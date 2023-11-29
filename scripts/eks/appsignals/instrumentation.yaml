@@ -1,0 +1,26 @@
+apiVersion: cloudwatch.aws.amazon.com/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java-instrumentation
+  namespace: ${NAMESPACE}
+spec:
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+    - xray
+  java:
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.31.1 
+    env:
+      - name: OTEL_METRICS_EXPORTER
+        value: "none"
+      - name: OTEL_SMP_ENABLED
+        value: "true"
+      - name: OTEL_TRACES_SAMPLER_ARG
+        value: "endpoint=http://cloudwatch-agent.amazon-cloudwatch:2000"
+      - name: OTEL_TRACES_SAMPLER
+        value: "xray"
+      - name: OTEL_AWS_SMP_EXPORTER_ENDPOINT
+        value: "http://cloudwatch-agent.amazon-cloudwatch:4315"
+      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: "http://cloudwatch-agent.amazon-cloudwatch:4315"

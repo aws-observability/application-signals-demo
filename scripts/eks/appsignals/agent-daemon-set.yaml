@@ -1,0 +1,80 @@
+apiVersion: cloudwatch.aws.amazon.com/v1alpha1
+kind: AmazonCloudWatchAgent
+metadata:
+  name: cloudwatch-agent
+  namespace: amazon-cloudwatch
+spec:
+  mode: daemonset
+  serviceAccount: cloudwatch-agent
+  image: public.ecr.aws/cloudwatch-agent/cloudwatch-agent:1.300031.1b317 
+  config: |
+    {
+      "agent": {
+        "region": "${REGION}",
+        "debug": true
+      },
+      "traces": {
+        "traces_collected": {
+          "app_signals": {}
+        }
+      },
+      "logs": {
+        "metrics_collected": {
+          "app_signals": {}
+        }
+      }
+    }
+  volumeMounts:
+    - mountPath: /rootfs
+      name: rootfs
+      readOnly: true
+    - mountPath: /var/run/docker.sock
+      name: dockersock
+      readOnly: true
+    - mountPath: /run/containerd/containerd.sock
+      name: containerdsock
+    - mountPath: /var/lib/docker
+      name: varlibdocker
+      readOnly: true
+    - mountPath: /sys
+      name: sys
+      readOnly: true
+    - mountPath: /dev/disk
+      name: devdisk
+      readOnly: true
+  volumes:
+    - name: rootfs
+      hostPath:
+        path: /
+    - hostPath:
+        path: /var/run/docker.sock
+      name: dockersock
+    - hostPath:
+        path: /var/lib/docker
+      name: varlibdocker
+    - hostPath:
+        path: /run/containerd/containerd.sock
+      name: containerdsock
+    - hostPath:
+        path: /sys
+      name: sys
+    - hostPath:
+        path: /dev/disk/
+      name: devdisk
+  env:
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: HOST_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: HOST_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: K8S_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
