@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+    kompose.version: 1.27.0 (b0ed6a2c9)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: config-server
+  name: config-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: config-server
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+        kompose.version: 1.27.0 (b0ed6a2c9)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: config-server
+    spec:
+      containers:
+        - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-config-server:latest
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          name: config-server
+          ports:
+            - containerPort: 8888
+      restartPolicy: Always
+status: {}

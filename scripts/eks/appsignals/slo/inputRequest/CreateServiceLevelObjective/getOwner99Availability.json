@@ -1,0 +1,24 @@
+{
+  "Name": "Availability for Searching an Owner",
+  "Description": "Availability larger than 99 for Get Owner operation",
+  "SliConfig": {
+    "StandardMetricsConfig": {
+      "ServiceId": "arn:aws:cloudwatch:us-west-2:285432994731:service/pet-clinic-frontend-7f6e6c088de97979c1ed9b1897ff45051aed6bc13440e4786e4fc7f755ae1c23",
+      "OperationName": "GET /api/customer/owners",
+      "MetricName": "AVAILABILITY",
+      "PeriodSeconds": 60
+    },
+    "MetricThreshold": 99.0,
+    "ComparisonOperator": "GreaterThan"
+  },
+  "Goal": {
+    "Interval": {
+      "RollingInterval": {
+        "Duration": 1,
+        "DurationUnit": "DAY"
+      }
+    },
+    "AttainmentGoal": 99.9,
+    "WarningThreshold": 60.0
+  }
+}
