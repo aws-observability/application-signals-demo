@@ -47,10 +47,8 @@ cd scripts/eks/appsignals/one-step && ./cleanup.sh new-cluster-name region-name
 # EC2 Demo
 The following instructions describe how to set up the pet clinic sample application on EC2 instances. You can run these steps in your personal AWS account to follow along.
 
-1. Clone this repository and run `./mvnw clean install`
-2. Set up an S3 bucket in your account and put the created JAR files into it
-3. Set up a VPC with a public subnet and a security group accepting all traffic.
-4. Set up 5 EC2 instances all with the following configuration:
+1. Set up a VPC with a public subnet and a security group accepting all traffic.
+2. Set up 5 EC2 instances all with the following configuration:
    - Running on Amazon Linux
    - Instance type t2.small or larger
    - A key-pair you save to your computer
@@ -61,52 +59,69 @@ The following instructions describe how to set up the pet clinic sample applicat
      - AmazonKinesisFullAccess 
      - AmazonS3FullAccess 
      - AmazonSQSFullAccess
-5. Rename your instances as follows to follow along with the instructions:
+3. Rename your instances as follows to follow along with the instructions:
    - setup
    - pet-clinic-frontend
    - vets
    - customers
    - visits
-6. Connect to the EC2 instance named setup and run the following commands to start the config, discovery, and admin services:
+4. Connect to the EC2 instance named setup and start the config, discovery, and admin services in screen sessions. Feel free to end your connection to the EC2 instance, the screen sessions will continue running.
 
-```
-sudo yum install java-1.8.0
-aws s3 sync s3://<S3-bucket-name> .
-screen -S config
-java -jar spring-petclinic-config...
-```
-Leave the config service `screen` session by inputting `ctrl+a, d`.
-```
-clear
-screen -S discovery
-java -jar spring-petclinic-discovery...
-```
-Leave the discovery service `screen` session by inputting `ctrl+a, d`.
-```
-clear
-screen -S admin
-java -jar spring-petclinic-admin...
-```
-Leave the admin service `screen` session by inputting `ctrl+a, d`.
-Feel free to end your connection to the EC2 instance, the screens will continue running.
+   - build the JAR files 
+   ```
+   sudo yum install java-17-amazon-corretto-devel git -y
+   git clone https://github.com/aws-observability/application-signals-demo.git
+   cd application-signals-demo/ && ./mvnw clean install
+   ```
 
-7. Connect to the EC2 instance named pet-clinic-frontend and run the following commands to start the api-gateway service. Make sure to replace the private IP in the export commands.
-```
-sudo yum install java-1.8.0
-aws s3 sync s3://<S3-bucket-name> .
-export CONFIG_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8888
-export DISCOVERY_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8761/eureka
-screen -S frontend
-java -jar spring-petclinic-api-gateway...
-```
-Leave the api-gateway service `screen` session by inputting `ctrl+a, d`.
-Feel free to end your connection to the EC2 instance, the screen will continue running the service
+   - Create an S3 buket in your account and put the created JAR files into it
+   ```
+   aws s3 mb s3://app-signals-ec2-demo
+   for dir in `ls -d spring-petclinic-*`; do aws s3 cp $dir/target/*.jar s3://app-signals-ec2-demo; done 
+   ```
 
-8. Repeat step 7 for the remaining EC2 instances (vets, customers, visits)
+   - Run config service and then leave the config service `screen` session by inputting `ctrl+a, d`.
+   ```
+   screen -S config
+   cd spring-petclinic-config-server/target/
+   java -jar spring-petclinic-config...
+   ```
 
-9. Visit the sample application by going to http://<PUBLIC-IPv4-DNS-OF-PET-CLINIC-FRONTEND-INSTANCE>:8080
+   - Run discovery serviceand then leave the discovery service `screen` session by inputting `ctrl+a, d`.
+   ```
+   clear
+   screen -S discovery
+   cd spring-petclinic-discovery-server/target/
+   java -jar spring-petclinic-discovery...
+   ```
 
-10. Interact with the application to ensure you've properly set up the backend services. Note that each service takes a few seconds to come up.
+
+   - Run admin serviceand then leave the admin service `screen` session by inputting `ctrl+a, d`.
+   ```
+   clear
+   screen -S admin
+   cd spring-petclinic-admin-server/target/
+   java -jar spring-petclinic-admin...
+   ```
+
+
+
+5. Connect to the EC2 instance named pet-clinic-frontend and run the following commands to start the api-gateway service. Make sure to replace the private IP in the export commands.You can leave the api-gateway service `screen` session by inputting `ctrl+a, d`.
+Feel free to end your connection to the EC2 instance, the screen will continue running the service.
+   ```
+   sudo yum install java-17-amazon-corretto-devel -y
+   aws s3 sync s3://app-signals-ec2-demo .
+   export CONFIG_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8888
+   export DISCOVERY_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8761/eureka
+   screen -S frontend
+   java -jar spring-petclinic-api-gateway...
+   ```
+
+6. Repeat step 5 for the remaining EC2 instances (vets, customers, visits)
+
+7. Visit the sample application by going to `http://<PUBLIC-IPv4-DNS-OF-PET-CLINIC-FRONTEND-INSTANCE>:8080`
+
+8. Interact with the application to ensure you've properly set up the backend services. Note that each service takes a few seconds to come up.
 
 
 To enable Application Signals on the sample application, please refer to [this user guide](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Application-Signals-Enable-EC2.html).
