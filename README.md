@@ -31,6 +31,7 @@ export REGION='us-east-1'
 ```
 
 ## Try Application Signals with the sample application
+
 1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**". 
 
 ```
@@ -42,6 +43,8 @@ cd scripts/eks/appsignals/one-step && ./setup.sh new-cluster-name region-name
 ```
 cd scripts/eks/appsignals/one-step && ./cleanup.sh new-cluster-name region-name
 ```
+
+Please be aware that this sample application includes a publicly accessible Application Load Balancer (ALB), enabling easy interaction with the application. If you perceive this public ALB as a security risk, consider restricting access by employing [security groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html).
 
 
 # EC2 Demo
