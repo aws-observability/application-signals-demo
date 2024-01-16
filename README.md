@@ -5,6 +5,10 @@ If your interest lies in exploring the broader aspects of the Spring Boot stack,
 
 In the following, we will focus on how customers can set up the current sample application to explore the features of Application Signals.
 
+# Disclaimer
+
+This code for sample application is intended for demonstration purposes only. It should not be used in a production environment or in any setting where reliability/security is a concern.
+
 # Prerequisite
 * A Linux or Mac machine with x86-64 (AMD64) architecture is required for building Docker images for the sample application.
 * Docker is installed and running on the machine.
