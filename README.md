@@ -72,11 +72,20 @@ The following instructions describe how to set up the pet clinic sample applicat
    - vets
    - customers
    - visits
-4. Connect to the EC2 instance named setup and start the config, discovery, and admin services in screen sessions. Feel free to end your connection to the EC2 instance, the screen sessions will continue running.
+4. Connect to the EC2 instance named setup and start the config, discovery, and admin services in tmux sessions. Feel free to end your connection to the EC2 instance, the tmux sessions will continue running.
 
-   - build the JAR files 
+   - Install `java17`, `git`, and `tmux` as dependencies
    ```
-   sudo yum install java-17-amazon-corretto-devel git -y
+   sudo yum install java-17-amazon-corretto-devel tmux -y
+   ```
+
+   - Verify java 17 is used. If not, run `sudo alternatives --config java` to change the default java provider
+   ```
+   java -version
+   ```
+
+   - Build the JAR files 
+   ```
    git clone https://github.com/aws-observability/application-signals-demo.git
    cd application-signals-demo/ && ./mvnw clean install
    ```
@@ -87,40 +96,52 @@ The following instructions describe how to set up the pet clinic sample applicat
    for dir in `ls -d spring-petclinic-*`; do aws s3 cp $dir/target/*.jar s3://app-signals-ec2-demo; done 
    ```
 
-   - Run config service and then leave the config service `screen` session by inputting `ctrl+a, d`.
+   - Run config service in a tmux session and then exit by inputting `ctrl+b, d`.
    ```
-   screen -S config
+   tmux new -s config
    cd spring-petclinic-config-server/target/
    java -jar spring-petclinic-config...
    ```
 
-   - Run discovery serviceand then leave the discovery service `screen` session by inputting `ctrl+a, d`.
+   - Run discovery service in a tmux session and then exit by inputting `ctrl+b, d`.
    ```
-   clear
-   screen -S discovery
+   tmux new -s discovery
    cd spring-petclinic-discovery-server/target/
    java -jar spring-petclinic-discovery...
    ```
 
 
-   - Run admin serviceand then leave the admin service `screen` session by inputting `ctrl+a, d`.
+   - Run admin service in a tmux session and then exit by inputting `ctrl+b, d`.
    ```
-   clear
-   screen -S admin
+   tmux new -s admin
    cd spring-petclinic-admin-server/target/
    java -jar spring-petclinic-admin...
    ```
 
 
 
-5. Connect to the EC2 instance named pet-clinic-frontend and run the following commands to start the api-gateway service. Make sure to replace the private IP in the export commands.You can leave the api-gateway service `screen` session by inputting `ctrl+a, d`.
-Feel free to end your connection to the EC2 instance, the screen will continue running the service.
+5. Connect to the EC2 instance named pet-clinic-frontend and run the following commands to start the api-gateway service. Feel free to end your connection to the EC2 instance, the tmux sessions will continue running.
+
+   - Install `java17` and `tmux` as dependencies
    ```
-   sudo yum install java-17-amazon-corretto-devel -y
+   sudo yum install java-17-amazon-corretto-devel tmux -y
+   ```
+
+   - Verify java 17 is used. If not, run `sudo alternatives --config java` to change the default java provider
+   ```
+   java -version
+   ```
+
+   - Download jar files from S3 bucket
+   ```
    aws s3 sync s3://app-signals-ec2-demo .
+   ```
+
+   - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`. Make sure to replace the private IP in the export commands.
+   ```
+   tmux new -s frontend
    export CONFIG_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8888
    export DISCOVERY_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8761/eureka
-   screen -S frontend
    java -jar spring-petclinic-api-gateway...
    ```
 
