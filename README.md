@@ -76,7 +76,7 @@ The following instructions describe how to set up the pet clinic sample applicat
 
    - Install `java17`, `git`, and `tmux` as dependencies
    ```
-   sudo yum install java-17-amazon-corretto-devel tmux -y
+   sudo yum install java-17-amazon-corretto-devel git tmux -y
    ```
 
    - Verify java 17 is used. If not, run `sudo alternatives --config java` to change the default java provider
