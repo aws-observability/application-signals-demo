@@ -143,7 +143,7 @@ create_canary() {
         --artifact-s3-location "s3://$ARTIFACT_BUCKET" \
         --code Handler="$canary_name.handler",S3Bucket="$CODE_BUCKET",S3Key="$canary_name" \
         --execution-role-arn $canary_execution_role_arn \
-        --runtime-version "syn-nodejs-puppeteer-4.0" \
+        --runtime-version "syn-nodejs-puppeteer-6.2" \
         --schedule Expression="rate(1 minute)" \
         --run-config ActiveTracing=true,EnvironmentVariables={URL=$ENDPOINT} \
         --region $REGION \
