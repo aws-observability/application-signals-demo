@@ -33,6 +33,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref:  update-addon-version-to-latest
 
       # This step avoids code duplication for terraform templates and the validator
       # To simplify, we get the entire repo and put it into a separate folder
