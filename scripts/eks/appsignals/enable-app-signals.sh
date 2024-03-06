@@ -55,11 +55,11 @@ result=$(aws eks describe-addon --addon-name amazon-cloudwatch-observability --c
 echo "${result}"
 
 if [[ "${result}" == *"No addon: "* ]];  then
+    echo "Using the latest version"
     echo "Installing amazon-cloudwatch-observability add-on"
     aws eks create-addon \
         --cluster-name ${CLUSTER_NAME} \
         --addon-name amazon-cloudwatch-observability \
-        --addon-version v1.2.0-eksbuild.1 \
         --region ${REGION}
     # wait until the amazon-cloudwatch-observability add-on is active    
     # Fetch the initial status
