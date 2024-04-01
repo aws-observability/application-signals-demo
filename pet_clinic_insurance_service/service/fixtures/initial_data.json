@@ -1,0 +1,20 @@
+[
+  {
+    "model": "service.Insurance",
+    "pk": 1,
+    "fields": {
+      "name": "CatCare",
+      "description": "Biggest cat insurance in Moon",
+      "price": 10
+    }
+  },
+  {
+    "model": "service.Insurance",
+    "pk": 2,
+    "fields": {
+      "name": "DogForever",
+      "description": "Most used dog insurance in Mars",
+      "price": 12
+    }
+  }
+]

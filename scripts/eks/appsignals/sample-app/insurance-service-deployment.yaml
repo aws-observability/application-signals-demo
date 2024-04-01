@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insurance-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: insurance-service
+  template:
+    metadata:
+      labels:
+        io.kompose.service: insurance-service
+      annotations:
+        sidecar.opentelemetry.io/inject-python: 'true'
+        instrumentation.opentelemetry.io/inject-python: 'true'
+    spec:
+      serviceAccountName: visits-service-account
+      containers:
+        - image: 613477150601.dkr.ecr.us-east-1.amazonaws.com/python-petclinic-insurance-service:latest
+          # securityContext:
+          #   runAsNonRoot: true
+          #   allowPrivilegeEscalation: true
+          name: insurance-service
+          env:
+            - name: EUREKA_SERVER_URL
+              value: discovery-server
+            - name: DB_NAME
+              value: 'postgres'
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: dbsecret
+                  key: username
+            - name: DB_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dbsecret
+                  key: password
+            - name: DB_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: dbinfo
+                  key: endpoint
+            - name: DATABASE_PROFILE
+              value: postgresql
+          # command: ["sh", "-c"]
+          # args: ['manage.py', 'runserver', '0.0.0.0:8000']
+          command: ['sh', '-c']
+          args:
+            - |
+              python manage.py migrate
+              python manage.py loaddata initial_data.json
+              python manage.py runserver 0.0.0.0:8000
+          ports:
+            - containerPort: 8000
+          # lifecycle:
+          #   postStart:
+          #     exec:
+          #       command:
+          #         - sh
+          #         - -c
+          #         - 'python manage.py migrate && python manage.py loaddata initial_data.json'
+          imagePullPolicy: Always
+      restartPolicy: Always

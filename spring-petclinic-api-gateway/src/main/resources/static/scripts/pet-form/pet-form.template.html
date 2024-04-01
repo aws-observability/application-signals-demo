@@ -34,6 +34,15 @@
     </div>
 
     <div class="form-group">
+        <label class="col-sm-2 control-label">Insurance</label>
+        <div class="col-sm-6">
+            <select class="form-control" ng-model="$ctrl.pet.insurance_id">
+                <option ng-repeat="t in $ctrl.insurances track by t.id" value="{{t.id}}">{{t.name}} - price {{t.price}}</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
         <div class="col-sm-6 col-sm-offset-2">
             <button class="btn btn-default" type="submit">
                 Submit

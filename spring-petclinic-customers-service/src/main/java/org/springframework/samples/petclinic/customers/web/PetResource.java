@@ -22,10 +22,12 @@ import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.samples.petclinic.customers.aws.KinesisService;
 import org.springframework.samples.petclinic.customers.aws.SqsService;
 import org.springframework.samples.petclinic.customers.model.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import javax.validation.constraints.Min;
 import java.util.List;
@@ -66,6 +68,7 @@ class PetResource {
         sqsService.sendMsg();
         final Pet pet = new Pet();
         owner.addPet(pet);
+
         return save(pet, petRequest);
     }
 
@@ -82,7 +85,6 @@ class PetResource {
 
         pet.setName(petRequest.getName());
         pet.setBirthDate(petRequest.getBirthDate());
-
         petRepository.findPetTypeById(petRequest.getTypeId())
             .ifPresent(pet::setType);
 
@@ -92,7 +94,18 @@ class PetResource {
 
     @GetMapping("owners/*/pets/{petId}")
     public PetDetails findPet(@PathVariable("petId") int petId) {
-        return new PetDetails(findPetById(petId));
+        PetDetails detail = new PetDetails(findPetById(petId));
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<PetInsurance> response = restTemplate.getForEntity("http://insurance-service/pet-insurances/" + detail.getId(), PetInsurance.class);
+        PetInsurance petInsurance = response.getBody();
+        if(petInsurance == null){
+            System.out.println("empty petInsurance");
+            return detail;
+        }
+        detail.setInsurance_id(petInsurance.getInsurance_id());
+        detail.setInsurance_name(petInsurance.getInsurance_name());
+        detail.setPrice(petInsurance.getPrice());
+        return detail;
     }
 
 

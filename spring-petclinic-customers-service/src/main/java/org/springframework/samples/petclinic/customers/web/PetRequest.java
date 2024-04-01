@@ -37,4 +37,6 @@ class PetRequest {
     private String name;
 
     private int typeId;
+
+    private int insurance_id;
 }

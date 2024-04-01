@@ -31,3 +31,14 @@ aws ecr create-repository --repository-name springcommunity/spring-petclinic-adm
 docker tag springcommunity/spring-petclinic-admin-server:latest ${REPOSITORY_PREFIX}/springcommunity/spring-petclinic-admin-server:latest
 docker push ${REPOSITORY_PREFIX}/springcommunity/spring-petclinic-admin-server:latest
 
+aws ecr create-repository --repository-name python-petclinic-insurance-service --region ${REGION} || true
+cd ./pet_clinic_insurance_service
+docker build -t insurance-service .
+docker tag insurance-service:latest ${REPOSITORY_PREFIX}/python-petclinic-insurance-service:latest
+docker push ${REPOSITORY_PREFIX}/python-petclinic-insurance-service:latest
+
+aws ecr create-repository --repository-name python-petclinic-billing-service --region ${REGION} || true
+cd ./pet_clinic_billing_service
+docker build -t billing-service .
+docker tag billing-service:latest ${REPOSITORY_PREFIX}/python-petclinic-billing-service:latest
+docker push ${REPOSITORY_PREFIX}/python-petclinic-billing-service:latest

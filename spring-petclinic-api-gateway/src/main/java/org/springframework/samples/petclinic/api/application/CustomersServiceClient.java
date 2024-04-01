@@ -22,11 +22,7 @@ import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.samples.petclinic.api.dto.OwnerDetails;
-import org.springframework.samples.petclinic.api.dto.OwnerRequest;
-import org.springframework.samples.petclinic.api.dto.PetDetails;
-import org.springframework.samples.petclinic.api.dto.PetRequest;
-import org.springframework.samples.petclinic.api.dto.PetType;
+import org.springframework.samples.petclinic.api.dto.*;
 import org.springframework.samples.petclinic.api.utils.WellKnownAttributes;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -82,11 +78,11 @@ public class CustomersServiceClient {
     }
 
     @WithSpan
-    public Mono<PetDetails> getPet(final int ownerId, final int petId) {
+    public Mono<PetFull> getPet(final int ownerId, final int petId) {
         return webClientBuilder.build().get()
             .uri("http://customers-service/owners/{ownerId}/pets/{petId}", ownerId, petId)
             .retrieve()
-            .bodyToMono(PetDetails.class);
+            .bodyToMono(PetFull.class);
     }
 
     @WithSpan

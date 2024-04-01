@@ -3,17 +3,8 @@
 package org.springframework.samples.petclinic.api.boundary.web;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.samples.petclinic.api.application.CustomersServiceClient;
-import org.springframework.samples.petclinic.api.application.VetsServiceClient;
-import org.springframework.samples.petclinic.api.application.VisitsServiceClient;
-import org.springframework.samples.petclinic.api.dto.OwnerDetails;
-import org.springframework.samples.petclinic.api.dto.OwnerRequest;
-import org.springframework.samples.petclinic.api.dto.PetDetails;
-import org.springframework.samples.petclinic.api.dto.PetRequest;
-import org.springframework.samples.petclinic.api.dto.PetType;
-import org.springframework.samples.petclinic.api.dto.VetDetails;
-import org.springframework.samples.petclinic.api.dto.VisitDetails;
-import org.springframework.samples.petclinic.api.dto.Visits;
+import org.springframework.samples.petclinic.api.application.*;
+import org.springframework.samples.petclinic.api.dto.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +23,8 @@ public class ApiController {
     private final CustomersServiceClient customersServiceClient;
     private final VetsServiceClient vetsServiceClient;
     private final VisitsServiceClient visitsServiceClient;
+    private final InsuranceServiceClient insuranceServiceClient;
+    private final BillingServiceClient billingServiceClient;
 
     @GetMapping(value = "customer/owners")
     public Flux<OwnerDetails> getOwners() {
@@ -59,7 +52,7 @@ public class ApiController {
     }
 
     @GetMapping(value = "customer/owners/{ownerId}/pets/{petId}")
-    public Mono<PetDetails> getPetTypes(final @PathVariable int ownerId, final @PathVariable int petId) {
+    public Mono<PetFull> getPetTypes(final @PathVariable int ownerId, final @PathVariable int petId) {
         return customersServiceClient.getPet(ownerId, petId);
     }
 
@@ -87,4 +80,30 @@ public class ApiController {
     public Mono<Void> addVisit(final @PathVariable int ownerId, final @PathVariable int petId, final @RequestBody VisitDetails visitDetails) {
         return visitsServiceClient.addVisitForOwnersPets(ownerId, petId, visitDetails);
     }
+    @GetMapping(value = "insurance/insurances")
+    public Flux<InsuranceDetail> getInsurance(){
+        return insuranceServiceClient.getInsurances();
+    }
+
+    @GetMapping(value = "billing/billings")
+    public Flux<BillingDetail> getBillings(){
+        return billingServiceClient.getBillings();
+    }
+
+    @PostMapping(value = "insurance/pet-insurances")
+    public Mono<Void> addPetInsurance(final @RequestBody PetInsurance petInsurance){
+        System.out.println(petInsurance.toString());
+        return insuranceServiceClient.addPetInsurance(petInsurance);
+    }
+
+    @PutMapping(value = "insurance/pet-insurances/{petId}")
+    public Mono<PetInsurance> updatePetInsurance(final @PathVariable int petId, final @RequestBody PetInsurance petInsurance){
+        return insuranceServiceClient.updatePetInsurance(petId, petInsurance);
+    }
+
+    @GetMapping(value = "insurance/pet-insurances/{petId}")
+    public Mono<PetInsurance> getPetInsurance(final @PathVariable int petId){
+        return insuranceServiceClient.getPetInsurance(petId);
+    }
+
 }
