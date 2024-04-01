@@ -6,13 +6,13 @@ metadata:
     kompose.version: 1.27.0 (b0ed6a2c9)
   creationTimestamp: null
   labels:
-    io.kompose.service: vets-service
-  name: vets-service
+    io.kompose.service: vets-service-java
+  name: vets-service-java
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: vets-service
+      io.kompose.service: vets-service-java
   strategy: {}
   template:
     metadata:
@@ -21,7 +21,7 @@ spec:
         kompose.version: 1.27.0 (b0ed6a2c9)
       creationTimestamp: null
       labels:
-        io.kompose.service: vets-service
+        io.kompose.service: vets-service-java
       annotations:
         sidecar.opentelemetry.io/inject-java: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
@@ -39,7 +39,7 @@ spec:
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
-          name: vets-service
+          name: vets-service-java
           ports:
             - containerPort: 8083
       restartPolicy: Always

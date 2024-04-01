@@ -6,13 +6,13 @@ metadata:
     kompose.version: 1.27.0 (b0ed6a2c9)
   creationTimestamp: null
   labels:
-    io.kompose.service: visits-service
-  name: visits-service
+    io.kompose.service: visits-service-java
+  name: visits-service-java
 spec:
   replicas: 3
   selector:
     matchLabels:
-      io.kompose.service: visits-service
+      io.kompose.service: visits-service-java
   strategy: {}
   template:
     metadata:
@@ -21,7 +21,7 @@ spec:
         kompose.version: 1.27.0 (b0ed6a2c9)
       creationTimestamp: null
       labels:
-        io.kompose.service: visits-service
+        io.kompose.service: visits-service-java
       annotations:
         sidecar.opentelemetry.io/inject-java: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
@@ -42,7 +42,7 @@ spec:
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
-          name: visits-service
+          name: visits-service-java
           ports:
             - containerPort: 8082
       restartPolicy: Always
