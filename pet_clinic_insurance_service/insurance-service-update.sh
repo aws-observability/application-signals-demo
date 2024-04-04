@@ -17,4 +17,4 @@ docker build -t insurance-service .
 docker tag insurance-service:latest ${ECR_URL}/python-petclinic-insurance-service:latest
 docker push ${ECR_URL}/python-petclinic-insurance-service:latest
 
-kubectl delete pods -l io.kompose.service=insurance-service
+kubectl delete pods -l io.kompose.service=insurance-service-python
