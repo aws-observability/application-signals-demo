@@ -12,55 +12,41 @@ spec:
       labels:
         io.kompose.service: billing-service-python
       annotations:
-        sidecar.opentelemetry.io/inject-python: 'true'
         instrumentation.opentelemetry.io/inject-python: 'true'
     spec:
       serviceAccountName: visits-service-account
       containers:
-        - image: 613477150601.dkr.ecr.us-east-1.amazonaws.com/python-petclinic-billing-service:latest
+        - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/python-petclinic-billing-service:latest 
           # securityContext:
           #   runAsNonRoot: true
           #   allowPrivilegeEscalation: true
           name: billing-service-python
           env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "pet_clinic_billing_service.settings"
+            - name: PYTHONPATH
+              value: "/app"
             - name: EUREKA_SERVER_URL
               value: discovery-server
             - name: DB_NAME
               value: 'postgres'
             - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: dbsecret
-                  key: username
+              value: 'djangouser'
             - name: DB_USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: dbsecret
-                  key: password
-            - name: DB_ENDPOINT
-              valueFrom:
-                secretKeyRef:
-                  name: dbinfo
-                  key: endpoint
+              value: 'qwerty'
             - name: DATABASE_PROFILE
               value: postgresql
             - name: NOTIFICATION_ARN
-              valueFrom:
-                secretKeyRef:
-                  name: notification
-                  key: sns_arn
+              value: arn:aws:sns:us-west-2:858348110546:petclinic #replace with ur own
             - name: REGION
-              valueFrom:
-                secretKeyRef:
-                  name: notification
-                  key: region
+              value: us-west-2
           # command: ["sh", "-c"]
           # args: ['manage.py', 'runserver', '0.0.0.0:8000']
           command: ['sh', '-c']
           args:
             - |
               python manage.py migrate
-              python manage.py runserver 0.0.0.0:8800
+              python manage.py runserver 0.0.0.0:8800 --noreload
           ports:
             - containerPort: 8800
           imagePullPolicy: Always

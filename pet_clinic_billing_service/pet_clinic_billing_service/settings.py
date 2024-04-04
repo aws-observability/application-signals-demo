@@ -92,9 +92,6 @@ LOGGING = {
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-endpoint = os.environ.get('DB_ENDPOINT', 'localhost:port')
-info = endpoint.split(':')
 DATABASES = {
     # local database - sqlite3
     "local": {
@@ -106,8 +103,8 @@ DATABASES = {
         "NAME": os.environ.get('DB_NAME'),
         "USER": os.environ.get('DB_USER'),
         "PASSWORD": os.environ.get('DB_USER_PASSWORD'),
-        "HOST": info[0],
-        "PORT": info[1],
+        "HOST": os.environ.get("DB_SERVICE_HOST"),
+        "PORT": os.environ.get("DB_SERVICE_PORT"),
     }
 }
 

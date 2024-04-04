@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.11
+FROM python:3.10
 LABEL authors="yagrxu"
 
 WORKDIR /app
