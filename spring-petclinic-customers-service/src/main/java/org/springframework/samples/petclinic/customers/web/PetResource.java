@@ -22,6 +22,7 @@ import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.samples.petclinic.customers.aws.KinesisService;
 import org.springframework.samples.petclinic.customers.aws.SqsService;
@@ -50,6 +51,9 @@ class PetResource {
     private final OwnerRepository ownerRepository;
     private final SqsService sqsService;
     private final KinesisService kinesisService;
+    
+    @Autowired
+    private RestTemplate restTemplate;
 
     @GetMapping("/petTypes")
     public List<PetType> getPetTypes() {
@@ -95,9 +99,14 @@ class PetResource {
     @GetMapping("owners/*/pets/{petId}")
     public PetDetails findPet(@PathVariable("petId") int petId) {
         PetDetails detail = new PetDetails(findPetById(petId));
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<PetInsurance> response = restTemplate.getForEntity("http://insurance-service/pet-insurances/" + detail.getId(), PetInsurance.class);
-        PetInsurance petInsurance = response.getBody();
+        PetInsurance petInsurance = null;
+        try{
+            ResponseEntity<PetInsurance> response = restTemplate.getForEntity("http://insurance-service/pet-insurances/" + detail.getId(), PetInsurance.class);
+            petInsurance = response.getBody();
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
         if(petInsurance == null){
             System.out.println("empty petInsurance");
             return detail;

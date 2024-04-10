@@ -3,4 +3,3 @@ django
 psycopg2
 django_rest_framework
 py_eureka_client
-django-health-check
