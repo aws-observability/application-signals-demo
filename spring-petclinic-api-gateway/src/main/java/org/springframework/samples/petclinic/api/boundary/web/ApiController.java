@@ -62,7 +62,7 @@ public class ApiController {
     }
 
     @PostMapping("customer/owners/{ownerId}/pets")
-    public Mono<Void> addPet(final @PathVariable int ownerId, @RequestBody PetRequest petRequest) {
+    public Mono<PetFull> addPet(final @PathVariable int ownerId, @RequestBody PetRequest petRequest) {
         return customersServiceClient.addPet(ownerId, petRequest);
     }
 

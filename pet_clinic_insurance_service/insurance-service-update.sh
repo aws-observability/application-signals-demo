@@ -9,7 +9,7 @@ else
       export REGION="us-east-1"
 fi
 
-export ACCOUNT_ID=`aws sts get-caller-identity --profile global | jq .Account -r`
+export ACCOUNT_ID=`aws sts get-caller-identity | jq .Account -r`
 export ECR_URL=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_URL}
 

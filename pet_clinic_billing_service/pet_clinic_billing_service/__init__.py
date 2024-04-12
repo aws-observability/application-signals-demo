@@ -21,6 +21,7 @@ def subscribe_to_topic(sns_client, topic_arn, email_address):
         TopicArn=topic_arn,
         Protocol='email',
         Endpoint=email_address
+    )
 
 # create sns topic when not existing, and subscribe to it from provided email address
 notification_arn = os.environ.get('NOTIFICATION_ARN')
@@ -31,6 +32,7 @@ if not notification_arn:
         notification_arn = existing_topic_arn
     else:
         notification_arn = create_sns_topic(sns_client, topic_name)
+        os.environ['NOTIFICATION_ARN'] = notification_arn
     
 notification_email = os.environ.get('NOTIFICATION_EMAIL')
 if notification_email:

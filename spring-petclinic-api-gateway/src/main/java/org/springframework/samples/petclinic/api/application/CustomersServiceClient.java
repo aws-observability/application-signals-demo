@@ -95,12 +95,12 @@ public class CustomersServiceClient {
     }
 
     @WithSpan
-    public Mono<Void> addPet(final int ownerId, final PetRequest petRequest) {
+    public Mono<PetFull> addPet(final int ownerId, final PetRequest petRequest) {
         return webClientBuilder.build().post()
             .uri("http://customers-service/owners/{ownerId}/pets", ownerId)
             .body(Mono.just(petRequest), PetRequest.class)
             .retrieve()
-            .bodyToMono(Void.class);
+            .bodyToMono(PetFull.class);
     }
 
     @WithSpan

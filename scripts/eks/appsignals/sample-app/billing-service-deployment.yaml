@@ -36,10 +36,10 @@ spec:
               value: 'qwerty'
             - name: DATABASE_PROFILE
               value: postgresql
-            - name: NOTIFICATION_ARN
-              value: arn:aws:sns:us-west-2:858348110546:petclinic #replace with ur own
+            - name: NOTIFICATION_EMAIL
+              value: example@email.com
             - name: REGION
-              value: us-west-2
+              value: ${REGION}
           # command: ["sh", "-c"]
           # args: ['manage.py', 'runserver', '0.0.0.0:8000']
           command: ['sh', '-c']

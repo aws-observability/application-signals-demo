@@ -79,7 +79,7 @@ angular.module('petForm')
                 }
                 else {
                     $http.post("api/insurance/pet-insurances/", {
-                        "pet_id": self.pet.id,
+                        "pet_id": response.data.id,
                         "owner_id": ownerId,
                         "insurance_id": self.pet.insurance_id,
                         "insurance_name": self.insuranceMap[self.pet.insurance_id + ""].name,

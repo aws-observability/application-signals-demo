@@ -45,7 +45,7 @@ ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 
 for config in $(ls ./sample-app/*.yaml)
 do
-    sed "s/111122223333.dkr.ecr.us-west-2/$ACCOUNT.dkr.ecr.$REGION/g" $config | kubectl ${OPERATION} --namespace=$NAMESPACE -f -
+    sed -e "s/111122223333.dkr.ecr.us-west-2/$ACCOUNT.dkr.ecr.$REGION/g" -e 's#\${REGION}'"#${REGION}#g" $config | kubectl ${OPERATION} --namespace=$NAMESPACE -f -
 done
 
 if [[ $OPERATION == "apply" ]]; then
