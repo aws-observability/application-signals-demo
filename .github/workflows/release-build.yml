@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   e2e-test:
-    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    uses: ./.github/workflows/application-signals-e2e-eks-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'

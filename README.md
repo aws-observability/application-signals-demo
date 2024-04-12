@@ -23,6 +23,7 @@ This code for sample application is intended for demonstration purposes only. It
 1. Build container images for each micro-service application
 
 ```
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 ./mvnw clean install -P buildDocker
 ```
 
@@ -39,13 +40,13 @@ export REGION='us-east-1'
 1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**". 
 
 ```
-cd scripts/eks/appsignals/one-step && ./setup.sh new-cluster-name region-name
+cd scripts/eks/application-signals/one-step && ./setup.sh new-cluster-name region-name
 ```
 
 2. Clean up all the resources. Replace `new-cluster-name` and `region-name` with the same values that you use in previous step.
 
 ```
-cd scripts/eks/appsignals/one-step && ./cleanup.sh new-cluster-name region-name
+cd scripts/eks/application-signals/one-step && ./cleanup.sh new-cluster-name region-name
 ```
 
 Please be aware that this sample application includes a publicly accessible Application Load Balancer (ALB), enabling easy interaction with the application. If you perceive this public ALB as a security risk, consider restricting access by employing [security groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html).
@@ -90,10 +91,10 @@ The following instructions describe how to set up the pet clinic sample applicat
    cd application-signals-demo/ && ./mvnw clean install
    ```
 
-   - Create an S3 buket in your account and put the created JAR files into it
+   - Create an S3 bucket in your account and put the created JAR files into it
    ```
-   aws s3 mb s3://app-signals-ec2-demo
-   for dir in `ls -d spring-petclinic-*`; do aws s3 cp $dir/target/*.jar s3://app-signals-ec2-demo; done 
+   aws s3 mb s3://application-signals-ec2-demo
+   for dir in `ls -d spring-petclinic-*`; do aws s3 cp $dir/target/*.jar s3://application-signals-ec2-demo; done 
    ```
 
    - Run config service in a tmux session and then exit by inputting `ctrl+b, d`.
@@ -134,7 +135,7 @@ The following instructions describe how to set up the pet clinic sample applicat
 
    - Download jar files from S3 bucket
    ```
-   aws s3 sync s3://app-signals-ec2-demo .
+   aws s3 sync s3://application-signals-ec2-demo .
    ```
 
    - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`. Make sure to replace the private IP in the export commands.

@@ -35,8 +35,8 @@ check_if_step_failed_and_exit() {
 check_if_step_failed_and_exit "There was an error creating cluster $CLUSTER_NAME in region $REGION, exiting"
 
 # enable application signals auto-instrumentation
-../enable-app-signals.sh $CLUSTER_NAME $REGION $NAMESPACE
-check_if_step_failed_and_exit "There was an error enabling app signals with namespace $NAMESPACE, exiting"
+../enable-application-signals.sh $CLUSTER_NAME $REGION $NAMESPACE
+check_if_step_failed_and_exit "There was an error enabling application signals with namespace $NAMESPACE, exiting"
 
 # deploy sample application
 ../deploy-sample-app.sh $CLUSTER_NAME $REGION $NAMESPACE

@@ -1,7 +1,7 @@
-# This is a reusable workflow for running the E2E test for App Signals.
+# This is a reusable workflow for running the E2E test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: App Signals Enablement E2E Testing - EKS
+name: Application Signals Enablement E2E Testing - EKS
 on:
   workflow_call:
     inputs:
@@ -27,7 +27,7 @@ env:
   LOG_GROUP_NAME: /aws/appsignals/eks
 
 jobs:
-  appsignals-e2e-test:
+  application-signals-e2e-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -102,16 +102,16 @@ jobs:
             -var="sample_app_image=${{ env.SAMPLE_APP_FRONTEND_SERVICE_IMAGE }}" \
             -var="sample_remote_app_image=${{ env.SAMPLE_APP_REMOTE_SERVICE_IMAGE }}"
 
-      - name: Enable App Signals
-        working-directory: scripts/eks/appsignals
+      - name: Enable Application Signals
+        working-directory: scripts/eks/application-signals
         run: |
-          ./enable-app-signals.sh \
+          ./enable-application-signals.sh \
           ${{ inputs.test-cluster-name }} \
           ${{ env.AWS_DEFAULT_REGION }} \
           ${{ env.SAMPLE_APP_NAMESPACE }}
 
       # Application pods need to be restarted for the
-      # app signals instrumentation to take effect
+      # application signals instrumentation to take effect
       - name: Restart the app pods
         run: kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
 
@@ -168,7 +168,7 @@ jobs:
         working-directory: ${{ env.TEST_RESOURCES_FOLDER }}
         run: ./gradlew
 
-      # Validation for app signals telemetry data
+      # Validation for application signals telemetry data
       - name: Validate generated EMF logs
         id: log-validation
         if: steps.endpoint-check.outcome == 'success' && !cancelled()
@@ -228,17 +228,17 @@ jobs:
 
       - name: Remove log group deletion command
         if: always()
-        working-directory: scripts/eks/appsignals
+        working-directory: scripts/eks/application-signals
         run: |
           delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
-          sed -i "s#$delete_log_group##g" clean-app-signals.sh
+          sed -i "s#$delete_log_group##g" clean-application-signals.sh
 
-      - name: Clean Up App Signals
+      - name: Clean Up Application Signals
         if: always()
         continue-on-error: true
-        working-directory: scripts/eks/appsignals
+        working-directory: scripts/eks/application-signals
         run: |
-          ./clean-app-signals.sh \
+          ./clean-application-signals.sh \
           ${{ inputs.test-cluster-name }} \
           ${{ env.AWS_DEFAULT_REGION }} \
           ${{ env.SAMPLE_APP_NAMESPACE }}
