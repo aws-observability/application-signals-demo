@@ -4,6 +4,7 @@ from .models import Billing
 from .serializers import BillingSerializer
 import logging
 import boto3
+import datetime
 import os
 import json
 
@@ -34,7 +35,7 @@ class BillingViewSet(viewsets.ViewSet):
         serializer = BillingSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            self.notify(json.dumps(request.data))
+            self.log(request.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -44,29 +45,35 @@ class BillingViewSet(viewsets.ViewSet):
             serializer = BillingSerializer(billing_obj, data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                self.notify(json.dumps(request.data))
+                self.log(request.data)
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Billing.DoesNotExist:
             return Response({'message': 'Billing object not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    def notify(self, data):
-        sns_client = boto3.client('sns', region_name=os.environ.get('REGION', 'us-east-1'))
-        topic_arn = os.environ.get('NOTIFICATION_ARN')
+    def log(self, data):
+        # Initialize a DynamoDB client
+        client = boto3.client('dynamodb', region_name=os.environ.get('REGION', 'us-east-1'))
 
-        # Define the message you want to send
+        # Define the table name
+        table_name = 'BillingInfo'
+        current_time = datetime.datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        # Define the item you want to add
+        item = {
+            'ownerId': {'S': data['owner_id']},
+            'timestamp': {'S': formatted_time},
+            'billing': {'S': json.dumps(data)},
+            # Add more attributes as needed
+        }
 
-        # Publish the message to the SNS topic
-        response = sns_client.publish(
-            TopicArn=topic_arn,
-            Message=data
+        # Add the item to the table
+        response = client.put_item(
+            TableName=table_name,
+            Item=item
         )
+
 
 class HealthViewSet(viewsets.ViewSet):
     def list(self, request):
-        # service_name = "insurance-service"
-        # eureka_server_url = "http://discovery-server:8761/eureka/"
-        # response = requests.get(f"{eureka_server_url}/apps/{service_name}")
-        # data = response.json()
-        # logger.error(data)
         return Response({'message':'ok'}, status=status.HTTP_200_OK)

@@ -3,42 +3,64 @@ import os
 from py_eureka_client import eureka_client
 import boto3
 
-sns_client = boto3.client('sns', region_name='us-east-1')
-def create_sns_topic(sns_client, topic_name):
-    response = sns_client.create_topic(Name=topic_name)
-    return response['TopicArn']
+def table_exists(table_name, dynamodb_client):
+    try:
+        dynamodb_client.describe_table(TableName=table_name)
+        return True
+    except dynamodb_client.exceptions.ResourceNotFoundException:
+        return False
 
-def check_sns_topic_exists(sns_client, topic_name):
-    response = sns_client.list_topics()
-    topics = response.get('Topics', [])
-    for topic in topics:
-        if topic_name in topic['TopicArn']:
-            return topic['TopicArn']
-    return None
+def create_dynamodb_table():
+    # Initialize a DynamoDB client
+    dynamodb = boto3.client('dynamodb', region_name=os.environ.get('REGION', 'us-east-1'))
 
-def subscribe_to_topic(sns_client, topic_arn, email_address):
-    sns_client.subscribe(
-        TopicArn=topic_arn,
-        Protocol='email',
-        Endpoint=email_address
-    )
+    # Define table parameters
+    table_name = 'BillingInfo'
+    billing_mode = 'PROVISIONED'
+    read_capacity_units = 2
+    write_capacity_units = 2
+    hash_key = 'ownerId'
+    range_key = 'timestamp'
+    attribute_definitions = [
+        {
+            'AttributeName': 'ownerId',
+            'AttributeType': 'S'
+        },
+        {
+            'AttributeName': 'timestamp',
+            'AttributeType': 'S'
+        }
+    ]
+    key_schema = [
+        {
+            'AttributeName': 'ownerId',
+            'KeyType': 'HASH'
+        },
+        {
+            'AttributeName': 'timestamp',
+            'KeyType': 'RANGE'
+        }
+    ]
 
-# create sns topic when not existing, and subscribe to it from provided email address
-notification_arn = os.environ.get('NOTIFICATION_ARN')
-if not notification_arn:
-    topic_name = "application-signal-demo"
-    existing_topic_arn = check_sns_topic_exists(sns_client, topic_name)
-    if existing_topic_arn:
-        notification_arn = existing_topic_arn
+    # Check if table exists
+    if not table_exists(table_name, dynamodb):
+        # Create table
+        dynamodb.create_table(
+            TableName=table_name,
+            KeySchema=key_schema,
+            AttributeDefinitions=attribute_definitions,
+            ProvisionedThroughput={
+                'ReadCapacityUnits': read_capacity_units,
+                'WriteCapacityUnits': write_capacity_units
+            }
+        )
+        print("Table created successfully.")
     else:
-        notification_arn = create_sns_topic(sns_client, topic_name)
-        os.environ['NOTIFICATION_ARN'] = notification_arn
-    
-notification_email = os.environ.get('NOTIFICATION_EMAIL')
-if notification_email:
-    subscribe_to_topic(sns_client, notification_arn, notification_email)
-else:
-    print("Notification email address not provided in environment variables.")
+        print("Table already exists.")
+
+# Call the function to create DynamoDB table
+create_dynamodb_table()
+
 
 # Get the local IP address
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
