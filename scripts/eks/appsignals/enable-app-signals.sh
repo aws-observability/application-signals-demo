@@ -79,14 +79,14 @@ if [[ "${result}" == *"No addon: "* ]];  then
     echo "EKS amazon-cloudwatch-observability add-on is now ACTIVE"
 else
   addon_version=$(echo "${result}" | grep "addonVersion" | awk -F '"' '{print $4}')
-  if [[ "$addon_version" < "v1.2.0" ]]; then
+  if [[ "$addon_version" < "v1.4.0" ]]; then
      read -p "Do you want to update the add-on version to v1.2.0, current version $addon_version? (yes/no): " choice
 
       if [ "$choice" == "yes" ]; then
         aws eks update-addon \
            --cluster-name ${CLUSTER_NAME} \
            --addon-name amazon-cloudwatch-observability \
-           --addon-version v1.2.0-eksbuild.1 \
+           --addon-version v1.4.0-eksbuild.1 \
            --region ${REGION}
         # wait until the amazon-cloudwatch-observability add-on is active
         echo "Waiting for addon to become ACTIVE..."
