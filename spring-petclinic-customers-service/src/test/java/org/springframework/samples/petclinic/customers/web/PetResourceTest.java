@@ -34,7 +34,7 @@ import org.springframework.samples.petclinic.customers.model.PetType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
-
+import org.springframework.web.client.RestTemplate;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -64,6 +64,9 @@ class PetResourceTest {
 
     @MockBean
     KinesisService kinesisService;
+
+    @MockBean
+    RestTemplate restTemplate;
 
     @Test
     void shouldGetAPetInJSonFormat() throws Exception {
