@@ -47,12 +47,12 @@ check_if_step_failed_and_exit "There was an error enabling aws-ebs-csi-driver wi
 check_if_step_failed_and_exit "There was an error deploying the sample app, exiting"
 
 # create canaries
-#../create-canaries.sh $REGION
-#check_if_step_failed_and_exit "There was an error creating the canaries, exiting"
+../create-canaries.sh $REGION
+check_if_step_failed_and_exit "There was an error creating the canaries, exiting"
 
 # create slo
-#../create-slo.sh $CLUSTER_NAME $REGION
-#check_if_step_failed_and_exit "There was an error creating the SLOs, exiting"
+../create-slo.sh $CLUSTER_NAME $REGION
+check_if_step_failed_and_exit "There was an error creating the SLOs, exiting"
 
 # Check if the current context points to the new cluster in the correct region
 kub_config=$(kubectl config current-context)

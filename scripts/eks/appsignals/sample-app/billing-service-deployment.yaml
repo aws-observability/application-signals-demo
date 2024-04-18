@@ -36,8 +36,6 @@ spec:
               value: 'qwerty'
             - name: DATABASE_PROFILE
               value: postgresql
-            - name: NOTIFICATION_EMAIL
-              value: example@email.com
             - name: REGION
               value: ${REGION}
           # command: ["sh", "-c"]
