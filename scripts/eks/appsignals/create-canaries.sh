@@ -181,7 +181,6 @@ declare -a canaries=(
     "pc-visit-pet"
     "pc-visit-vet"
     "pet-clinic-traffic"
-    "pc-generate-traffic"
     "pc-visit-insurances"
     "pc-visit-billings"
 )
