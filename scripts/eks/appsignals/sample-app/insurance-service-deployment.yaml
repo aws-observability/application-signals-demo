@@ -54,4 +54,10 @@ spec:
           #         - -c
           #         - 'python manage.py migrate && python manage.py loaddata initial_data.json'
           imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /insurances/
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 60
       restartPolicy: Always

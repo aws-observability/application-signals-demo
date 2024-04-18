@@ -48,4 +48,10 @@ spec:
           ports:
             - containerPort: 8800
           imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /billings/
+              port: 8800
+            initialDelaySeconds: 3
+            periodSeconds: 60
       restartPolicy: Always
