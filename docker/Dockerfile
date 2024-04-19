@@ -1,4 +1,4 @@
-FROM public.ecr.aws/amazoncorretto/amazoncorretto:11 as builder
+FROM --platform=linux/amd64 public.ecr.aws/amazoncorretto/amazoncorretto:11 as builder
 WORKDIR /application
 ARG ARTIFACT_NAME
 COPY ${ARTIFACT_NAME}.jar application.jar

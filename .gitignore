@@ -19,6 +19,7 @@ target/
 
 # Visual Studio Code
 .factorypath
+.vscode/
 
 # Branch switching
 generated/
