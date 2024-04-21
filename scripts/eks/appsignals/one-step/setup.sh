@@ -10,7 +10,7 @@ version=$(aws --version 2>&1 | cut -d/ -f2 | cut -d' ' -f1)
 
 # Use sort -V (version sort) to compare the version numbers
 min_version="2.13.0"
-if [[ $(echo -e "$min_version\n$version" | sort -V | head -n1) == "$version" && "$min_version" != "$version" ]]; then
+if [[ $(echo -e "$min_version\n$version" | sort -Vr | head -n1) == "$version" && "$min_version" != "$version" ]]; then
     echo "Your AWS CLI version is lower than 2.13.0. Please upgrade your AWS CLI version: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"
     exit 1
 fi

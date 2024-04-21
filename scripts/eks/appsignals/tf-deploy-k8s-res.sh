@@ -23,4 +23,4 @@ do
     sed -e "s/111122223333.dkr.ecr.us-west-2/$ACCOUNT_ID.dkr.ecr.$REGION/g" -e 's#\${REGION}'"#${REGION}#g" -e 's#\${DB_SERVICE_HOST}'"#${host}#g" $config | kubectl ${OPERATION} --namespace=$NAMESPACE -f -
 done
 
-kubectl apply -f ./sample-app/alb-ingress
+kubectl ${OPERATION} -f ./sample-app/alb-ingress

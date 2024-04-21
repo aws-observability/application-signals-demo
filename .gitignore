@@ -1,3 +1,11 @@
+# test
+**petclinic_test_plan.jmx
+
+# terraform
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+
 # python
 **/__pycache__/
 

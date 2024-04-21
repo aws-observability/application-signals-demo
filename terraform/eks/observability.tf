@@ -25,3 +25,7 @@ resource aws_iam_role_policy_attachment "x-ray" {
   policy_arn = "arn:aws:iam::aws:policy/AWSXrayFullAccess"
   depends_on = [ module.irsa_cloudwatch_observability ]
 }
+
+resource "aws_cloudwatch_log_group" "appsignals_log_group" {
+  name = "/aws/appsignals/eks"
+}

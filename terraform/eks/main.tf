@@ -245,69 +245,11 @@ resource "aws_eks_addon" "ebs-csi" {
   depends_on = [module.eks]
 }
 
-# resource "helm_release" "external_secrets" {
-#   name              = "external-secrets"
-#   namespace         = "external-secrets"
+resource "aws_kinesis_stream" "apm_test_stream" {
+  name             = "apm_test"
+  shard_count      = 1
+}
 
-#   repository        = "https://charts.external-secrets.io"
-#   chart             = "external-secrets"
-#   create_namespace  = true
-#   set {
-#     name  = "installCRDs"
-#     value = "true"
-#   }
-#   depends_on = [ module.eks ]
-# }
-
-# module "irsa-external-secrets" {
-#   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-
-#   create_role                   = true
-#   role_name                     = "ExternalSecrets-${var.cluster_name}"
-#   provider_url                  = replace(module.eks.oidc_provider, "https://", "")
-#   role_policy_arns              = ["arn:aws:iam::aws:policy/SecretsManagerReadWrite", "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"]
-#   oidc_fully_qualified_subjects = ["system:serviceaccount:default:external-secrets"]
-# }
-
-# resource "kubernetes_service_account" "external_secrets_service_account" {
-#   metadata {
-#     name      = "external-secrets"
-#     annotations = {
-#       "eks.amazonaws.com/role-arn" = module.irsa-external-secrets.iam_role_arn
-#     }
-#   }
-# }
-
-# resource "kubernetes_secret" "external_secrets_service_account" {
-#   metadata {
-#     name      = "external-secrets-token"
-#     annotations = {
-#       "kubernetes.io/service-account.name"      = kubernetes_service_account.external_secrets_service_account.metadata.0.name
-#     }
-#   }
-#   type                           = "kubernetes.io/service-account-token"
-#   wait_for_service_account_token = true
-# }
-
-# resource "kubernetes_secret" "db_info" {
-#   metadata {
-#     name = "dbinfo"
-#   }
-
-#   data = {
-#     endpoint = module.db.db_instance_endpoint
-#   }
-#   depends_on = [ module.db, module.eks ]
-#   # type = "kubernetes.io/basic-auth"
-# }
-
-# resource "kubernetes_secret" "info" {
-#   metadata {
-#     name = "info"
-#   }
-
-#   data = {
-#     region  = var.region
-#   }
-#   depends_on = [ module.db, module.eks ]
-# }
+resource "aws_sqs_queue" "apm_test_queue" {
+  name                      = "apm_test"
+}

@@ -58,11 +58,13 @@ This code for sample application is intended for demonstration purposes only. It
 
 3. Build and push docker images
 
-   ```shell
+   ``` shell
    # move back to the project root directory
    cd ../.. 
 
    ./mvnw clean install -P buildDocker
+   export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
+   export REGION=$AWS_REGION
    ./push-ecr.sh
    ```
 
@@ -71,9 +73,43 @@ This code for sample application is intended for demonstration purposes only. It
    Change the cluster-name and region if you configure them differently.
 
    ``` shell
-   aws eks update-kubeconfig --name python-apm-demo  --kubeconfig ~/.kube/config --region us-east-1 --alias python-apm-demo
+   aws eks update-kubeconfig --name $TF_VAR_cluster_name  --kubeconfig ~/.kube/config --region $AWS_REGION --alias $TF_VAR_cluster_name
    ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
 
+   ```
+
+5. Create Canaries and SLOs
+
+   ``` shell
+   endpoint="http://$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
+   cd scripts/eks/appsignals/
+   ./create-canaries.sh $AWS_REGION create $endpoint
+   ./create-slo.sh $CLUSTER_NAME $AWS_REGION
+   ```
+
+6. Visit Application
+
+   ``` shell
+   endpoint=$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')
+   # Print the endpoint
+   echo "Visit the following URL to see the sample app running: $endpoint"
+   ```
+
+7. Cleanup
+
+   ``` shell
+   # delete ALB ingress
+   kubectl delete -f ./scripts/eks/appsignals/sample-app/alb-ingress/petclinic-ingress.yaml
+
+   # Delete SLOs
+   ../cleanup-slo.sh $REGION
+
+   # delete Canaries
+   ../create-canaries.sh $REGION delete
+
+   # move to terraform directory and destroy stack
+   cd ../../../terraform/eks
+   terraform destroy --auto-approve
    ```
 
 ## Deploy via Shell Scripts
@@ -97,7 +133,7 @@ export REGION='us-east-1'
 
 ### Try Application Signals with the sample application
 
-1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**". 
+1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**".
 
 ```
 cd scripts/eks/appsignals/one-step && ./setup.sh new-cluster-name region-name
