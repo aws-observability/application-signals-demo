@@ -181,6 +181,8 @@ declare -a canaries=(
     "pc-visit-pet"
     "pc-visit-vet"
     "pet-clinic-traffic"
+    "pc-visit-insurances"
+    "pc-visit-billings"
 )
 
 if [ $OPERATION = "create" ]; then

@@ -1,0 +1,150 @@
+[
+  {
+    "model": "service.Insurance",
+    "pk": 1,
+    "fields": {
+      "name": "CatCare",
+      "description": "Biggest cat insurance in Moon",
+      "price": 10
+    }
+  },
+  {
+    "model": "service.Insurance",
+    "pk": 2,
+    "fields": {
+      "name": "DogForever",
+      "description": "Most used dog insurance in Mars",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 1,
+    "fields": {
+      "pet_id": 1,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 2,
+    "fields": {
+      "pet_id": 2,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 3,
+    "fields": {
+      "pet_id": 3,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 4,
+    "fields": {
+      "pet_id": 4,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 5,
+    "fields": {
+      "pet_id": 5,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 6,
+    "fields": {
+      "pet_id": 6,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 7,
+    "fields": {
+      "pet_id": 7,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 8,
+    "fields": {
+      "pet_id": 8,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 9,
+    "fields": {
+      "pet_id": 9,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 10,
+    "fields": {
+      "pet_id": 10,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 11,
+    "fields": {
+      "pet_id": 11,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 12,
+    "fields": {
+      "pet_id": 12,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  },
+  {
+    "model": "service.PetInsurance",
+    "pk": 13,
+    "fields": {
+      "pet_id": 13,
+      "insurance_id": 1,
+      "insurance_name": "DogForever",
+      "price": 12
+    }
+  }
+]

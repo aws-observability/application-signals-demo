@@ -55,7 +55,7 @@ Please be aware that this sample application includes a publicly accessible Appl
 The following instructions describe how to set up the pet clinic sample application on EC2 instances. You can run these steps in your personal AWS account to follow along.
 
 1. Set up a VPC with a public subnet and a security group accepting all traffic.
-2. Set up 5 EC2 instances all with the following configuration:
+2. Set up 7 EC2 instances all with the following configuration:
    - Running on Amazon Linux
    - Instance type t2.small or larger
    - A key-pair you save to your computer
@@ -66,12 +66,15 @@ The following instructions describe how to set up the pet clinic sample applicat
      - AmazonKinesisFullAccess 
      - AmazonS3FullAccess 
      - AmazonSQSFullAccess
+     - AmazonRDSFullAccess
 3. Rename your instances as follows to follow along with the instructions:
    - setup
    - pet-clinic-frontend
    - vets
    - customers
    - visits
+   - insurances
+   - billings
 4. Connect to the EC2 instance named setup and start the config, discovery, and admin services in tmux sessions. Feel free to end your connection to the EC2 instance, the tmux sessions will continue running.
 
    - Install `java17`, `git`, and `tmux` as dependencies
@@ -145,11 +148,42 @@ The following instructions describe how to set up the pet clinic sample applicat
    java -jar spring-petclinic-api-gateway...
    ```
 
-6. Repeat step 5 for the remaining EC2 instances (vets, customers, visits)
+6. Repeat step 5 for the EC2 instances (vets, customers, visits)
 
-7. Visit the sample application by going to `http://<PUBLIC-IPv4-DNS-OF-PET-CLINIC-FRONTEND-INSTANCE>:8080`
+7. Go to RDS and create a Postgres DB with the following configurations:
+    - Use the Dev/Test template with a single DB instance. 
+    - Update the Master username to `root` and create a password of your choosing. Write it down since you will need it later. 
+    - In the Connectivity settings, use the VPC, public subnet, and security group created in step 1. 
+    - Switch to Connect to an EC2 compute instance and choose the vehicle-service EC2 instance and then create the DB.
 
-8. Interact with the application to ensure you've properly set up the backend services. Note that each service takes a few seconds to come up.
+8. Select the EC2 instance names `insurances` and choose Actions -> Networking -> Connect RDS and choose the RDS instance from step 7. 
+
+9. Connect to the EC2 instance named `insurances` and then run the following commands to start the python microservice in a tmux session. Feel free to end your connection to the EC2 instance, the tmux sessions will continue running.
+   - Create a zip file of the `pet_clinic_insurance_service` directory and upload it to S3 bucket `s3://app-signals-ec2-demo`.
+   - Download the zip file from S3 bucket
+   ```
+   aws s3 cp s3://app-signals-ec2-demo/pet_clinic_insurance_service.zip .
+   unzip pet_clinic_insurance_service.zip
+   cd pet_clinic_insurance_service
+   . ec2-setup.sh <PASS-FROM-STEP-7> <PRIVATE-IP-OF-SETUP-INSTANCE>
+   ```
+
+   - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`.
+   ```
+   tmux new -s insurance
+   python3 manage.py migrate & python3 manage.py loaddata initial_data.json & python3 manage.py runserver 0.0.0.0:8000 --noreload
+   ```
+
+10. Repeat steps 8 and 9 for the `billings` EC2 instance but with the following to start the app.
+    - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`.
+    ```
+    tmux new -s billing
+    python3.11 manage.py migrate & python3.11 manage.py runserver 0.0.0.0:8800 --noreload
+    ```
+
+11. Visit the sample application by going to `http://<PUBLIC-IPv4-DNS-OF-PET-CLINIC-FRONTEND-INSTANCE>:8080`
+
+12. Interact with the application to ensure you've properly set up the backend services. Note that each service takes a few seconds to come up.
 
 
 To enable Application Signals on the sample application, please refer to [this user guide](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Application-Signals-Enable-EC2.html).

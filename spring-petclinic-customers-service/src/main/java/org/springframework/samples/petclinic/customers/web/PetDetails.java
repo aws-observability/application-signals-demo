@@ -15,6 +15,8 @@
  */
 package org.springframework.samples.petclinic.customers.web;
 
+import com.ctc.wstx.shaded.msv_core.grammar.relax.EmptyStringType;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.Date;
@@ -40,11 +42,20 @@ class PetDetails {
 
     private PetType type;
 
+    private Integer insurance_id;
+
+    private String insurance_name;
+
+    private Float price;
+
     PetDetails(Pet pet) {
         this.id = pet.getId();
         this.name = pet.getName();
         this.owner = pet.getOwner().getFirstName() + " " + pet.getOwner().getLastName();
         this.birthDate = pet.getBirthDate();
         this.type = pet.getType();
+        this.insurance_id = 0;
+        this.insurance_name = "";
+        this.price = 0F;
     }
 }

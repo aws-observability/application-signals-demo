@@ -1,0 +1,20 @@
+<h2>Billing</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Item Name</th>
+            <th>Payment</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tr ng-repeat="billing in $ctrl.billingList">
+        <td>{{billing.first_name}} {{billing.last_name}}</td>
+        <td>{{billing.type}}</td>
+        <td>{{billing.type_name}}</td>
+        <td>{{billing.payment}}</td>
+        <td>{{billing.status}}</td>
+    </tr>
+</table>

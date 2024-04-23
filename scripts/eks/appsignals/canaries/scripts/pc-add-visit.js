@@ -27,7 +27,7 @@ const flowBuilderBlueprint = async function () {
         ]);
     });
     await synthetics.executeStep('input', async function () {
-        await page.waitFor(12000);
+        await page.waitForSelector("body > div > div > div > ui-view > visits > form > div:nth-child(2) > textarea", { timeout: 120000 });
         await page.type("body > div > div > div > ui-view > visits > form > div:nth-child(2) > textarea", "i\'m going to visit");
     });
     await synthetics.executeStep('click', async function () {

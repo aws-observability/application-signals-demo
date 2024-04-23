@@ -1,0 +1,16 @@
+<h2>Insurance</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Cost (Per Month)</th>
+        </tr>
+    </thead>
+
+    <tr ng-repeat="insurance in $ctrl.insuranceList">
+        <td>{{insurance.name}}</td>
+        <td>{{insurance.description}}</td>
+        <td>{{insurance.price + ' per month'}}</td>
+    </tr>
+</table>

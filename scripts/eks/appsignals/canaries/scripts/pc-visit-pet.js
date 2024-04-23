@@ -20,9 +20,9 @@ const flowBuilderBlueprint = async function () {
 
     // Execute customer steps
     await synthetics.executeStep('click', async function () {
-        await page.waitForSelector("body > div > div > div > ui-view > pet-form > form > div:nth-child(5) > div > button", { timeout: 120000 });
+        await page.waitForSelector("body > div > div > div > ui-view > pet-form > form > div:nth-child(6) > div > button", { timeout: 120000 });
         await Promise.all([
-            page.click("body > div > div > div > ui-view > pet-form > form > div:nth-child(5) > div > button"),
+            page.click("body > div > div > div > ui-view > pet-form > form > div:nth-child(6) > div > button"),
             page.waitForNavigation({ timeout: 30000 })
         ]);
     });
