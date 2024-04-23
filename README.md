@@ -162,7 +162,7 @@ The following instructions describe how to set up the pet clinic sample applicat
    - Create a zip file of the `pet_clinic_insurance_service` directory and upload it to S3 bucket `s3://app-signals-ec2-demo`.
    - Download the zip file from S3 bucket
    ```
-   aws s3 cp s3://app-signals-ec2-demo-asakem/pet_clinic_insurance_service.zip .
+   aws s3 cp s3://app-signals-ec2-demo/pet_clinic_insurance_service.zip .
    unzip pet_clinic_insurance_service.zip
    cd pet_clinic_insurance_service
    . ec2-setup.sh <PASS-FROM-STEP-7> <PRIVATE-IP-OF-SETUP-INSTANCE>
