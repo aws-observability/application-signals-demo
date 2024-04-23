@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 # Create your views here.
 
 class BillingViewSet(viewsets.ViewSet):
-    # queryset = Billing.objects.all()
-    # serializer_class = BillingSerializer
     def list(self, request):
         queryset = Billing.objects.all()
         serializer = BillingSerializer(queryset, many=True)

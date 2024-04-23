@@ -171,7 +171,7 @@ The following instructions describe how to set up the pet clinic sample applicat
    - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`.
    ```
    tmux new -s insurance
-   python3.11 manage.py migrate & python3.11 manage.py loaddata initial_data.json & python3.11 manage.py runserver 0.0.0.0:8000 --noreload
+   python3 manage.py migrate & python3 manage.py loaddata initial_data.json & python3 manage.py runserver 0.0.0.0:8000 --noreload
    ```
 
 10. Repeat steps 8 and 9 for the `billings` EC2 instance but with the following to start the app.

@@ -2,7 +2,7 @@
 psql_pass=$1
 private_setup_ip_address=$2
 
-sudo yum install python3.11 python3.11-pip python3.11-devel postgresql15 postgresql-devel gcc* tmux -y
+sudo yum install python3.9-pip python3.9-devel postgresql15 postgresql-devel gcc* tmux -y
 
 # get rds endpoint
 rds_endpoint=`aws rds describe-db-instances --db-instance-identifier petclinic-python --query "DBInstances[*].Endpoint.Address"`
@@ -23,4 +23,4 @@ export DB_SERVICE_HOST=$rds_endpoint
 export DB_SERVICE_PORT=5432
 export EUREKA_SERVER_URL=$private_setup_ip_address
 
-python3.11 -m pip install -r requirements.txt
+pip install -r requirements.txt

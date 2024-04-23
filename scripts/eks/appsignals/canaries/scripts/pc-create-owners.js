@@ -68,7 +68,7 @@ const flowBuilderBlueprint = async function () {
         await page.type("body > div > div > div > ui-view > pet-form > form > div:nth-child(3) > div > input", "08082022");
     });
     await synthetics.executeStep('click', async function() {
-        await page.waitForSelector('.ng-scope > .form-horizontal > .form-group:nth-child(5) > .col-sm-6 > .form-control')
+        await page.waitForSelector('.ng-scope > .form-horizontal > .form-group:nth-child(5) > .col-sm-6 > .form-control', { timeout: 120000 })
         await page.click('.ng-scope > .form-horizontal > .form-group:nth-child(5) > .col-sm-6 > .form-control')
     })
     await synthetics.executeStep('select', async function() {
