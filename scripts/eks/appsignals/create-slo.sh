@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 CLUSTER_NAME=$1
 REGION=$2
-SERVICE_NAME="pet-clinic-frontend"
+SERVICE_NAME="pet-clinic-frontend-java"
 
 check_if_step_failed_and_exit() {
   if [ $? -ne 0 ]; then

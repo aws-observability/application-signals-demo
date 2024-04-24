@@ -178,7 +178,7 @@ The following instructions describe how to set up the pet clinic sample applicat
     - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`.
     ```
     tmux new -s billing
-    python3.11 manage.py migrate & python3.11 manage.py runserver 0.0.0.0:8800 --noreload
+    python3 manage.py migrate & python3 manage.py runserver 0.0.0.0:8800 --noreload
     ```
 
 11. Visit the sample application by going to `http://<PUBLIC-IPv4-DNS-OF-PET-CLINIC-FRONTEND-INSTANCE>:8080`
