@@ -16,27 +16,124 @@ This code for sample application is intended for demonstration purposes only. It
 * kubectl is installed - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 * eksctl is installed - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
 * jq is installed - https://jqlang.github.io/jq/download/
+* [Optional] If you plan to install the infrastructure resources using Terraform, terraform cli is required. https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 
 # EKS demo
 
-## Build the sample application images and push to ECR
+## Deploy via Terraform
+
+1. Go to the terraform directory under the project. Prepare Terraform S3 backend and set required environment variables
+
+   ``` shell
+   cd terraform/eks
+
+   # create a new bucket for terraform backend storage
+   aws s3 mb s3://tfstate-$(uuidgen)
+
+   # setup env variables
+   export AWS_REGION=us-east-1
+   export TFSTATE_KEY=application-signals/demo-applications
+   export TFSTATE_BUCKET=$(aws s3 ls --output text | awk '{print $3}' | grep tfstate-)
+   export TFSTATE_REGION=$AWS_REGION
+   ```
+
+2. Replace the user name with the one you configured for aws cli, deploy EKS cluster and RDS postgreSQL database.
+
+   ``` shell
+   # provide EKS access to user, make sure to change it to your own user that configured for aws cli in terminal
+   export TF_VAR_username={your_username}
+
+   # some other values can be changed, the value below are default values
+   export TF_VAR_cluster_name=python-apm-demo
+   export TF_VAR_region=us-east-1
+   export TF_VAR_cloudwatch_observability_addon_version=v1.5.1-eksbuild.1
+
+   # optionally use -migrate-state
+   terraform init -backend-config="bucket=${TFSTATE_BUCKET}" -backend-config="key=${TFSTATE_KEY}" -backend-config="region=${TFSTATE_REGION}"
+
+   terraform apply --auto-approve
+   ```
+
+   The deployment takes 20 - 25 minutes.
+
+3. Build and push docker images
+
+   ``` shell
+   # move back to the project root directory
+   cd ../.. 
+
+   ./mvnw clean install -P buildDocker
+   export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
+   export REGION=$AWS_REGION
+   ./push-ecr.sh
+   ```
+
+4. Deploy Kubernetes resources
+
+   Change the cluster-name and region if you configure them differently.
+
+   ``` shell
+   aws eks update-kubeconfig --name $TF_VAR_cluster_name  --kubeconfig ~/.kube/config --region $AWS_REGION --alias $TF_VAR_cluster_name
+   ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
+
+   ```
+
+5. Create Canaries and SLOs
+
+   ``` shell
+   endpoint="http://$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
+   cd scripts/eks/appsignals/
+   ./create-canaries.sh $AWS_REGION create $endpoint
+   ./create-slo.sh $TF_VAR_cluster_name $AWS_REGION
+   ```
+
+6. Visit Application
+
+   ``` shell
+   endpoint=$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')
+   # Print the endpoint
+   echo "Visit the following URL to see the sample app running: $endpoint"
+   ```
+
+7. Cleanup
+
+   ``` shell
+   # delete ALB ingress
+   kubectl delete -f ./scripts/eks/appsignals/sample-app/alb-ingress/petclinic-ingress.yaml
+
+   # Delete SLOs
+   ./cleanup-slo.sh $REGION
+
+   # delete Canaries
+   ./create-canaries.sh $REGION delete
+
+   # move to terraform directory and destroy stack
+   cd ../../../terraform/eks
+   terraform destroy --auto-approve
+   ```
+
+## Deploy via Shell Scripts
+
+### Build the sample application images and push to ECR
+
 1. Build container images for each micro-service application
 
-```
+``` shell
+
 ./mvnw clean install -P buildDocker
 ```
 
 2. Create an ECR repo for each micro service and push the images to the relevant repos. Replace the aws account id and the AWS Region.
-    
+
 ```
-export ACCOUNT='111122223333'
+export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
 export REGION='us-east-1'
 ./push-ecr.sh
 ```
 
-## Try Application Signals with the sample application
+### Try Application Signals with the sample application
 
-1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**". 
+1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**".
 
 ```
 cd scripts/eks/appsignals/one-step && ./setup.sh new-cluster-name region-name
