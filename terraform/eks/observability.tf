@@ -8,6 +8,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 }
 
 module "irsa_cloudwatch_observability" {
+  #checkov:skip=CKV_TF_1:sub-module hash key ignored
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
 
   create_role                   = true
@@ -27,5 +28,9 @@ resource aws_iam_role_policy_attachment "x-ray" {
 }
 
 resource "aws_cloudwatch_log_group" "appsignals_log_group" {
+  #checkov:skip=CKV_AWS_338:Only for demo, no need to keep 1 year
+  #checkov:skip=CKV_AWS_158:Only for demo, no encryption required
+
   name = "/aws/appsignals/eks"
+  retention_in_days = 14
 }

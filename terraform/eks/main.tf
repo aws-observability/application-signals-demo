@@ -4,7 +4,14 @@ data "aws_availability_zones" "available" {
 }
 
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  #checkov:skip=CKV2_AWS_19:low priority, skip
+  #checkov:skip=CKV2_AWS_12:low priority, skip
+  #checkov:skip=CKV2_AWS_11:demo only, no flow log is required
+  #checkov:skip=CKV_AWS_111:demo only, not access limit is required
+  #checkov:skip=CKV_AWS_356:demo only, no resource limit is required
+  #checkov:skip=CKV_AWS_23:low priority, sg descriptions skip
+
+  source = "git::https://github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=c182453f881ae77afd14c826dc8e23498b957907"
 
   name = var.cluster_name
   cidr = "10.0.0.0/16"
@@ -31,6 +38,7 @@ module "vpc" {
 }
 
 resource "aws_security_group_rule" "example" {
+  #checkov:skip=CKV_AWS_23:low priority, skip
   type              = "ingress"
   from_port         = 5432
   to_port           = 5432
@@ -42,8 +50,20 @@ resource "aws_security_group_rule" "example" {
 
 
 module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "20.8.3"
+  #checkov:skip=CKV2_AWS_5:low priority, skip
+  #checkov:skip=CKV2_AWS_11:demo only, vpc flow log not needed
+  #checkov:skip=CKV_AWS_39:demo only, public endpoint allowed
+  #checkov:skip=CKV_AWS_58:demo only, no encryption required
+  #checkov:skip=CKV_AWS_38:demo only, access restriction is not required
+  #checkov:skip=CKV_AWS_37:demo only, no control plain logging needed
+  #checkov:skip=CKV_AWS_338:demo only, log retention for 1 year is not required
+  #checkov:skip=CKV_AWS_79:demo only, IMDS v1 enabled is ok
+  #checkov:skip=CKV_AWS_341:demo only, limit greater than 1 is allowed
+  #checkov:skip=CKV_AWS_111:demo only, access restriction is not required
+  #checkov:skip=CKV_AWS_356:demo only, no resource limitation is required
+  #checkov:skip=CKV_TF_1:sub-module hash key ignored
+
+  source  = "git::https://github.com/terraform-aws-modules/terraform-aws-eks.git?ref=1627231af669796669ce83e0a4672a7e6d94a0b3"
 
   cluster_version                 = "1.29"
   cluster_name                    = var.cluster_name
@@ -155,53 +175,24 @@ module "eks" {
 }
 
 
-# module "observability" {
-#   source                  = "./observability"
-#   adot_namespace          = "opentelemetry-operator-system"
-#   cluster_name            = var.cluster_name
-#   cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
-#   region                  = var.region
-#   subnet_ids              = module.vpc.private_subnets
-#   security_group_ids      = [module.eks.node_security_group_id, module.eks.cluster_primary_security_group_id]
-#   grafana_username        = var.grafana_username
-#   user_ids                = [data.aws_identitystore_user.example.user_id]
-#   depends_on = [
-#     module.eks
-#   ]
-# }
-
 data "aws_iam_policy" "ebs_csi_policy" {
   arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
 
 
 module "demo_service_account" {
+  #checkov:skip=CKV_TF_1:sub-module hash key ignored
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
 
   create_role                   = true
   role_name                     = "DemoServiceRole-${var.cluster_name}"
   provider_url                  = replace(module.eks.oidc_provider, "https://", "")
-  role_policy_arns              = ["arn:aws:iam::aws:policy/AmazonSQSFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonKinesisFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess", aws_iam_policy.sns_full_access_policy.arn]
+  role_policy_arns              = ["arn:aws:iam::aws:policy/AmazonSQSFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonKinesisFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"]
   oidc_fully_qualified_subjects = ["system:serviceaccount:default:visits-service-account"]
 }
 
-resource "aws_iam_policy" "sns_full_access_policy" {
-  name        = "SNSFullAccessPolicy"
-  description = "Policy granting full access to SNS actions"
-  policy      = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect   = "Allow",
-        Action   = "sns:*",
-        Resource = "*",
-      },
-    ],
-  })
-}
-
-
 resource "kubernetes_service_account" "demo_service_account" {
+  #checkov:skip=CKV_K8S_21:demo only, use default namespace
   metadata {
     name      = "visits-service-account"
     annotations = {
@@ -211,6 +202,7 @@ resource "kubernetes_service_account" "demo_service_account" {
 }
 
 resource "kubernetes_secret" "demo_service_account" {
+  #checkov:skip=CKV_K8S_21:demo only, use default namespace
   metadata {
     name      = "serviceaccount-token-secret"
     annotations = {
@@ -224,6 +216,7 @@ resource "kubernetes_secret" "demo_service_account" {
 
 
 module "irsa-ebs-csi" {
+  #checkov:skip=CKV_TF_1:sub-module hash key ignored
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
 
   create_role                   = true
@@ -246,10 +239,13 @@ resource "aws_eks_addon" "ebs-csi" {
 }
 
 resource "aws_kinesis_stream" "apm_test_stream" {
+  #checkov:skip=CKV_AWS_43:demo only, not encryption is needed
+  #checkov:skip=CKV_AWS_185:demo only, not encryption is needed
   name             = "apm_test"
   shard_count      = 1
 }
 
 resource "aws_sqs_queue" "apm_test_queue" {
+  #checkov:skip=CKV_AWS_27:demo only, not encryption is needed
   name                      = "apm_test"
 }

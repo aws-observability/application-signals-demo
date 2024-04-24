@@ -1,6 +1,11 @@
 
 module "db" {
-  source  = "terraform-aws-modules/rds/aws"
+  #checkov:skip=CKV_AWS_293:demo only, no deletion protection is needed
+  #checkov:skip=CKV2_AWS_60:demo only, no backup is needed
+  #checkov:skip=CKV_AWS_338:demo only, log retention is not required
+  #checkov:skip=CKV_AWS_304:demo only, secret rotation is not required
+
+  source  = "git::https://github.com/terraform-aws-modules/terraform-aws-rds?ref=0a4405c039d0149fe05bfe8f19a1bbbba17ceb0d"
 
   identifier = "petclinic-database"
 
@@ -70,12 +75,23 @@ module "db" {
 }
 
 resource "aws_dynamodb_table" "billing_table" {
+  #checkov:skip=CKV2_AWS_16:demo only, autoscaling is not needed
+  #checkov:skip=CKV_AWS_119:demo only, no encryption is needed
+
   name           = "BillingInfo"
   billing_mode   = "PROVISIONED"
   read_capacity  = 2
   write_capacity = 2
   hash_key       = "ownerId"
   range_key      = "timestamp"
+
+  point_in_time_recovery {
+   enabled = true
+  }
+
+  # server_side_encryption {
+  #   enabled     = true
+  # }
 
   attribute {
     name = "ownerId"
@@ -90,11 +106,22 @@ resource "aws_dynamodb_table" "billing_table" {
 }
 
 resource "aws_dynamodb_table" "apm_test_table" {
+  #checkov:skip=CKV2_AWS_16:demo only, autoscaling is not needed
+  #checkov:skip=CKV_AWS_119:demo only, no encryption is needed
+
   name           = "apm_test"
   billing_mode   = "PROVISIONED"
   read_capacity  = 1
   write_capacity = 1
   hash_key       = "id"
+
+  point_in_time_recovery {
+   enabled = true
+  }
+
+  # server_side_encryption {
+  #   enabled     = true
+  # }
 
   attribute {
     name = "id"

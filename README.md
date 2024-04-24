@@ -43,7 +43,7 @@ This code for sample application is intended for demonstration purposes only. It
    # provide EKS access to user, make sure to change it to your own user that configured for aws cli in terminal
    export TF_VAR_username={your_username}
 
-   # some other values can change, the value below are default values
+   # some other values can be changed, the value below are default values
    export TF_VAR_cluster_name=python-apm-demo
    export TF_VAR_region=us-east-1
    export TF_VAR_cloudwatch_observability_addon_version=v1.5.1-eksbuild.1
@@ -84,7 +84,7 @@ This code for sample application is intended for demonstration purposes only. It
    endpoint="http://$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
    cd scripts/eks/appsignals/
    ./create-canaries.sh $AWS_REGION create $endpoint
-   ./create-slo.sh $CLUSTER_NAME $AWS_REGION
+   ./create-slo.sh $TF_VAR_cluster_name $AWS_REGION
    ```
 
 6. Visit Application
@@ -102,10 +102,10 @@ This code for sample application is intended for demonstration purposes only. It
    kubectl delete -f ./scripts/eks/appsignals/sample-app/alb-ingress/petclinic-ingress.yaml
 
    # Delete SLOs
-   ../cleanup-slo.sh $REGION
+   ./cleanup-slo.sh $REGION
 
    # delete Canaries
-   ../create-canaries.sh $REGION delete
+   ./create-canaries.sh $REGION delete
 
    # move to terraform directory and destroy stack
    cd ../../../terraform/eks

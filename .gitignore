@@ -5,6 +5,7 @@
 **/.terraform/
 **/terraform.tfstate
 **/terraform.tfstate.backup
+**/.external_modules/
 
 # python
 **/__pycache__/
