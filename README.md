@@ -20,6 +20,41 @@ This code for sample application is intended for demonstration purposes only. It
 
 # EKS demo
 
+## Deploy via Shell Scripts
+
+### Build the sample application images and push to ECR
+
+1. Build container images for each micro-service application
+
+``` shell
+
+./mvnw clean install -P buildDocker
+```
+
+2. Create an ECR repo for each micro service and push the images to the relevant repos. Replace the aws account id and the AWS Region.
+
+``` shell
+export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
+export REGION='us-east-1'
+./push-ecr.sh
+```
+
+### Try Application Signals with the sample application
+
+1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**".
+
+``` shell
+cd scripts/eks/appsignals/one-step && ./setup.sh new-cluster-name region-name
+```
+
+2. Clean up all the resources. Replace `new-cluster-name` and `region-name` with the same values that you use in previous step.
+
+``` shell
+cd scripts/eks/appsignals/one-step && ./cleanup.sh new-cluster-name region-name
+```
+
+Please be aware that this sample application includes a publicly accessible Application Load Balancer (ALB), enabling easy interaction with the application. If you perceive this public ALB as a security risk, consider restricting access by employing [security groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html).
+
 ## Deploy via Terraform
 
 1. Go to the terraform directory under the project. Prepare Terraform S3 backend and set required environment variables
@@ -111,42 +146,6 @@ This code for sample application is intended for demonstration purposes only. It
    cd ../../../terraform/eks
    terraform destroy --auto-approve
    ```
-
-## Deploy via Shell Scripts
-
-### Build the sample application images and push to ECR
-
-1. Build container images for each micro-service application
-
-``` shell
-
-./mvnw clean install -P buildDocker
-```
-
-2. Create an ECR repo for each micro service and push the images to the relevant repos. Replace the aws account id and the AWS Region.
-
-```
-export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
-export REGION='us-east-1'
-./push-ecr.sh
-```
-
-### Try Application Signals with the sample application
-
-1. Create an EKS cluster, enable Application Signals, and deploy the sample application to your EKS cluster. Replace `new-cluster-name` with the name that you want to use for the new cluster. Replace `region-name` with the same region in previous section "**Build the sample application images and push to ECR**".
-
-```
-cd scripts/eks/appsignals/one-step && ./setup.sh new-cluster-name region-name
-```
-
-2. Clean up all the resources. Replace `new-cluster-name` and `region-name` with the same values that you use in previous step.
-
-```
-cd scripts/eks/appsignals/one-step && ./cleanup.sh new-cluster-name region-name
-```
-
-Please be aware that this sample application includes a publicly accessible Application Load Balancer (ALB), enabling easy interaction with the application. If you perceive this public ALB as a security risk, consider restricting access by employing [security groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html).
-
 
 # EC2 Demo
 The following instructions describe how to set up the pet clinic sample application on EC2 instances. You can run these steps in your personal AWS account to follow along.
