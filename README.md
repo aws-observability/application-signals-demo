@@ -79,8 +79,7 @@ Please be aware that this sample application includes a publicly accessible Appl
    export TF_VAR_username={your_username}
 
    # some other values can be changed, the value below are default values
-   export TF_VAR_cluster_name=python-apm-demo
-   export TF_VAR_region=us-east-1
+   export TF_VAR_cluster_name=app-signals-demo
    export TF_VAR_cloudwatch_observability_addon_version=v1.5.1-eksbuild.1
 
    # optionally use -migrate-state
@@ -125,7 +124,7 @@ Please be aware that this sample application includes a publicly accessible Appl
 6. Visit Application
 
    ``` shell
-   endpoint=$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')
+   endpoint="http://$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
    # Print the endpoint
    echo "Visit the following URL to see the sample app running: $endpoint"
    ```
