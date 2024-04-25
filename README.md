@@ -72,11 +72,9 @@ Please be aware that this sample application includes a publicly accessible Appl
    export TFSTATE_REGION=$AWS_REGION
    ```
 
-2. Replace the user name with the one you configured for aws cli, deploy EKS cluster and RDS postgreSQL database.
+2. Deploy EKS cluster and RDS postgreSQL database.
 
    ``` shell
-   # provide EKS access to user, make sure to change it to your own user that configured for aws cli in terminal
-   export TF_VAR_username={your_username}
 
    # some other values can be changed, the value below are default values
    export TF_VAR_cluster_name=app-signals-demo
