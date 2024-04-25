@@ -62,10 +62,8 @@ Please be aware that this sample application includes a publicly accessible Appl
    ``` shell
    cd terraform/eks
 
-   # create a new bucket for terraform backend storage
-   aws s3 mb s3://tfstate-$(uuidgen)
+   aws s3 mb s3://tfstate-$(uuidgen | tr A-Z a-z)
 
-   # setup env variables
    export AWS_REGION=us-east-1
    export TFSTATE_KEY=application-signals/demo-applications
    export TFSTATE_BUCKET=$(aws s3 ls --output text | awk '{print $3}' | grep tfstate-)
@@ -76,11 +74,9 @@ Please be aware that this sample application includes a publicly accessible Appl
 
    ``` shell
 
-   # some other values can be changed, the value below are default values
    export TF_VAR_cluster_name=app-signals-demo
    export TF_VAR_cloudwatch_observability_addon_version=v1.5.1-eksbuild.1
 
-   # optionally use -migrate-state
    terraform init -backend-config="bucket=${TFSTATE_BUCKET}" -backend-config="key=${TFSTATE_KEY}" -backend-config="region=${TFSTATE_REGION}"
 
    terraform apply --auto-approve
@@ -91,18 +87,19 @@ Please be aware that this sample application includes a publicly accessible Appl
 3. Build and push docker images
 
    ``` shell
-   # move back to the project root directory
    cd ../.. 
 
    ./mvnw clean install -P buildDocker
+
    export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
    export REGION=$AWS_REGION
+
    ./push-ecr.sh
    ```
 
 4. Deploy Kubernetes resources
 
-   Change the cluster-name and region if you configure them differently.
+   Change the cluster-name, alias and region if you configure them differently.
 
    ``` shell
    aws eks update-kubeconfig --name $TF_VAR_cluster_name  --kubeconfig ~/.kube/config --region $AWS_REGION --alias $TF_VAR_cluster_name
@@ -123,23 +120,22 @@ Please be aware that this sample application includes a publicly accessible Appl
 
    ``` shell
    endpoint="http://$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
-   # Print the endpoint
+
    echo "Visit the following URL to see the sample app running: $endpoint"
    ```
 
 7. Cleanup
 
+   Delete ALB ingress, SLOs and Canaries before destroy terraform stack.
+
    ``` shell
-   # delete ALB ingress
+
    kubectl delete -f ./scripts/eks/appsignals/sample-app/alb-ingress/petclinic-ingress.yaml
 
-   # Delete SLOs
    ./cleanup-slo.sh $REGION
 
-   # delete Canaries
    ./create-canaries.sh $REGION delete
 
-   # move to terraform directory and destroy stack
    cd ../../../terraform/eks
    terraform destroy --auto-approve
    ```
