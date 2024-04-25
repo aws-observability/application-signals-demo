@@ -152,21 +152,7 @@ module "eks" {
     }
   }
 
-  access_entries = {
-    user = {
-      kubernetes_groups = []
-      principal_arn     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${var.username}"
-
-      policy_associations = {
-        single = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-          access_scope = {
-            type = "cluster"
-          }
-        }
-      }
-    }
-  }
+  enable_cluster_creator_admin_permissions = true
 
   tags = {
     "karpenter.sh/discovery" = var.cluster_name
