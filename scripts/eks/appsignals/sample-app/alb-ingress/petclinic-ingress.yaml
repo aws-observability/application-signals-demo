@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: petclinic-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pet-clinic-frontend-java
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: customers-service-java
+                port:
+                  number: 8081
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vets-service-java
+                port:
+                  number: 8083
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: visits-service-java
+                port:
+                  number: 8082

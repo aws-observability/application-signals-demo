@@ -50,7 +50,7 @@ REFERENCE_ID=$(aws cloudwatch list-services \
                --output text --query "AttributeSets[?contains(Attributes[?Name=='EKS.Cluster'].Value, '$CLUSTER_NAME')].ReferenceId" \
                --region $REGION)
 echo "Reference_Id"
-echo "$REFERENCE_ID"
+echo $REFERENCE_ID
 
 # Use reference id to retrieve the service arn
 SERVICE_ARN_THROUGH_ATTRIBUTES_SET=$(aws cloudwatch list-services \

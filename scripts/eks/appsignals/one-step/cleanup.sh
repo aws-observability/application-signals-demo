@@ -69,7 +69,7 @@ check_if_step_failed "There was an error deleting the kinesis stream."
 
 # remove DDB table
 aws dynamodb delete-table --table-name apm_test --region $REGION
-check_if_step_failed "There was an error deleting the dynamodb table."
+check_if_step_failed "There was an error deleting the dynamodb table apm_test."
 
 aws dynamodb delete-table --table-name BillingInfo --region $REGION
-check_if_step_failed "There was an error deleting the dynamodb table."
+check_if_step_failed "There was an error deleting the dynamodb table BillingInfo."
