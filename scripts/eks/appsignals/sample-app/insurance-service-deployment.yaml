@@ -33,9 +33,13 @@ spec:
             - name: DB_USER
               value: 'djangouser'
             - name: DB_USER_PASSWORD
-              value: 'qwerty'
+              value: 'asdfqwer'
             - name: DATABASE_PROFILE
               value: postgresql
+            - name: DB_SERVICE_HOST
+              value: ${DB_SERVICE_HOST}
+            - name: DB_SERVICE_PORT
+              value: '5432'
           # command: ["sh", "-c"]
           # args: ['manage.py', 'runserver', '0.0.0.0:8000']
           command: ['sh', '-c']

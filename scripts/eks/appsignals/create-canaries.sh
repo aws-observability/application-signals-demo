@@ -12,6 +12,7 @@ cd "$(dirname "$0")"
 # Set variables with provided arguments or default values
 REGION=${1:-"us-west-2"}
 OPERATION=${2:-"create"} # Specify 'create' to set up canaries or 'delete' to clean up canaries
+NGINX_ENDPOINT=$3
 
 ACCOUNT_ID=$(aws sts get-caller-identity | jq -r '.Account')
 if [ -z "$ACCOUNT_ID" ]; then
@@ -125,7 +126,12 @@ create_canary() {
       exit 1
     fi
 
-    ENDPOINT=${3:-"http://"$(kubectl get svc -n ingress-nginx | grep "ingress-nginx" | awk '{print $4}')}
+    if [ -n "$NGINX_ENDPOINT" ]; then
+      ENDPOINT="$NGINX_ENDPOINT"
+    else
+      # If NGINX_ENDPOINT is not provided, get it from kubectl
+      ENDPOINT="http://$(kubectl get svc -n ingress-nginx | grep 'ingress-nginx' | awk '{print $4}')"
+    fi
     if [ -z "$ENDPOINT" ]; then
       echo "Fail to get a valid endpoint. Endpoint is empty. Exit the script"
       exit 6

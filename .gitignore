@@ -1,3 +1,14 @@
+
+# test
+**petclinic_test_plan.jmx
+
+# terraform
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/.external_modules/
+**/.terraform.lock.hcl
+
 # python
 **/__pycache__/
 
@@ -19,6 +30,7 @@ target/
 
 # Visual Studio Code
 .factorypath
+.vscode/
 
 # Branch switching
 generated/
