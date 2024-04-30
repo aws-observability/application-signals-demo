@@ -14,7 +14,7 @@ PGPASSWORD=$psql_pass psql -h $rds_endpoint -U root -d postgres -c "alter user d
 PGPASSWORD=$psql_pass psql -h $rds_endpoint -U root -d postgres -c "grant all privileges on database postgres to djangouser;"
 PGPASSWORD=$psql_pass psql -h $rds_endpoint -U root -d postgres -c "ALTER DATABASE postgres OWNER TO djangouser;"
 
-export DJANGO_SETTINGS_MODULE=pet_clinic_billing_service.settings
+export DJANGO_SETTINGS_MODULE=pet_clinic_insurance_service.settings
 export DB_NAME=postgres
 export DB_USER=djangouser
 export DB_USER_PASSWORD=$psql_pass
