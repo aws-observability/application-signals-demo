@@ -151,10 +151,10 @@ The following instructions describe how to set up the pet clinic sample applicat
 6. Repeat step 5 for the EC2 instances (vets, customers, visits)
 
 7. Go to RDS and create a Postgres DB with the following configurations:
+    - Set the instance name to `petclinic-python`
     - Use the Dev/Test template with a single DB instance. 
     - Update the Master username to `root` and create a password of your choosing. Write it down since you will need it later. 
     - In the Connectivity settings, use the VPC, public subnet, and security group created in step 1. 
-    - Switch to Connect to an EC2 compute instance and choose the vehicle-service EC2 instance and then create the DB.
 
 8. Select the EC2 instance names `insurances` and choose Actions -> Networking -> Connect RDS and choose the RDS instance from step 7. 
 
