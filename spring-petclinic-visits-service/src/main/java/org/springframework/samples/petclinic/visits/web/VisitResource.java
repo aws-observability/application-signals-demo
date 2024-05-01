@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.samples.petclinic.visits.aws.DdbService;
 import org.springframework.samples.petclinic.visits.model.Visit;
 import org.springframework.samples.petclinic.visits.model.VisitRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -85,6 +86,12 @@ class VisitResource {
     public Visits visitsMultiGet(@RequestParam("petId") List<Integer> petIds) throws Exception {
         final List<Visit> byPetIdIn = visitRepository.findByPetIdIn(petIds);
         return new Visits(byPetIdIn);
+    }
+
+    @Scheduled(cron = "0 0 8 * * ?") // every PST midnight
+    public void ageOldData() {
+        log.info("ageOldData() get called and purge all data!");
+        visitRepository.deleteAll();
     }
 
     @Value
