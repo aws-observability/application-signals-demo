@@ -9,7 +9,7 @@ metadata:
     io.kompose.service: customers-service-java
   name: customers-service-java
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       io.kompose.service: customers-service-java
