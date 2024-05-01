@@ -73,6 +73,3 @@ endpoint=$(kubectl get svc -n ingress-nginx | grep "ingress-nginx" | awk '{print
 # Print the endpoint
 echo "Visit the following URL to see the sample app running: $endpoint"
 
-# start the traffic generator
-cd ../../../../traffic-generator
-sed -e "s/111122223333.dkr.ecr.us-west-2/$ACCOUNT_ID.dkr.ecr.$REGION/g" -e 's/"  traffic-generator.yaml | kubectl ${OPERATION} --namespace=$NAMESPACE -f -
