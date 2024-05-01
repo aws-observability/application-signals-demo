@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-generator
+  labels:
+    app: traffic-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-generator
+  template:
+    metadata:
+      labels:
+        app: traffic-generator
+    spec:
+      containers:
+      - name: traffic-generator
+        image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/traffic-generator:latest
+        env:
+        - name: URL
+          value: "http://SAMPLE_APP_END_POINT"
+        - name: HIGH_LOAD_MAX
+          value: "1600"
+        - name: HIGH_LOAD_MIN
+          value: "800"
+        - name: BURST_DELAY_MAX
+          value: "80"
+        - name: BURST_DELAY_MIN
+          value: "60"
+        - name: LOW_LOAD_MAX
+          value: "60"
+        - name: LOW_LOAD_MIN
+          value: "30"
