@@ -45,7 +45,7 @@ const flowBuilderBlueprint = async function () {
         ]);
     });
     await synthetics.executeStep('input', async function () {
-        await page.type("body > div > div > div > ui-view > owner-list > form > div > input", "FirstName");
+        await page.type("body > div > div > div > ui-view > owner-list > form > div > input", firstName);
     });
     await synthetics.executeStep('click', async function () {
         await page.waitForSelector("body > div > div > div > ui-view > owner-list > table > tbody > tr:nth-child(1) > td:nth-child(1) > a", { timeout: 30000 });
