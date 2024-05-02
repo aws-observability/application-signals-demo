@@ -44,3 +44,8 @@ aws ecr create-repository --repository-name python-petclinic-billing-service --r
 docker build -t billing-service ./pet_clinic_billing_service --no-cache
 docker tag billing-service:latest ${REPOSITORY_PREFIX}/python-petclinic-billing-service:latest
 docker push ${REPOSITORY_PREFIX}/python-petclinic-billing-service:latest
+
+aws ecr create-repository --repository-name traffic-generator --region ${REGION} --no-cli-pager || true
+docker build -t traffic-generator ./traffic-generator --no-cache
+docker tag traffic-generator:latest ${REPOSITORY_PREFIX}/traffic-generator:latest
+docker push ${REPOSITORY_PREFIX}/traffic-generator:latest

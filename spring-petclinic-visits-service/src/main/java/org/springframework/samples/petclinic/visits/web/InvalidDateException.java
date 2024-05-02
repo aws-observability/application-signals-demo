@@ -12,23 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
  */
-package org.springframework.samples.petclinic.visits;
+package org.springframework.samples.petclinic.visits.web;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.scheduling.annotation.EnableScheduling;
-
-/**
- * @author Maciej Szarlinski
- */
-@EnableDiscoveryClient
-@SpringBootApplication
-@EnableScheduling
-public class VisitsServiceApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(VisitsServiceApplication.class, args);
+@ResponseStatus(value = HttpStatus.BAD_REQUEST)
+public class InvalidDateException extends RuntimeException {
+    public InvalidDateException(String message) {
+        super(message);
     }
 }

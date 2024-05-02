@@ -53,6 +53,9 @@ kubectl delete pvc data  --grace-period=0 --force
 ../deploy-sample-app.sh $CLUSTER_NAME $REGION $NAMESPACE delete
 check_if_step_failed_and_exit "There was an error deleting the sample apps. Please make sure they are deleted properly before proceeding with the following steps"
 
+../deploy-traffic-generator.sh $CLUSTER_NAME $REGION $NAMESPACE delete
+check_if_step_failed_and_exit "There was an error deleting the traffic generator. Please make sure they are deleted properly before proceeding with the following steps"
+
 eksctl delete cluster --name $CLUSTER_NAME --region $REGION
 check_if_step_failed "There was an error deleting the cluster $CLUSTER_NAME."
 

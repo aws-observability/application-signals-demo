@@ -77,7 +77,7 @@ public class ApiController {
     }
 
     @PostMapping(value = "visit/owners/{ownerId}/pets/{petId}/visits")
-    public Mono<Void> addVisit(final @PathVariable int ownerId, final @PathVariable int petId, final @RequestBody VisitDetails visitDetails) {
+    public Mono<String> addVisit(final @PathVariable int ownerId, final @PathVariable int petId, final @RequestBody VisitDetails visitDetails) {
         return visitsServiceClient.addVisitForOwnersPets(ownerId, petId, visitDetails);
     }
     @GetMapping(value = "insurance/insurances")

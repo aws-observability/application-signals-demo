@@ -21,9 +21,14 @@ package org.springframework.samples.petclinic.customers.web;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.http.HttpStatus;
 import org.springframework.samples.petclinic.customers.model.Owner;
 import org.springframework.samples.petclinic.customers.model.OwnerRepository;
+import org.springframework.samples.petclinic.customers.model.Pet;
+import org.springframework.samples.petclinic.customers.model.PetRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -47,6 +52,7 @@ import java.util.Optional;
 class OwnerResource {
 
     private final OwnerRepository ownerRepository;
+    private final PetRepository petRepository;
 
     /**
      * Create Owner
@@ -99,5 +105,42 @@ class OwnerResource {
         ownerModel.setTelephone(ownerRequest.getTelephone());
         log.info("Saving owner {}", ownerModel);
         ownerRepository.save(ownerModel);
+    }
+
+    @Scheduled(cron = "0 0 8 * * ?") // every PST midnight
+    public void ageOldData() {
+        log.info("ageOldData() get called and purge all data!");
+        ownerRepository.deleteAll();
+        /* Purge pets. */
+        Pet pet = new Pet();
+        pet.setName("lastName");
+
+        Example<Pet> petExample = Example.of(
+                pet,
+                ExampleMatcher
+                        .matchingAll()
+                        .withStringMatcher(ExampleMatcher.StringMatcher.STARTING));
+
+        List<Pet> pets = petRepository.findAll(petExample);
+        log.info("Found {} pets to purge", pets.size());
+        petRepository.deleteAllInBatch(pets);
+
+        log.info("Successfully purged {} pets", pets.size());
+
+        /* Purge owners. */
+        Owner owner = new Owner();
+        owner.setFirstName("firstName");
+
+        Example<Owner> ownerExample = Example.of(
+                owner,
+                ExampleMatcher
+                        .matchingAll()
+                        .withStringMatcher(ExampleMatcher.StringMatcher.STARTING));
+
+        List<Owner> owners = ownerRepository.findAll(ownerExample);
+        log.info("Found {} owners to purge", owners.size());
+        ownerRepository.deleteAllInBatch(owners);
+
+        log.info("Successfully purged {} owners", owners.size());
     }
 }

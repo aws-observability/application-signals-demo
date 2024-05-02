@@ -11,6 +11,10 @@ eureka:
     service-url:
       defaultZone: ${DISCOVERY_SERVER_URL:http://localhost:8761/eureka}
 
+server:
+  error:
+    include-message: always
+
 ---
 spring:
   config:

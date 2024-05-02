@@ -21,11 +21,14 @@ package org.springframework.samples.petclinic.api.application;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.samples.petclinic.api.dto.VisitDetails;
 import org.springframework.samples.petclinic.api.dto.Visits;
 import org.springframework.samples.petclinic.api.utils.WellKnownAttributes;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -69,7 +72,7 @@ public class VisitsServiceClient {
     }
 
     @WithSpan
-    public Mono<Void> addVisitForOwnersPets(final int ownerId, final int petId, final VisitDetails visitDetails) {
+    public Mono<String> addVisitForOwnersPets(final int ownerId, final int petId, final VisitDetails visitDetails) {
         // Span.current().setAttribute(WellKnownAttributes.REMOTE_APPLICATION, "visits-service");
         // Span.current().setAttribute(WellKnownAttributes.REMOTE_OPERATION, "/owners/*/pets/{petId}/visits");
         return webClientBuilder.build()
@@ -77,7 +80,15 @@ public class VisitsServiceClient {
             .uri(hostname + "owners/{ownerId}/pets/{petId}/visits", ownerId, petId)
             .body(Mono.just(visitDetails), VisitDetails.class)
             .retrieve()
-            .bodyToMono(Void.class);
+            .bodyToMono(String.class)
+                .onErrorResume(WebClientResponseException.class,
+                    ex -> {
+                        if (ex.getRawStatusCode() == 400) {
+                            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getResponseBodyAsString()));
+                        } else {
+                            return Mono.error(ex);
+                        }
+                    });
     }
 
     private String joinIds(List<Integer> petIds) {
