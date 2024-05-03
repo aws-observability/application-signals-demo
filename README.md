@@ -143,137 +143,17 @@ Please be aware that this sample application includes a publicly accessible Appl
 # EC2 Demo
 The following instructions describe how to set up the pet clinic sample application on EC2 instances. You can run these steps in your personal AWS account to follow along.
 
-1. Set up a VPC with a public subnet and a security group accepting all traffic.
-2. Set up 7 EC2 instances all with the following configuration:
-   - Running on Amazon Linux
-   - Instance type t2.small or larger
-   - A key-pair you save to your computer
-   - Use the VPC, public subnet, and security group created in step 1
-   - Enable auto-assign public IP
-   - An IAM instance profile with the following permissions:
-     - AmazonDynamoDBFullAccess 
-     - AmazonKinesisFullAccess 
-     - AmazonS3FullAccess 
-     - AmazonSQSFullAccess
-     - AmazonRDSFullAccess
-3. Rename your instances as follows to follow along with the instructions:
-   - setup
-   - pet-clinic-frontend
-   - vets
-   - customers
-   - visits
-   - insurances
-   - billings
-4. Connect to the EC2 instance named setup and start the config, discovery, and admin services in tmux sessions. Feel free to end your connection to the EC2 instance, the tmux sessions will continue running.
-
-   - Install `java17`, `git`, and `tmux` as dependencies
+1. Create resources and deploy sample app. Replace `region-name` with the region you choose.
    ```
-   sudo yum install java-17-amazon-corretto-devel git tmux -y
-   ```
-
-   - Verify java 17 is used. If not, run `sudo alternatives --config java` to change the default java provider
-   ```
-   java -version
-   ```
-
-   - Build the JAR files 
-   ```
-   git clone https://github.com/aws-observability/application-signals-demo.git
-   cd application-signals-demo/ && ./mvnw clean install
-   ```
-
-   - Create an S3 buket in your account and put the created JAR files into it
-   ```
-   aws s3 mb s3://app-signals-ec2-demo
-   for dir in `ls -d spring-petclinic-*`; do aws s3 cp $dir/target/*.jar s3://app-signals-ec2-demo; done 
-   ```
-
-   - Run config service in a tmux session and then exit by inputting `ctrl+b, d`.
-   ```
-   tmux new -s config
-   cd spring-petclinic-config-server/target/
-   java -jar spring-petclinic-config...
-   ```
-
-   - Run discovery service in a tmux session and then exit by inputting `ctrl+b, d`.
-   ```
-   tmux new -s discovery
-   cd spring-petclinic-discovery-server/target/
-   java -jar spring-petclinic-discovery...
+   cd scripts/ec2/appsignals/ && ./setup-ec2-demo.sh --region=region-name
    ```
 
 
-   - Run admin service in a tmux session and then exit by inputting `ctrl+b, d`.
+2. Clean up after you are done with the sample app. Replace `region-name` with the same value that you use in previous step.
    ```
-   tmux new -s admin
-   cd spring-petclinic-admin-server/target/
-   java -jar spring-petclinic-admin...
+   cd scripts/ec2/appsignals/ && ./setup-ec2-demo.sh --operation=delete --region=region-name
    ```
 
 
-
-5. Connect to the EC2 instance named pet-clinic-frontend and run the following commands to start the api-gateway service. Feel free to end your connection to the EC2 instance, the tmux sessions will continue running.
-
-   - Install `java17` and `tmux` as dependencies
-   ```
-   sudo yum install java-17-amazon-corretto-devel tmux -y
-   ```
-
-   - Verify java 17 is used. If not, run `sudo alternatives --config java` to change the default java provider
-   ```
-   java -version
-   ```
-
-   - Download jar files from S3 bucket
-   ```
-   aws s3 sync s3://app-signals-ec2-demo .
-   ```
-
-   - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`. Make sure to replace the private IP in the export commands.
-   ```
-   tmux new -s frontend
-   export CONFIG_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8888
-   export DISCOVERY_SERVER_URL=http://<PRIVATE-IP-OF-SETUP-INSTANCE>:8761/eureka
-   java -jar spring-petclinic-api-gateway...
-   ```
-
-6. Repeat step 5 for the EC2 instances (vets, customers, visits)
-
-7. Go to RDS and create a Postgres DB with the following configurations:
-    - Set the instance name to `petclinic-python`
-    - Use the Dev/Test template with a single DB instance. 
-    - Update the Master username to `root` and create a password of your choosing. Write it down since you will need it later. 
-    - In the Connectivity settings, use the VPC, public subnet, and security group created in step 1. 
-
-8. Select the EC2 instance names `insurances` and choose Actions -> Networking -> Connect RDS and choose the RDS instance from step 7. 
-
-9. Connect to the EC2 instance named `insurances` and then run the following commands to start the python microservice in a tmux session. Feel free to end your connection to the EC2 instance, the tmux sessions will continue running.
-   - Create a zip file of the `pet_clinic_insurance_service` directory and upload it to S3 bucket `s3://app-signals-ec2-demo`.
-   - Download the zip file from S3 bucket
-   ```
-   aws s3 cp s3://app-signals-ec2-demo/pet_clinic_insurance_service.zip .
-   unzip pet_clinic_insurance_service.zip
-   cd pet_clinic_insurance_service
-   . ec2-setup.sh <PASS-FROM-STEP-7> <PRIVATE-IP-OF-SETUP-INSTANCE>
-   ```
-
-   - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`.
-   ```
-   tmux new -s insurance
-   python3 manage.py migrate & python3 manage.py loaddata initial_data.json & python3 manage.py runserver 0.0.0.0:8000 --noreload
-   ```
-
-10. Repeat steps 8 and 9 for the `billings` EC2 instance but with the following to start the app.
-    - Run the sample app in a tmux session and then exit by inputting `ctrl+b, d`.
-    ```
-    tmux new -s billing
-    python3 manage.py migrate & python3 manage.py runserver 0.0.0.0:8800 --noreload
-    ```
-
-11. Visit the sample application by going to `http://<PUBLIC-IPv4-DNS-OF-PET-CLINIC-FRONTEND-INSTANCE>:8080`
-
-12. Interact with the application to ensure you've properly set up the backend services. Note that each service takes a few seconds to come up.
-
-
-To enable Application Signals on the sample application, please refer to [this user guide](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Application-Signals-Enable-EC2.html).
-
+# K8s Demo
+To be added
