@@ -8,9 +8,13 @@ angular.module('infrastructure')
         return {
             responseError: function (response) {
                 var error = response.data;
-                alert(error.error + "\r\n" + error.errors.map(function (e) {
-                    return e.field + ": " + e.defaultMessage;
-                }).join("\r\n"));
+                if(error) {
+                    var errorAlert = document.getElementById("http-error-alert");
+                    var errorMessage = document.getElementById("http-error-message");
+                    var errorDescription = error.message ? error.message : error.error;
+                    errorAlert.removeAttribute("style");
+                    errorMessage.innerHTML = `${error.status}: ${errorDescription}`;
+                }
                 return response;
             }
         }

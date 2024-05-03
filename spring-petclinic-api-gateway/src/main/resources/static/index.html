@@ -7,6 +7,36 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0, minimal-ui" />
         <!-- The above 4 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        <script>
+            (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:n,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.head.getElementsByTagName('script')[0]);})(
+                'cwr',
+                'bc8d15fd-43d6-41b8-a927-07ba6499234a',
+                '1.0.0',
+                'us-west-1',
+                'https://client.rum.us-east-1.amazonaws.com/1.17.x/cwr.js',
+                {
+                sessionSampleRate: 1,
+                identityPoolId: "us-west-1:1421c310-a184-4d47-8ffd-1d6c4deb3290",
+                telemetries: [
+                    "performance",
+                    "errors",
+                    [
+                        "http",
+                        {
+                            recordAllRequests: true,
+                            addXRayTraceIdHeader: true
+                        }
+                    ]
+                ],
+                allowCookies: true,
+                disableAutoPageView: true,
+                cookieAttributes: {
+                    secure: false
+                },
+                enableXRay: true
+                }
+            );
+        </script>
 
         <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.png" />
 
