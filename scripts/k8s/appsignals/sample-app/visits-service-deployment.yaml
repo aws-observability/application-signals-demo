@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+    kompose.version: 1.27.0 (b0ed6a2c9)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: visits-service-java
+  name: visits-service-java
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      io.kompose.service: visits-service-java
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+        kompose.version: 1.27.0 (b0ed6a2c9)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: visits-service-java
+      annotations:
+        sidecar.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+        - command:
+            - ./dockerize
+            - -wait=tcp://discovery-server:8761
+            - -timeout=60s
+            - --
+            - java
+            - org.springframework.boot.loader.JarLauncher
+          env:
+            - name: OTEL_INSTRUMENTATION_AWS_SDK_EXPERIMENTAL_SPAN_ATTRIBUTES
+              value: "true"
+          image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-visits-service:latest
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          name: visits-service-java
+          ports:
+            - containerPort: 8082
+      restartPolicy: Always
+status: {}
