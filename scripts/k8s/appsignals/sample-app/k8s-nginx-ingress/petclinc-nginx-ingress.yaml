@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: petclinic-nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" 
+    nginx.ingress.kubernetes.io/enable-opentelemetry: "true"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pet-clinic-frontend-java
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: customers-service-java
+            port:
+              number: 8081
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vets-service-java
+            port:
+              number: 8083
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: visits-service-java
+            port:
+              number: 8082

@@ -156,4 +156,94 @@ The following instructions describe how to set up the pet clinic sample applicat
 
 
 # K8s Demo
-To be added
+The following instructions describe how to set up the pet clinic sample application on [minikube](https://minikube.sigs.k8s.io/docs/) in an EC2 instance. You can run these steps in your personal AWS account to follow along. Note that you need to first [build and push the sample app images as described for EKS Demo](###Build-the-sample-application-images-and-push-to-ECR).
+
+1. Launching an EC2 instance with the following configurations:
+   * Amazon Linux 2023
+   * t2.2xlarge instance type
+   * Default VPC
+   * Enable public IPv4 address
+   * A security group that accepts all incoming traffic
+   * Configure 30 GB of storage
+   * An EC2 IAM instance profile with the following managed policies:
+      * AmazonEC2FullAccess
+      * AmazonDynamoDBFullAccess
+      * AmazonKinesisFullAccess
+      * AmazonS3FullAccess
+      * AmazonSQSFullAccess
+      * AWSXrayWriteOnlyAccess
+      * CloudWatchAgentServerPolicy
+   * Set the metadata response hop limit to 3 or higher
+
+2. Set up Minikube Cluster and Helm
+   ```
+   sudo yum install docker -y && \
+   sudo service docker start && \
+   sudo usermod -aG docker $USER && newgrp docker
+
+   curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && \
+   sudo install minikube-linux-amd64 /usr/local/bin/minikube && \
+   minikube start --driver docker --cpus 8 --memory 20000 && \
+   alias kubectl="minikube kubectl --" 
+
+   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+
+   curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
+   chmod 700 get_helm.sh && \
+   ./get_helm.sh 
+   ```
+
+3. Configure Minikube to access AWS ECR
+   ```
+   $ minikube addons configure registry-creds
+
+   Do you want to enable AWS Elastic Container Registry? [y/n]: y
+   -- Enter AWS Access Key ID: <put_access_key_here>
+   -- Enter AWS Secret Access Key: <put_secret_access_key_here>
+   -- (Optional) Enter AWS Session Token:
+   -- Enter AWS Region: <put_aws_region_of_ECR_repo_here>
+   -- Enter 12 digit AWS Account ID (Comma separated list): <account_number>
+   -- (Optional) Enter ARN of AWS role to assume:
+
+   Do you want to enable Google Container Registry? [y/n]: n
+
+   Do you want to enable Docker Registry? [y/n]: n
+
+   Do you want to enable Azure Container Registry? [y/n]: n
+   ✅  registry-creds was successfully configured
+
+   $ minikube addons enable registry-creds
+   ```
+
+4. Install Cloudwatch Agent operator
+   - Get the helm chart for Cloudwatch Agent operator
+   ```
+   sudo yum install git -y && \
+   git clone https://github.com/aws-observability/helm-charts -q && \
+   cd helm-charts/charts/amazon-cloudwatch-observability/ 
+   ```
+   - Modify the default config to disable Container Insights (which sometimes cause issues in minikube cluster). Open the `values.yaml` file and remove the following part:
+   ```
+         "kubernetes": {
+            "enhanced_container_insights": true
+          },
+   ```
+   - Use helm chart to install Cloudwatch Agent operator. Replace `cluster-name` with the name that you want to use. Replace `region-name` with the aws region that you choose.
+   ```
+   export REGION=region-name
+   export CLUSTER=cluster-name
+   helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${REGION} --set clusterName=${CLUSTER}
+   ```
+
+5. Deploy the sample app to the minikube cluster. Replace `region-name` with the aws region that you use in last step. 
+   ```
+   cd ~
+   git clone https://github.com/aws-observability/application-signals-demo.git
+   cd application-signals-demo/scripts/k8s/appsignals
+   ./deploy-sample-app.sh your-region-name
+   ```
+
+6. Destroy the minikube cluster and all resources in it
+   ```
+   minikube delete
+   ```

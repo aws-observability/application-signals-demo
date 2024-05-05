@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+    kompose.version: 1.27.0 (b0ed6a2c9)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: pet-clinic-frontend-java
+  name: pet-clinic-frontend-java
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      io.kompose.service: pet-clinic-frontend-java
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+        kompose.version: 1.27.0 (b0ed6a2c9)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: pet-clinic-frontend-java
+      annotations:
+        sidecar.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+        - command:
+            - ./dockerize
+            - -wait=tcp://discovery-server:8761
+            - -timeout=60s
+            - --
+            - java
+            - org.springframework.boot.loader.JarLauncher
+          image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-api-gateway:latest
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          name: api-gateway-java
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always
+status: {}

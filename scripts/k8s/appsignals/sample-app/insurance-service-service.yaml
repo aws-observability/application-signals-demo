@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: insurance-service-python
+  name: insurance-service-python
+spec:
+  ports:
+    - name: '80'
+      port: 80
+      targetPort: 8000
+  selector:
+    io.kompose.service: insurance-service-python
+status:
+  loadBalancer: {}
