@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: traffic-generator
-        image: 868155213681.dkr.ecr.us-east-1.amazonaws.com/traffic-generator:latest
+        image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/traffic-generator:latest
         env:
         - name: URL
           value: "http://SAMPLE_APP_END_POINT"

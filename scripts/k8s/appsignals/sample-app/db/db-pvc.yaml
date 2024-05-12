@@ -4,9 +4,8 @@ metadata:
   name: data
 spec:
   accessModes:
-    - ReadWriteOnce  # The volume can be mounted as read-write by a single node
+    - ReadWriteOnce
+  storageClassName: ebs-sc
   resources:
     requests:
-      storage: 1Gi  # Specify the size of the volume
-  storageClassName: standard  # Make sure this matches with your storage class (Minikube should have a default 'standard' class)
-
+      storage: 1Gi
