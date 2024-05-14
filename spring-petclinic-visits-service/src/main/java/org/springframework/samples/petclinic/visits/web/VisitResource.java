@@ -74,6 +74,8 @@ class VisitResource {
             String message = "Visit cannot be scheduled for a date more than 30 days in the future.";
             throw new InvalidDateException(message);
         }
+
+        log.info("Reaching Post api: owners/*/pets/{petId}/visits for petId: {}", petId);
         ddbService.putItems();
         visit.setPetId(petId);
         // petId 9 is used for testing high traffic
@@ -89,6 +91,7 @@ class VisitResource {
     @GetMapping("owners/*/pets/{petId}/visits")
     public Visits visits(@PathVariable("petId") @Min(1) int petId) throws Exception {
 //        return visitRepository.findByPetId(petId);
+        log.info("Reaching Get api: /owners/*/pets/{petId}/visits for petId: {}", petId);
         return new Visits(visitRepository.findByPetId(petId));
     }
 
@@ -100,6 +103,7 @@ class VisitResource {
     @GetMapping("pets/visits")
     public Visits visitsMultiGet(@RequestParam("petId") List<Integer> petIds) throws Exception {
         final List<Visit> byPetIdIn = visitRepository.findByPetIdIn(petIds);
+        log.info("Reaching Get api: pets/visits for petIds: {}", petIds);
         return new Visits(byPetIdIn);
     }
 

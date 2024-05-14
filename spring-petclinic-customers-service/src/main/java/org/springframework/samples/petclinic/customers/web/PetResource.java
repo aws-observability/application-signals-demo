@@ -68,11 +68,15 @@ class PetResource {
 
         final Optional<Owner> optionalOwner = ownerRepository.findById(ownerId);
         Owner owner = optionalOwner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));
-
-        sqsService.sendMsg();
+        
         final Pet pet = new Pet();
-        owner.addPet(pet);
-
+        try {
+            sqsService.sendMsg();
+            owner.addPet(pet);
+        } catch (Exception e) {
+            log.error("Failed to add pet: '{}' for owner: '{}'", petRequest.getName(), owner);
+            throw e;
+        }
         return save(pet, petRequest);
     }
 
