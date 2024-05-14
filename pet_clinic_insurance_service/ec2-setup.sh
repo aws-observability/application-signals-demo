@@ -1,8 +1,7 @@
 #!/bin/bash
 psql_pass=$1
 private_setup_ip_address=$2
-HOST_ENV=$3
-SVC_NAME=$4
+SVC_NAME=$3
 
 sudo yum install python3.9-pip python3.9-devel postgresql15 postgresql-devel gcc* tmux -y
 
@@ -37,7 +36,7 @@ export OTEL_TRACES_SAMPLER=xray
 export OTEL_TRACES_SAMPLER_ARG="endpoint=http://localhost:2000" 
 export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics 
 export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces 
-export OTEL_RESOURCE_ATTRIBUTES="aws.hostedin.environment=$HOST_ENV,service.name=$SVC_NAME"
+export OTEL_RESOURCE_ATTRIBUTES="service.name=$SVC_NAME"
 
 python3 manage.py migrate  
 python3 manage.py loaddata initial_data.json
