@@ -124,14 +124,13 @@ function create_resources() {
 
 
 function run_k8s_master() {
-  # Retrieve public IP of 'setup' instance
+  # Retrieve public IP of k8s master node
   master_ip=$(aws ec2 describe-instances \
       --filters "Name=tag:Name,Values=k8s-master" "Name=instance-state-name,Values=running" \
       --query "Reservations[*].Instances[*].PublicIpAddress" \
       --output text)
 
-  # SSH and run commands on the setup instance
-
+  # SSH and run commands on the master node
   master_private_ip=$(aws ec2 describe-instances \
       --filters "Name=tag:Name,Values=k8s-master" "Name=instance-state-name,Values=running" \
       --query "Reservations[*].Instances[*].PrivateIpAddress" \
@@ -180,7 +179,7 @@ EOF
 
 
 function run_k8s_worker() {
-  # Retrieve public IP of 'setup' instance
+  # Retrieve public IP of worker node
   worker_ip=$(aws ec2 describe-instances \
       --filters "Name=tag:Name,Values=k8s-worker" "Name=instance-state-name,Values=running" \
       --query "Reservations[*].Instances[*].PublicIpAddress" \
@@ -222,7 +221,7 @@ sleep 5m
 
 
 function install_helm_and_cloudwatch() {
-  # Retrieve public IP of 'setup' instance
+  # Retrieve public IP of master node
   master_ip=$(aws ec2 describe-instances \
       --filters "Name=tag:Name,Values=k8s-master" "Name=instance-state-name,Values=running" \
       --query "Reservations[*].Instances[*].PublicIpAddress" \
@@ -262,7 +261,7 @@ function deploy_sample_app() {
       --output text)
 
   ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$master_ip << EOF
-    git clone https://github.com/pxaws/application-signals-demo.git && \
+    git clone https://github.com/aws-observability/application-signals-demo.git && \
     cd application-signals-demo/scripts/k8s/appsignals && \
     ./deploy-sample-app.sh ${REGION}
 EOF

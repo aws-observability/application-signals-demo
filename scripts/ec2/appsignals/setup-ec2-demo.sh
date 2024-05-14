@@ -34,10 +34,8 @@ IAM_ROLE_NAME="ec2-demo-role"
 INSTANCE_PROFILE="ec2-demo-instance-profile"
 INSTANCE_NAMES=("setup" "pet-clinic-frontend" "vets" "customers" "visits" "insurances" "billings")
 KEY_NAME="ec2-demo-key-pair"
-S3_BUCKET="s3://application-signals-ec2-demo"
 CLOUDWATCH_AGENT_DOWNLOAD_URL="https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 JAVA_INSTRUMENTATION_AGENT_DOWNLOAD_URL="https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
-YOUR_HOST_ENV="EC2"
 
 master_password=$(tr -dc 'A-Za-z0-9_' </dev/urandom | head -c 10; echo)
 echo $master_password > master_password.txt
@@ -56,12 +54,13 @@ function create_resources() {
     # Get the default VPC
     vpc_id=$(aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query 'Vpcs[0].VpcId' --output text)
 
+    # Get two subnets in the default VPC
+    subnet_ids=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc_id" --query "join(',', sort_by(Subnets, &AvailabilityZone)[0:2].SubnetId)" --output text)
+
     # TODO
     # Create a security group
     sg_id=$(aws ec2 create-security-group --group-name $SG_NAME --description "Security group for all traffic" --vpc-id $vpc_id --query 'GroupId' --output text)
     aws ec2 authorize-security-group-ingress --group-id $sg_id --protocol all --cidr 0.0.0.0/0
-    # 
-    # sg_id=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SG_NAME" --query 'SecurityGroups[0].GroupId' --output text)
     
     # Create an IAM role and attach policies
     aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document file://trust-policy.json
@@ -89,9 +88,47 @@ function create_resources() {
     # Create EC2 instances
     for name in "${INSTANCE_NAMES[@]}"
     do
-      instance_id=$(aws ec2 run-instances --image-id $IMAGE_ID --count 1 --instance-type t3.medium --key-name $KEY_NAME --security-group-ids $sg_id  --iam-instance-profile Name=$INSTANCE_PROFILE --associate-public-ip-address --query 'Instances[0].InstanceId' --output text)
-      aws ec2 create-tags --resources $instance_id --tags Key=Name,Value=$name
-      instance_ids+=($instance_id)
+      if [ "$name" == "visits" ]; then
+        # Create ASG for 'visits'
+        asg_name="asg-$name"
+        launch_template_name="lt-$name"
+        
+        # Create Launch Template
+        aws ec2 create-launch-template --launch-template-name $launch_template_name --version-description "1" --launch-template-data "{
+          \"ImageId\":\"$IMAGE_ID\",
+          \"InstanceType\":\"t3.medium\",
+          \"KeyName\":\"$KEY_NAME\",
+          \"IamInstanceProfile\":{
+            \"Name\":\"$INSTANCE_PROFILE\"
+          },
+          \"NetworkInterfaces\":[
+            {
+              \"AssociatePublicIpAddress\":true,
+              \"DeviceIndex\":0,
+              \"Groups\":[\"$sg_id\"]
+            }
+          ]
+        }"
+        
+        # Create Auto Scaling Group
+        aws autoscaling create-auto-scaling-group --auto-scaling-group-name $asg_name --launch-template "LaunchTemplateName=$launch_template_name,Version=1" --min-size 1 --max-size 1 --desired-capacity 1 --vpc-zone-identifier "$subnet_ids"    
+
+        # Wait until the instance is running
+        instance_id=$(aws autoscaling describe-auto-scaling-instances --query "AutoScalingInstances[?AutoScalingGroupName=='$asg_name'].InstanceId" --output text)
+        while [ -z "$instance_id" ]; do
+          sleep 5
+          instance_id=$(aws autoscaling describe-auto-scaling-instances --query "AutoScalingInstances[?AutoScalingGroupName=='$asg_name'].InstanceId" --output text)
+        done
+    
+        # Tag the instance
+        aws ec2 create-tags --resources $instance_id --tags Key=Name,Value=$name
+        instance_ids+=($instance_id)
+
+      else
+        instance_id=$(aws ec2 run-instances --image-id $IMAGE_ID --count 1 --instance-type t3.medium --key-name $KEY_NAME --security-group-ids $sg_id  --iam-instance-profile Name=$INSTANCE_PROFILE --associate-public-ip-address --query 'Instances[0].InstanceId' --output text)
+        aws ec2 create-tags --resources $instance_id --tags Key=Name,Value=$name
+        instance_ids+=($instance_id)
+      fi
     done
 
         # Wait for all instances to be in the 'running' state
@@ -110,13 +147,12 @@ function create_database() {
   # Fetch the default VPC ID
   vpc_id=$(aws ec2 describe-vpcs --filters "Name=is-default,Values=true" --query 'Vpcs[0].VpcId' --output text)
 
-  # Select 2 subnets from availability zones a and b in the default VPC
-  subnet_a=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc_id" "Name=availability-zone,Values=${REGION}a" --query 'Subnets[0].SubnetId' --output text)
-  subnet_b=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc_id" "Name=availability-zone,Values=${REGION}b" --query 'Subnets[0].SubnetId' --output text)
+  # Get two subnets in the default VPC
+  subnet_ids=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc_id" --query "sort_by(Subnets, &AvailabilityZone)[0:2].SubnetId" --output text | tr '\n' ',' | sed 's/,$//')
 
   # Create a database subnet group
   db_subnet_group_name="my-db-subnet-group"
-  aws rds create-db-subnet-group --db-subnet-group-name $db_subnet_group_name --db-subnet-group-description "Subnet group for RDS" --subnet-ids $subnet_a $subnet_b
+  aws rds create-db-subnet-group --db-subnet-group-name $db_subnet_group_name --db-subnet-group-description "Subnet group for RDS" --subnet-ids $subnet_ids
 
   # Wait for the DB subnet group to be available (assumed immediate availability after creation)
   echo "DB subnet group created and ready to use."
@@ -274,7 +310,7 @@ EOF
     tmux send-keys -t frontend "export OTEL_AWS_APP_SIGNALS_ENABLED=true" C-m
     tmux send-keys -t frontend "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315" C-m
     tmux send-keys -t frontend "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315" C-m
-    tmux send-keys -t frontend "export OTEL_RESOURCE_ATTRIBUTES=\"aws.hostedin.environment=$YOUR_HOST_ENV,service.name=${service_name}\"" C-m
+    tmux send-keys -t frontend "export OTEL_RESOURCE_ATTRIBUTES=\"service.name=${service_name}\"" C-m
     tmux send-keys -t frontend "java -jar spring-petclinic-api*.jar" C-m
 EOF
 
@@ -317,7 +353,7 @@ EOF
     tmux send-keys -t vets  "export OTEL_AWS_APP_SIGNALS_ENABLED=true" C-m
     tmux send-keys -t vets  "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315" C-m
     tmux send-keys -t vets  "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315" C-m
-    tmux send-keys -t vets  "export OTEL_RESOURCE_ATTRIBUTES=\"aws.hostedin.environment=$YOUR_HOST_ENV,service.name=${service_name}\"" C-m
+    tmux send-keys -t vets  "export OTEL_RESOURCE_ATTRIBUTES=\"service.name=${service_name}\"" C-m
     tmux send-keys -t vets "java -jar spring-petclinic-vet*.jar" C-m
 EOF
 
@@ -361,7 +397,7 @@ EOF
     tmux send-keys -t customers  "export OTEL_AWS_APP_SIGNALS_ENABLED=true" C-m
     tmux send-keys -t customers  "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315" C-m
     tmux send-keys -t customers  "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315" C-m
-    tmux send-keys -t customers  "export OTEL_RESOURCE_ATTRIBUTES=\"aws.hostedin.environment=$YOUR_HOST_ENV,service.name=${service_name}\"" C-m
+    tmux send-keys -t customers  "export OTEL_RESOURCE_ATTRIBUTES=\"service.name=${service_name}\"" C-m
     tmux send-keys -t customers "java -jar spring-petclinic-customers*.jar" C-m
 EOF
 
@@ -404,7 +440,7 @@ EOF
     tmux send-keys -t visits  "export OTEL_AWS_APP_SIGNALS_ENABLED=true" C-m
     tmux send-keys -t visits  "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315" C-m
     tmux send-keys -t visits  "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315" C-m
-    tmux send-keys -t visits  "export OTEL_RESOURCE_ATTRIBUTES=\"aws.hostedin.environment=$YOUR_HOST_ENV,service.name=${service_name}\"" C-m
+    tmux send-keys -t visits  "export OTEL_RESOURCE_ATTRIBUTES=\"service.name=${service_name}\"" C-m
     tmux send-keys -t visits "java -jar spring-petclinic-visits*.jar" C-m
 EOF
 
@@ -436,7 +472,7 @@ EOF
   ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$setup_ip << EOF
     tmux new -s insurance -d
     tmux send-keys -t insurance 'cd application-signals-demo/pet_clinic_insurance_service' C-m
-    tmux send-keys -t insurance "./ec2-setup.sh $master_password $PRIVATE_IP_OF_SETUP_INSTANCE $YOUR_HOST_ENV $service_name" C-m
+    tmux send-keys -t insurance "./ec2-setup.sh $master_password $PRIVATE_IP_OF_SETUP_INSTANCE $service_name" C-m
 EOF
 sleep 60
 
@@ -469,7 +505,7 @@ EOF
   ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$setup_ip << EOF
     tmux new -s billing -d
     tmux send-keys -t billing 'cd application-signals-demo/pet_clinic_billing_service' C-m
-    tmux send-keys -t billing "./ec2-setup.sh $master_password $PRIVATE_IP_OF_SETUP_INSTANCE $YOUR_HOST_ENV $service_name" C-m
+    tmux send-keys -t billing "./ec2-setup.sh $master_password $PRIVATE_IP_OF_SETUP_INSTANCE $service_name" C-m
 EOF
 sleep 60
 
@@ -490,12 +526,16 @@ function generate_traffic() {
       --query "Reservations[*].Instances[*].PublicIpAddress" \
       --output text)
 
+  ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$setup_ip << EOF
+    cd application-signals-demo/traffic-generator/ &&
+    sudo yum install nodejs -y &&
+    npm install --only=production
+EOF
+
   # SSH again to start tmux session
   ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$setup_ip << EOF
     tmux new -s traffic-generator -d
     tmux send-keys -t traffic-generator 'cd application-signals-demo/traffic-generator/' C-m
-    tmux send-keys -t traffic-generator "sudo yum install nodejs -y" C-m
-    tmux send-keys -t traffic-generator "npm install --only=production" C-m
     tmux send-keys -t traffic-generator "export URL=\"http://${setup_ip}:8080\"" C-m
     tmux send-keys -t traffic-generator "export HIGH_LOAD_MAX=1600" C-m
     tmux send-keys -t traffic-generator "export HIGH_LOAD_MIN=800" C-m
@@ -515,14 +555,47 @@ function delete_resources() {
     delete_database
 
     # Delete EC2 instances
+    declare -a instance_ids=()
+
     for name in "${INSTANCE_NAMES[@]}"
     do
-      instance_ids=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$name" --query 'Reservations[*].Instances[*].InstanceId' --output text)
-      if [ ! -z "$instance_ids" ]; then
-        aws ec2 terminate-instances --instance-ids $instance_ids
-        echo "Instances terminating: $instance_ids"
+      if [ "$name" == "visits" ]; then
+        # Update the ASG to have 0 instances
+        asg_name="asg-$name"
+        launch_template_name="lt-$name"
+        aws autoscaling update-auto-scaling-group --auto-scaling-group-name $asg_name --min-size 0 --max-size 0 --desired-capacity 0
+      else 
+        instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$name" --query 'Reservations[*].Instances[*].InstanceId' --output text)
+        if [ ! -z "$instance_id" ]; then
+          if [ "$name" != "visits" ]; then
+            aws ec2 terminate-instances --instance-ids $instance_id
+          fi
+          echo "Instances terminating: $instance_id"
+          instance_ids+=($instance_id)
+        fi
       fi
     done
+    
+    # Update the ASG to have 0 instances
+    asg_name="asg-visits"
+    aws autoscaling update-auto-scaling-group --auto-scaling-group-name $asg_name --min-size 0 --max-size 0 --desired-capacity 0
+
+    # wait for all instances are terminated
+    for id in "${instance_ids[@]}"
+    do
+        echo "Checking instance: $id"
+        aws ec2 wait instance-terminated --instance-ids $id
+        echo "Instance $id is terminated."
+    done
+
+    echo "All EC2 instances are termianted"
+
+    # Delete the ASG
+    aws autoscaling delete-auto-scaling-group --auto-scaling-group-name $asg_name --force-delete
+    
+    # Delete the Launch Template
+    launch_template_name="lt-visits"
+    aws ec2 delete-launch-template --launch-template-name $launch_template_name
 
     # Delete instance profile
     aws iam remove-role-from-instance-profile --instance-profile-name $INSTANCE_PROFILE --role-name $IAM_ROLE_NAME
@@ -538,7 +611,6 @@ function delete_resources() {
     done
     aws iam delete-role --role-name $IAM_ROLE_NAME
 
-    sleep 5m
     # Delete security groups
     sg_id=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SG_NAME" --query 'SecurityGroups[0].GroupId' --output text)
     if [ ! -z "$sg_id" ]; then
@@ -549,6 +621,8 @@ function delete_resources() {
     # Delete key pair
     aws ec2 delete-key-pair --key-name $KEY_NAME
     rm -f "${KEY_NAME}.pem"
+
+    rm -f master_password.txt
 
     echo "Resource deletion complete."
 }
