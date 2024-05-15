@@ -31,7 +31,7 @@ export AWS_DEFAULT_REGION=$REGION
 
 # Variables
 SG_NAME="k8s-demo-security-group"
-IAM_ROLE_NAME="k8s-demo-role"
+IAM_ROLE_NAME="k8s-demo-role-${REGION}"
 INSTANCE_PROFILE="k8s-demo-instance-profile"
 INSTANCE_NAMES=("k8s-master" "k8s-worker") 
 KEY_NAME="k8s-demo-key-pair"
@@ -209,6 +209,7 @@ function run_k8s_worker() {
     sudo cp apiserver.key /etc/kubernetes/pki/apiserver.key && \
     echo "tlsCertFile: /etc/kubernetes/pki/apiserver.crt" | sudo tee -a /var/lib/kubelet/config.yaml && \
     echo "tlsPrivateKeyFile: /etc/kubernetes/pki/apiserver.key" | sudo tee -a /var/lib/kubelet/config.yaml && \
+    sudo systemctl restart kubelet && \ 
     sleep 60 && \
     sudo bash join-cluster.sh
 EOF

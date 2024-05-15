@@ -48,11 +48,9 @@ host=db.$NAMESPACE.svc.cluster.local
 
 sleep 60
 
-repo_prefix=$(aws ecr-public describe-repositories --repository-names traffic-generator --region us-east-1 --query 'repositories[0].repositoryUri' --output text | cut -d'\' -f1,2)
-
 for config in $(ls ./sample-app/*.yaml)
 do
-    sed -e "s#111122223333.dkr.ecr.us-west-2.amazonaws.com#${repo_prefix}#g" -e 's#\${REGION}'"#${REGION}#g" -e 's#\${DB_SERVICE_HOST}'"#${host}#g" $config | kubectl ${OPERATION} --namespace=$NAMESPACE -f -
+    sed -e "s/111122223333.dkr.ecr.us-west-2/$ACCOUNT.dkr.ecr.$REGION/g" -e 's#\${REGION}'"#${REGION}#g" -e 's#\${DB_SERVICE_HOST}'"#${host}#g" $config | kubectl ${OPERATION} --namespace=$NAMESPACE -f -
 done
 
 if [[ $OPERATION == "apply" ]]; then
