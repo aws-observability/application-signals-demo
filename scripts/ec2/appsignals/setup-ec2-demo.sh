@@ -30,7 +30,7 @@ export AWS_DEFAULT_REGION=$REGION
 
 # Variables
 SG_NAME="ec2-demo-security-group"
-IAM_ROLE_NAME="ec2-demo-role"
+IAM_ROLE_NAME="ec2-demo-role-${REGION}"
 INSTANCE_PROFILE="ec2-demo-instance-profile"
 INSTANCE_NAMES=("setup" "pet-clinic-frontend" "vets" "customers" "visits" "insurances" "billings")
 KEY_NAME="ec2-demo-key-pair"
