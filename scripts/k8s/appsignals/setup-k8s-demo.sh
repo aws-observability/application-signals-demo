@@ -162,15 +162,16 @@ function run_k8s_master() {
     curl https://raw.githubusercontent.com/projectcalico/calico/v3.27.2/manifests/calico.yaml -O && \
     kubectl apply -f calico.yaml && sleep 60 && \
     sudo cd \$HOME && \
-    sudo cp /var/lib/kubelet/config.yaml config.yaml && \
     sudo cp /etc/kubernetes/pki/apiserver.crt apiserver.crt && \
     sudo cp /etc/kubernetes/pki/apiserver.key apiserver.key && \
     sudo chmod +r apiserver.key && \
     sudo kubeadm token create --print-join-command > join-cluster.sh && \
-    sudo chmod +x join-cluster.sh
+    sudo chmod +x join-cluster.sh && \
+    echo "tlsCertFile: /etc/kubernetes/pki/apiserver.crt" | sudo tee -a /var/lib/kubelet/config.yaml && \
+    echo "tlsPrivateKeyFile: /etc/kubernetes/pki/apiserver.key" | sudo tee -a /var/lib/kubelet/config.yaml && \
+    sudo systemctl restart kubelet
 EOF
 
-  scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$master_ip:~/config.yaml . 
   scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$master_ip:~/apiserver.crt . 
   scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$master_ip:~/apiserver.key . 
   scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$master_ip:~/join-cluster.sh . 
@@ -185,7 +186,6 @@ function run_k8s_worker() {
       --query "Reservations[*].Instances[*].PublicIpAddress" \
       --output text)
 
-  scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" config.yaml ec2-user@$worker_ip:~
   scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" apiserver.crt ec2-user@$worker_ip:~
   scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" apiserver.key ec2-user@$worker_ip:~
   scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" join-cluster.sh ec2-user@$worker_ip:~
@@ -202,16 +202,13 @@ function run_k8s_worker() {
     sudo setenforce 0 && sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config && \
     echo -e "[kubernetes]\nname=Kubernetes\nbaseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/\nenabled=1\ngpgcheck=1\ngpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key\nexclude=kubelet kubeadm kubectl cri-tools kubernetes-cni" | sudo tee /etc/yum.repos.d/kubernetes.repo && \
     sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes && \
-    cd ~ && \
-    sudo cp config.yaml /var/lib/kubelet/config.yaml && \
     sudo mkdir -p /etc/kubernetes/pki/ && \
     sudo cp apiserver.crt /etc/kubernetes/pki/apiserver.crt && \
     sudo cp apiserver.key /etc/kubernetes/pki/apiserver.key && \
+    sudo bash join-cluster.sh && sleep 30 && \
     echo "tlsCertFile: /etc/kubernetes/pki/apiserver.crt" | sudo tee -a /var/lib/kubelet/config.yaml && \
     echo "tlsPrivateKeyFile: /etc/kubernetes/pki/apiserver.key" | sudo tee -a /var/lib/kubelet/config.yaml && \
-    sudo systemctl restart kubelet && \ 
-    sleep 60 && \
-    sudo bash join-cluster.sh
+    sudo systemctl restart kubelet
 EOF
 
 
@@ -232,7 +229,7 @@ function install_helm_and_cloudwatch() {
     kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml && \
     curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
     chmod 700 get_helm.sh && \
-    ./get_helm.sh && sleep 60 && \
+    ./get_helm.sh && sleep 30 && \
     git clone https://github.com/aws-observability/helm-charts -q && \
     cd helm-charts/charts/amazon-cloudwatch-observability/ && \
     helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${REGION} --set clusterName=${CLUSTER}
@@ -323,7 +320,6 @@ function delete_resources() {
     aws ec2 delete-key-pair --key-name $KEY_NAME
     rm -f "${KEY_NAME}.pem"
 
-    rm -rf config.yaml
     rm -rf apiserver.crt
     rm -rf apiserver.key
     rm -rf join-cluster.sh

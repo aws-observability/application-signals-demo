@@ -37,7 +37,7 @@ KEY_NAME="ec2-demo-key-pair"
 CLOUDWATCH_AGENT_DOWNLOAD_URL="https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 JAVA_INSTRUMENTATION_AGENT_DOWNLOAD_URL="https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
 
-master_password=$(tr -dc 'A-Za-z0-9_' </dev/urandom | head -c 10; echo)
+master_password=$(LC_ALL=C tr -dc 'A-Za-z0-9_' < /dev/urandom | head -c 10; echo)
 echo $master_password > master_password.txt
 
 function create_resources() {
