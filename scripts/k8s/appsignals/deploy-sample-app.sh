@@ -11,6 +11,10 @@ REGION=$1
 ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 NAMESPACE=default
 
+# allow master node for scheduling apps
+master_node=$(kubectl get nodes --selector='node-role.kubernetes.io/control-plane' -o jsonpath='{.items[*].metadata.name}')
+kubectl taint nodes $master_node node-role.kubernetes.io/control-plane-
+
 kubectl apply -f ./sample-app/db/storageclass.yaml 
 kubectl apply -f ./sample-app/db/db-pvc.yaml 
 kubectl apply -f ./sample-app/db/db-deployment.yaml
