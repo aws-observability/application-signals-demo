@@ -92,6 +92,7 @@ public class DdbService {
     }
 
     public void putItems() {
+        log.info("Reaching DdbService.putItems()");
         try {
             for (int i = 0; i < 1; i++) {
                 String timestamp = Instant.now().toString();

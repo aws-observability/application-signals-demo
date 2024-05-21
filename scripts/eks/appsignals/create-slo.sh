@@ -47,6 +47,7 @@ LIST_SERVICES_REQUEST="slo/inputRequest/ListServices/listServices.json"
 # Replace startTime and endTime in the request template with correct timestamps
 LIST_SERVICES_REQUEST_WITH_CORRECT_INPUT=$(sed -e "s|\"StartTime\": .*|\"StartTime\": $start_time_as_int,|" -e "s|\"EndTime\": .*|\"EndTime\": $end_time_as_int|"  "$LIST_SERVICES_REQUEST")
 
+
 SERVICE_KEY_ATTRIBUTES=$(aws application-signals list-services \
   --endpoint $ENDPOINT --region "us-west-2" \
   --cli-input-json "$LIST_SERVICES_REQUEST_WITH_CORRECT_INPUT" \

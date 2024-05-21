@@ -46,6 +46,10 @@ check_if_step_failed_and_exit "There was an error enabling aws-ebs-csi-driver wi
 ../deploy-sample-app.sh $CLUSTER_NAME $REGION $NAMESPACE
 check_if_step_failed_and_exit "There was an error deploying the sample app, exiting"
 
+# deploy traffic generator
+../deploy-traffic-generator.sh $CLUSTER_NAME $REGION $NAMESPACE
+check_if_step_failed_and_exit "There was an error deploying the traffic generator, exiting"
+
 # create canaries
 ../create-canaries.sh $REGION
 check_if_step_failed_and_exit "There was an error creating the canaries, exiting"
@@ -68,3 +72,4 @@ endpoint=$(kubectl get svc -n ingress-nginx | grep "ingress-nginx" | awk '{print
 
 # Print the endpoint
 echo "Visit the following URL to see the sample app running: $endpoint"
+

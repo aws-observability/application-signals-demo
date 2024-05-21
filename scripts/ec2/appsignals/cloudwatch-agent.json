@@ -1,0 +1,12 @@
+{
+  "traces": {
+    "traces_collected": {
+      "app_signals": {}
+    }
+  },
+  "logs": {
+    "metrics_collected": {
+      "app_signals": {}
+    }
+  }
+}
