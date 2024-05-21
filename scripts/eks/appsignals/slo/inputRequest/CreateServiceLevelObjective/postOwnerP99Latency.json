@@ -1,5 +1,5 @@
 {
-  "Name": "Latency for Registering an Owner-test",
+  "Name": "Latency for Registering an Owner",
   "Description": "Latency P99 less than 2000 ms for Post Owner operation",
   "SliConfig": {
     "SliMetricConfig": {

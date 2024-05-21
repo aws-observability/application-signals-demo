@@ -1,11 +1,11 @@
 {
-  "Name": "Availability for Registering an Owner-test",
+  "Name": "Availability for Registering an Owner",
   "Description": "Availability larger than 99 for Post Owner operation",
   "SliConfig": {
     "SliMetricConfig": {
       "KeyAttributes": "",
       "OperationName": "POST /api/customer/owners",
-      "MetricName": "AVAILABILITY",
+      "MetricType": "AVAILABILITY",
       "PeriodSeconds": 60
     },
     "MetricThreshold": 99.0,

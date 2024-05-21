@@ -1,5 +1,5 @@
 {
-  "Name": "Latency for Searching an Owner-test",
+  "Name": "Latency for Searching an Owner",
   "Description": "Latency P99 less than 200 ms for Get Owner operation",
   "SliConfig": {
     "SliMetricConfig": {

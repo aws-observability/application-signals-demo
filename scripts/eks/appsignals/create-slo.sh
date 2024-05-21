@@ -32,7 +32,7 @@ check_if_step_failed_and_exit "There was an error enabling topology discovery, e
 
 # Pause for synthetics canaries to generate traffic
 echo "Wait 10 minutes for canaries to generate traffic"
-sleep 600
+#sleep 600
 
 echo "Creating Service Level Objectives"
 
@@ -79,7 +79,7 @@ do
   fi
   break
 done
-check_if_loop_failed_and_exit $err "There was an error updating the service arn, exiting"
+check_if_loop_failed_and_exit $err "There was an error creating an SLO - GetOwner99Availability, exiting"
 echo "$output"
 
 CREATE_SLO_REQUEST_2="slo/inputRequest/CreateServiceLevelObjective/getOwnerP99Latency.json"
@@ -97,12 +97,12 @@ do
   fi
   break
 done
-check_if_loop_failed_and_exit $err "There was an error updating the service arn, exiting"
+check_if_loop_failed_and_exit $err "There was an error creating an SLO - GetOwnerP99Latency, exiting"
 echo "$output"
 
 CREATE_SLO_REQUEST_3="slo/inputRequest/CreateServiceLevelObjective/postOwner99Availability.json"
 # Update service arn in the request
-CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_3=$(sed "s|\"KeyAttributes\": .*|\"KeyAttributes\": \"$KEY_ATTRIBUTES\",|" "$CREATE_SLO_REQUEST_3")
+CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_3=$(sed "s|\"KeyAttributes\": .*|\"KeyAttributes\": $KEY_ATTRIBUTES,|" "$CREATE_SLO_REQUEST_3")
 err=0
 for i in {1..5}
 do
@@ -115,12 +115,12 @@ do
   fi
   break
 done
-check_if_loop_failed_and_exit $err "There was an error updating the service arn, exiting"
+check_if_loop_failed_and_exit $err "There was an error creating an SLO - PostOwner99Availability"
 echo "$output"
 
 CREATE_SLO_REQUEST_4="slo/inputRequest/CreateServiceLevelObjective/postOwnerP99Latency.json"
 # Update service arn in the request
-CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_4=$(sed "s|\"KeyAttributes\": .*|\"KeyAttributes\": \"$KEY_ATTRIBUTES\",|" "$CREATE_SLO_REQUEST_4")
+CREATE_SLO_REQUEST_WITH_CORRECT_SERVICE_ARN_4=$(sed "s|\"KeyAttributes\": .*|\"KeyAttributes\": $KEY_ATTRIBUTES,|" "$CREATE_SLO_REQUEST_4")
 err=0
 for i in {1..5}
 do
@@ -133,5 +133,5 @@ do
   fi
   break
 done
-check_if_loop_failed_and_exit $err "There was an error updating the service arn, exiting"
+check_if_loop_failed_and_exit $err "There was an error creating an SLO - PostOwnerP99Latency"
 echo "$output"
