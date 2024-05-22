@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+    kompose.version: 1.27.0 (b0ed6a2c9)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: admin-server-java
+  name: admin-server-java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: admin-server-java
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f ../docker-compose-eks.yml
+        kompose.version: 1.27.0 (b0ed6a2c9)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: admin-server-java
+    spec:
+      containers:
+        - command:
+            - ./dockerize
+            - -wait=tcp://discovery-server:8761
+            - -timeout=60s
+            - --
+            - java
+            - org.springframework.boot.loader.JarLauncher
+          image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-admin-server:latest
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          name: admin-server-java
+          ports:
+            - containerPort: 9090
+      restartPolicy: Always
+status: {}

@@ -46,12 +46,11 @@ echo "Deleting canaries"
 ../create-canaries.sh $REGION delete
 check_if_step_failed_and_exit "There was an error deleting the canaries. Please make sure they are deleted properly before proceeding with the following steps"
 
-# force delete db service and pvc as this might cause the cluster delete to hang
-kubectl delete pods -l io.kompose.service=db
-kubectl delete pvc data  --grace-period=0 --force 
-
 ../deploy-sample-app.sh $CLUSTER_NAME $REGION $NAMESPACE delete
 check_if_step_failed_and_exit "There was an error deleting the sample apps. Please make sure they are deleted properly before proceeding with the following steps"
+
+../deploy-traffic-generator.sh $CLUSTER_NAME $REGION $NAMESPACE delete
+check_if_step_failed_and_exit "There was an error deleting the traffic generator. Please make sure they are deleted properly before proceeding with the following steps"
 
 eksctl delete cluster --name $CLUSTER_NAME --region $REGION
 check_if_step_failed "There was an error deleting the cluster $CLUSTER_NAME."
@@ -69,7 +68,7 @@ check_if_step_failed "There was an error deleting the kinesis stream."
 
 # remove DDB table
 aws dynamodb delete-table --table-name apm_test --region $REGION
-check_if_step_failed "There was an error deleting the dynamodb table."
+check_if_step_failed "There was an error deleting the dynamodb table apm_test."
 
 aws dynamodb delete-table --table-name BillingInfo --region $REGION
-check_if_step_failed "There was an error deleting the dynamodb table."
+check_if_step_failed "There was an error deleting the dynamodb table BillingInfo."

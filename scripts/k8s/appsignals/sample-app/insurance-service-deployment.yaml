@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insurance-service-python
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: insurance-service-python
+  template:
+    metadata:
+      labels:
+        io.kompose.service: insurance-service-python
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: 'true'
+    spec:
+      containers:
+        - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/python-petclinic-insurance-service:latest
+          # securityContext:
+          #   runAsNonRoot: true
+          #   allowPrivilegeEscalation: true
+          name: insurance-service-python
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: pet_clinic_insurance_service.settings
+            - name: PYTHONPATH
+              value: /app
+            - name: EUREKA_SERVER_URL
+              value: discovery-server
+            - name: DB_NAME
+              value: 'postgres'
+            - name: DB_USER
+              value: 'djangouser'
+            - name: DB_USER_PASSWORD
+              value: 'asdfqwer'
+            - name: DATABASE_PROFILE
+              value: postgresql
+            - name: DB_SERVICE_HOST
+              value: ${DB_SERVICE_HOST}
+            - name: DB_SERVICE_PORT
+              value: '5432'
+          # command: ["sh", "-c"]
+          # args: ['manage.py', 'runserver', '0.0.0.0:8000']
+          command: ['sh', '-c']
+          args:
+            - |
+              python manage.py migrate
+              python manage.py loaddata initial_data.json
+              python manage.py runserver 0.0.0.0:8000 --noreload
+          ports:
+            - containerPort: 8000
+          # lifecycle:
+          #   postStart:
+          #     exec:
+          #       command:
+          #         - sh
+          #         - -c
+          #         - 'python manage.py migrate && python manage.py loaddata initial_data.json'
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /insurances/
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 60
+      restartPolicy: Always
