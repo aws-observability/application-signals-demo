@@ -2,10 +2,10 @@
   "Name": "Latency for Registering an Owner",
   "Description": "Latency P99 less than 2000 ms for Post Owner operation",
   "SliConfig": {
-    "StandardMetricsConfig": {
-      "ServiceId": "arn:aws:cloudwatch:us-west-2:285432994731:service/pet-clinic-frontend-7f6e6c088de97979c1ed9b1897ff45051aed6bc13440e4786e4fc7f755ae1c23",
+    "SliMetricConfig": {
+      "KeyAttributes": "",
       "OperationName": "POST /api/customer/owners",
-      "MetricName": "LATENCY",
+      "MetricType": "LATENCY",
       "Statistic": "p99",
       "PeriodSeconds": 60
     },
