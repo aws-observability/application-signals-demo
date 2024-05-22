@@ -32,7 +32,7 @@ check_if_step_failed_and_exit "There was an error enabling topology discovery, e
 
 # Pause for synthetics canaries to generate traffic
 echo "Wait 10 minutes for canaries to generate traffic"
-#sleep 600
+sleep 600
 
 echo "Creating Service Level Objectives"
 
