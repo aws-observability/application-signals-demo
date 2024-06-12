@@ -22,4 +22,4 @@ aws eks delete-addon --cluster-name $CLUSTER_NAME --addon-name amazon-cloudwatch
 echo "Deleting ServiceAccount"
 eksctl delete iamserviceaccount --cluster $CLUSTER_NAME --region $REGION --name cloudwatch-agent --namespace amazon-cloudwatch
 
-aws logs delete-log-group --log-group-name '/aws/appsignals/eks' --region $REGION
+aws logs delete-log-group --log-group-name '/aws/application-signals/data' --region $REGION
