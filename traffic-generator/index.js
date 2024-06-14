@@ -36,11 +36,12 @@ const lowTrafficTask = cron.schedule('* * * * *', () => {
         sleep(2 * 1000)
         postVisitData('2023-08-01', `low-traffic-visit-${i + 1}`)
             .catch(err => {
-                console.error("Failed to post /api/visit/owners/7/pets/9/visits, error: " + err.response && err.response.data);
+                console.error("Failed to post /api/visit/owners/7/pets/9/visits, error: " + (err.response ? err.response.data : err.toString()));
+
             }); // Catch and log errors
         axios.get(`${baseUrl}/api/gateway/owners/1`, { timeout: 10000 })
             .catch(err => {
-                console.error("Failed to get /api/gateway/owners/1, error: " + err.response && err.response.data);
+                console.error(`${baseUrl}/api/gateway/owners/1, error: ` + (err.response ? err.response.data : err.toString()));
             }); // Catch and log errors
     }
 }, { scheduled: false });
@@ -53,7 +54,7 @@ const generateHighLoad = async () => {
         console.log('send high traffic: ' + (i + 1))
         postVisitData('2023-08-08', `high-traffic-visit-${i + 1}`)
             .catch(err => {
-                console.error("Failed to post /api/visit/owners/7/pets/9/visits, error: " + err.response && err.response.data);
+                console.error("Failed to post /api/visit/owners/7/pets/9/visits, error: " + (err.response ? err.response.data : err.toString()));
             }); // Catch and log errors
     }
     scheduleHighLoad();  // Schedule the next high load
@@ -75,7 +76,7 @@ const invalidRequestTask = cron.schedule('* * * * *', () => {
         console.log('send invalid traffic: ' + (i + 1))
         axios.get(`${baseUrl}/api/gateway/owners/-1`, { timeout: 10000 })
             .catch(err => {
-                console.error("Failed to get /api/gateway/owners/-1, error: " + err.response && err.response.data);
+                console.error("Failed to get /api/gateway/owners/-1, error: " + (err.response ? err.response.data : err.toString()));
             }); // Catch and log errors
     }
 }, { scheduled: false });
@@ -92,7 +93,7 @@ const createOwnerLowTrafficTask = cron.schedule('* * * * *', () => {
         const data = { firstName: "random-traffic", address: "A", city: "B", telephone: "123489067542", lastName: "NA" }
         axios.post(`${baseUrl}/api/customer/owners`, data, { timeout: 10000 })
             .catch(err => {
-                console.error("Failed to post /api/customer/owners, error: " + err.response && err.response.data);
+                console.error("Failed to post /api/customer/owners, error: " + (err.response ? err.response.data : err.toString()));
             }); // Catch and log errors
     }
 }, { scheduled: false });
@@ -110,7 +111,7 @@ const createOwnerHighTrafficTask = cron.schedule('*/5 * * * *', () => {
         const data = { firstName: "random-traffic", address: "A", city: "B", telephone: "123489067542", lastName: "NA" }
         axios.post(`${baseUrl}/api/customer/owners`, data, { timeout: 10000 })
             .catch(err => {
-                console.error("Failed to post /api/customer/owners, error: " + err.response && err.response.data);
+                console.error("Failed to post /api/customer/owners, error: " + (err.response ? err.response.data : err.toString()));
             }); // Catch and log errors
     }
 }, { scheduled: false });
@@ -123,7 +124,7 @@ const postPetsLowTrafficTask = cron.schedule('*/2 * * * *', () => {
     const data = {"id":0,"name":name ,"birthDate":"2023-11-20T08:00:00.000Z","typeId":"1"}
     axios.post(`${baseUrl}/api/customer/owners/7/pets`, data, { timeout: 10000 })
         .catch(err => {
-            console.error("Failed to post /api/customer/owners/7/pets, error: " + err.response && err.response.data);
+            console.error("Failed to post /api/customer/owners/7/pets, error: " + (err.response ? err.response.data : err.toString()));
         }); // Catch and log errors
 }, { scheduled: false });
 
@@ -140,7 +141,7 @@ for (let i = 0; i < 2; i++) {
     const data = {"id": 0, "name": name, "birthDate": "2023-11-20T08:00:00.000Z", "typeId": "2"}
     await axios.post(`${baseUrl}/api/customer/owners/7/pets`, data, {timeout: 10000})
         .catch(err => {
-            console.error("Failed to post /api/customer/owners/7/pets, error: " + err.response && err.response.data);
+            console.error("Failed to post /api/customer/owners/7/pets, error: " + (err.response ? err.response.data : err.toString()));
         }); // Catch and log errors
 }
 }, { scheduled: false });
