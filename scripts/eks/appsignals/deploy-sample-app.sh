@@ -67,9 +67,6 @@ if [[ $OPERATION == "apply" ]]; then
     # Print the endpoint
     echo "Visit the following URL to see the sample app running: $endpoint"
 
-    # Replace the old endpoint in the jmx file
-    sed '/<stringProp name="Argument.name">PETCLINC_HOST<\/stringProp>/{n;s|<stringProp name="Argument.value">.*</stringProp>|<stringProp name="Argument.value">'${endpoint}'</stringProp>|;}' ./sample-app/test/petclinic_test_plan.jmx > tmp.jmx 
-    mv tmp.jmx ./sample-app/test/petclinic_test_plan.jmx
 else
     kubectl delete -f ./sample-app/k8s-nginx-ingress/
 fi

@@ -55,8 +55,8 @@ check_if_step_failed_and_exit "There was an error deleting the traffic generator
 eksctl delete cluster --name $CLUSTER_NAME --region $REGION
 check_if_step_failed "There was an error deleting the cluster $CLUSTER_NAME."
 
-aws logs delete-log-group --log-group-name '/aws/appsignals/eks' --region $REGION
-check_if_step_failed "There was an error deleting the log group /aws/appsignals/eks."
+aws logs delete-log-group --log-group-name '/aws/application-signals/data' --region $REGION
+check_if_step_failed "There was an error deleting the log group /aws/application-signals/data."
 
 # remove the sqs queue 
 aws sqs delete-queue --region $REGION --queue-url $(aws sqs get-queue-url --region $REGION --queue-name apm_test --query 'QueueUrl' --output text)

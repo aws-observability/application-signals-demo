@@ -59,6 +59,6 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: data
+            claimName: ebs-claim
 status: {}
 
