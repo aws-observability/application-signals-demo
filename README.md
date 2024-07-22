@@ -22,6 +22,9 @@ This code for sample application is intended for demonstration purposes only. It
 
 ## Deploy via Shell Scripts
 
+Note that if you want to run the scripts in a shell inside an [AWS Cloud9](https://docs.aws.amazon.com/cloud9/latest/user-guide/welcome.html) environment, you need to ensure the environment has sufficient disk space, as building images can consume a lot of space. To increase the disk size to 50 GB, follow the instructions here: [Resize Cloud9 Environment](https://docs.aws.amazon.com/cloud9/latest/user-guide/move-environment.html#move-environment-resize). Additionally, you need to disable AWS managed temporary credentials to avoid credential renewal interfering with script execution. Instructions can be found here: [Disable AWS managed temporary credentials](https://catalog.workshops.aws/observability/en-US/workshopstudio/setup-cloud9#disable-aws-managed-temporary-credentials).
+
+
 ### Build the sample application images and push to ECR
 
 1. Build container images for each micro-service application
