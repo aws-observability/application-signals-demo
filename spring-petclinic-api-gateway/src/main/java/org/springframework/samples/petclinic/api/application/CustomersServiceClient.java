@@ -77,6 +77,10 @@ public class CustomersServiceClient {
         return fluxQuery(PetType.class, "customers-service", "/petTypes");
     }
 
+    public Flux<String> getConcernsForPetType(String petType) {
+        return fluxQuery(String.class, "customers-service", "/petTypes/"+petType+"/concerns");
+    }
+
     @WithSpan
     public Mono<PetFull> getPet(final int ownerId, final int petId) {
         return webClientBuilder.build().get()

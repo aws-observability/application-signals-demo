@@ -8,7 +8,7 @@
 <packaging>jar</packaging>
 <description>Spring PetClinic Customers Service</description>
 
-<parent>
+  <parent>
   <groupId>org.springframework.samples</groupId>
   <artifactId>spring-petclinic-microservices</artifactId>
   <version>2.6.7</version>
@@ -17,11 +17,75 @@
 <properties>
   <docker.image.exposed.port>8081</docker.image.exposed.port>
   <docker.image.dockerfile.dir>${basedir}/../docker</docker.image.dockerfile.dir>
-</properties>
+  <aws.java.sdk.version>2.26.22</aws.java.sdk.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${aws.java.sdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.24</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>2.15.0</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.validation</groupId>
+        <artifactId>jakarta.validation-api</artifactId>
+        <version>2.0.2</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-core</artifactId>
+        <version>1.8.5</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>6.0.9</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-web</artifactId>
+        <version>6.0.9</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>6.0.9</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>sdk-core</artifactId>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>auth</artifactId>
+        <version>2.21.29</version>
+        <scope>compile</scope>
+      </dependency>
 
-<dependencies>
-
-  <!-- Spring Boot -->
+      <!-- Spring Boot -->
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-actuator</artifactId>
@@ -38,7 +102,6 @@
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-web</artifactId>
-    <version>2.5.12</version>
   </dependency>
 
   <!-- Spring Cloud -->
@@ -84,29 +147,54 @@
   <dependency>
     <groupId>software.amazon.awssdk</groupId>
     <artifactId>sts</artifactId>
-    <version>2.20.46</version>
   </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bedrock</artifactId>
+        <version>${aws.java.sdk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bedrockruntime</artifactId>
+        <version>${aws.java.sdk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20230227</version>
+      </dependency>
+
   <dependency>
     <groupId>software.amazon.awssdk</groupId>
     <artifactId>sqs</artifactId>
-    <version>2.20.46</version>
+    <version>${aws.java.sdk.version}</version>
   </dependency>
   <dependency>
     <groupId>software.amazon.awssdk</groupId>
     <artifactId>s3</artifactId>
-    <version>2.20.46</version>
+    <version>${aws.java.sdk.version}</version>
+    <exclusions>
+      <exclusion>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>netty-nio-client</artifactId>
+      </exclusion>
+      <exclusion>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>apache-client</artifactId>
+      </exclusion>
+    </exclusions>
   </dependency>
   <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/dynamodb-enhanced -->
   <dependency>
     <groupId>software.amazon.awssdk</groupId>
     <artifactId>dynamodb-enhanced</artifactId>
-    <version>2.20.46</version>
+    <version>${aws.java.sdk.version}</version>
   </dependency>
   <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/kinesis -->
   <dependency>
     <groupId>software.amazon.awssdk</groupId>
     <artifactId>kinesis</artifactId>
-    <version>2.20.47</version>
+    <version>${aws.java.sdk.version}</version>
   </dependency>
 
   <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-lambda -->
@@ -138,8 +226,7 @@
     <artifactId>assertj-core</artifactId>
     <scope>test</scope>
   </dependency>
-</dependencies>
-
+  </dependencies>
 <profiles>
   <profile>
     <id>buildDocker</id>

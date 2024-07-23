@@ -15,15 +15,12 @@
  */
 package org.springframework.samples.petclinic.customers.web;
 
-import com.ctc.wstx.shaded.msv_core.grammar.relax.EmptyStringType;
-import lombok.Builder;
 import lombok.Data;
-
-import java.util.Date;
-
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.samples.petclinic.customers.model.Pet;
 import org.springframework.samples.petclinic.customers.model.PetType;
+
+import java.util.Date;
 
 /**
  * @author mszarlinski@bravurasolutions.com on 2016-12-05.

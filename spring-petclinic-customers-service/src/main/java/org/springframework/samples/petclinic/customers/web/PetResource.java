@@ -21,9 +21,10 @@ package org.springframework.samples.petclinic.customers.web;
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.customers.aws.BedrockService;
 import org.springframework.samples.petclinic.customers.aws.KinesisService;
 import org.springframework.samples.petclinic.customers.aws.SqsService;
 import org.springframework.samples.petclinic.customers.model.*;
@@ -51,7 +52,8 @@ class PetResource {
     private final OwnerRepository ownerRepository;
     private final SqsService sqsService;
     private final KinesisService kinesisService;
-    
+    private final BedrockService bedrockService;
+
     @Autowired
     private RestTemplate restTemplate;
 
@@ -59,6 +61,7 @@ class PetResource {
     public List<PetType> getPetTypes() {
         return petRepository.findPetTypes();
     }
+
 
     @PostMapping("/owners/{ownerId}/pets")
     @ResponseStatus(HttpStatus.CREATED)
@@ -120,7 +123,13 @@ class PetResource {
         detail.setPrice(petInsurance.getPrice());
         return detail;
     }
+    @GetMapping("/petTypes/{petType}/concerns")
+    public String getConcernsByPetType(@PathVariable("petType") String petType) {
 
+        // Create a Bedrock Runtime client in the AWS Region you want to use.
+        // Replace the DefaultCredentialsProvider with your preferred credentials provider.
+        return bedrockService.getConcernsForPetType(petType);
+    }
 
     private Pet findPetById(int petId) {
         Optional<Pet> pet = petRepository.findById(petId);

@@ -10,7 +10,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="PETCLINC_HOST" elementType="Argument">
             <stringProp name="Argument.name">PETCLINC_HOST</stringProp>
-            <stringProp name="Argument.value">k8s-ingressn-ingressn-193e15626c-4c39ac279c55df38.elb.us-west-2.amazonaws.com</stringProp>
+            <stringProp name="Argument.value">ac4a82f59decc4eb7a50f4375183fca6-198595285.us-east-1.elb.amazonaws.com</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="PETCLINIC_PORT" elementType="Argument">

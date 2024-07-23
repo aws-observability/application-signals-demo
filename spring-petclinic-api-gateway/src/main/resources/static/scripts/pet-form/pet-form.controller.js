@@ -7,6 +7,9 @@ angular.module('petForm')
 
         $http.get('api/customer/petTypes').then(function (resp) {
             self.types = resp.data;
+        }).then(function () {
+            $http.get('api/customer/petTypes/'+self.petTypeId+'/concerns').then(function (resp) {
+                  self.concerns = resp.data;
         }).then(function (){
             $http.get('api/insurance/insurances').then(function (resp) {
                 self.insurances = resp.data;

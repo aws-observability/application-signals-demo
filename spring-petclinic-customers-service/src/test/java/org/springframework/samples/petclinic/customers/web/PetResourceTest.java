@@ -15,32 +15,26 @@
  */
 package org.springframework.samples.petclinic.customers.web;
 
-import java.util.Optional;
-
-import org.hibernate.validator.internal.IgnoreForbiddenApisErrors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.samples.petclinic.customers.aws.BedrockService;
 import org.springframework.samples.petclinic.customers.aws.KinesisService;
 import org.springframework.samples.petclinic.customers.aws.SqsService;
-import org.springframework.samples.petclinic.customers.model.Owner;
-import org.springframework.samples.petclinic.customers.model.OwnerRepository;
-import org.springframework.samples.petclinic.customers.model.Pet;
-import org.springframework.samples.petclinic.customers.model.PetRepository;
-import org.springframework.samples.petclinic.customers.model.PetType;
+import org.springframework.samples.petclinic.customers.model.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Optional;
+
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * @author Maciej Szarlinski
@@ -64,6 +58,9 @@ class PetResourceTest {
 
     @MockBean
     KinesisService kinesisService;
+
+    @MockBean
+    BedrockService bedrockService;
 
     @MockBean
     RestTemplate restTemplate;

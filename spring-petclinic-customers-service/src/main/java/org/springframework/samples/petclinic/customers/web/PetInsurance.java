@@ -15,9 +15,6 @@
  */
 package org.springframework.samples.petclinic.customers.web;
 
-import java.util.Date;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.core.style.ToStringCreator;
 

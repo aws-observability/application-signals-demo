@@ -15,13 +15,11 @@
  */
 package org.springframework.samples.petclinic.customers.web;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import java.util.Date;
-
 import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
+import java.util.Date;
 
 /**
  * @author mszarlinski@bravurasolutions.com on 2016-12-05.
