@@ -56,6 +56,11 @@ public class ApiController {
         return customersServiceClient.getPet(ownerId, petId);
     }
 
+    @GetMapping(value = "customer/diagnose/owners/{ownerId}/pets/{petId}")
+    public Mono<Void> diagnosePet(final @PathVariable int ownerId, final @PathVariable int petId) {
+        log.info("DEBUG: Inside the diagnose API - diagnosePet");
+        return customersServiceClient.diagnosePet(ownerId, petId);
+    }
     @PutMapping("customer/owners/{ownerId}/pets/{petId}")
     public Mono<Void> updatePet(final @PathVariable int ownerId, final @PathVariable int petId, @RequestBody PetRequest petRequest) {
         return customersServiceClient.updatePet(ownerId, petId, petRequest);

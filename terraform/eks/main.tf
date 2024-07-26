@@ -167,7 +167,7 @@ module "demo_service_account" {
   create_role                   = true
   role_name                     = "DemoServiceRole-${var.cluster_name}"
   provider_url                  = replace(module.eks.oidc_provider, "https://", "")
-  role_policy_arns              = ["arn:aws:iam::aws:policy/AmazonSQSFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonKinesisFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"]
+  role_policy_arns              = ["arn:aws:iam::aws:policy/AmazonSQSFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonKinesisFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess", "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"]
   oidc_fully_qualified_subjects = ["system:serviceaccount:default:visits-service-account"]
 }
 
