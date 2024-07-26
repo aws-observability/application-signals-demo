@@ -41,7 +41,7 @@ public class BedrockRuntimeV1Service {
         try {
             System.out.printf("invokeTitanModel: ");
             String modelId = "amazon.titan-text-express-v1";
-            String inputText = "What's the common desease for a pet?";
+            String inputText = "What's the common disease for a pet?";
             float temperature = 0.8f;
             float topP = 0.9f;
             int maxTokenCount = 100;

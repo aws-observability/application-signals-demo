@@ -36,7 +36,7 @@ public class BedrockRuntimeV2Service {
         try {
             System.out.printf("Invoke Anthropic claude: ");
             String claudeModelId = "anthropic.claude-3-sonnet-20240229-v1:0";
-            String prompt = "What's the common desease for a pet?";
+            String prompt = "What's the common disease for a pet?";
             JSONObject userMessage = new JSONObject()
                     .put("role", "user")
                     .put("content", "Pet diagnose content");
@@ -65,12 +65,12 @@ public class BedrockRuntimeV2Service {
 
             JSONObject responseBody = new JSONObject(response.body().asUtf8String());
             System.out.println("invokeLlama2 response:" + response.body().asUtf8String());
-            // String generatedText = responseBody.getString("generation");
-            // int promptTokenCount = responseBody.getInt("prompt_token_count");
-            // int generationTokenCount = responseBody.getInt("generation_token_count");
-            // String stopReason = responseBody.getString("stop_reason");
-            // System.out.printf("Invoke claude Model response: prompt_token_count: " + promptTokenCount + " generation_token_count: " + generationTokenCount + " stop_reason: " + stopReason);
-            return "Done";
+            String generatedText = responseBody.getString("generation");
+            int promptTokenCount = responseBody.getInt("prompt_token_count");
+            int generationTokenCount = responseBody.getInt("generation_token_count");
+            String stopReason = responseBody.getString("stop_reason");
+            System.out.printf("Invoke claude Model response: prompt_token_count: " + promptTokenCount + " generation_token_count: " + generationTokenCount + " stop_reason: " + stopReason);
+            return generatedText;
         } catch (Exception e) {
             System.out.printf("Failed to invoke Anthropic claude: Error: %s%n",e.getMessage());
             throw e;
