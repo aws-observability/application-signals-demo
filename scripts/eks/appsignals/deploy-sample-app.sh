@@ -30,6 +30,7 @@ if [[ $OPERATION == "apply" ]]; then
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess \
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonKinesisFullAccess \
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess \
+        --attach-policy-arn arn:aws:iam::aws:policy/AmazonBedrockFullAccess \
         --approve \
         --override-existing-serviceaccounts
 else

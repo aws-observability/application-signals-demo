@@ -18,6 +18,7 @@
  */
 package org.springframework.samples.petclinic.api.application;
 
+import lombok.extern.slf4j.Slf4j;
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ import org.springframework.web.server.ResponseStatusException;
  * @author Maciej Szarlinski
  */
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class CustomersServiceClient {
 
@@ -85,6 +87,14 @@ public class CustomersServiceClient {
             .bodyToMono(PetFull.class);
     }
 
+    @WithSpan
+    public Mono<Void> diagnosePet(final int ownerId, final int petId) {
+        log.info("DEBUG: Inside the diagnose API");
+        return webClientBuilder.build().get()
+                .uri("http://customers-service/diagnose/owners/{ownerId}/pets/{petId}", ownerId, petId)
+                .retrieve()
+                .bodyToMono(Void.class);
+    }
     @WithSpan
     public Mono<Void> updatePet(final int ownerId, final int petId, final PetRequest petRequest) {
         return webClientBuilder.build().put()

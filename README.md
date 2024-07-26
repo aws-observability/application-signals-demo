@@ -17,7 +17,7 @@ This code for sample application is intended for demonstration purposes only. It
 * eksctl is installed - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
 * jq is installed - https://jqlang.github.io/jq/download/
 * [Optional] If you plan to install the infrastructure resources using Terraform, terraform cli is required. https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
-
+* [Optional] If you want to try out AWS Bedrock/GenAI support with Application Signals, enable Amazon Titian, Anthropic Claude, Meta Llama foundation models by following the instructions in https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html
 # EKS demo
 
 ## Deploy via Shell Scripts

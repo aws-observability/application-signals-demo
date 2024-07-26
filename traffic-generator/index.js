@@ -83,6 +83,19 @@ const invalidRequestTask = cron.schedule('* * * * *', () => {
 
 invalidRequestTask.start();
 
+const bedrockRequestTask = cron.schedule('* * * * *', () => {
+    const lowLoad = getRandomNumber(1, 2);
+    for (let i = 0; i < lowLoad; i++) {
+        sleep(5*1000);
+        console.log('calling bedrock: ' + (i + 1))
+        axios.get(`${baseUrl}/api/customer/diagnose/owners/1/pets/1`, { timeout: 30000 })
+            .catch(err => {
+                console.error("Failed to get /api/customer/diagnose/owners/1/pets/1, error: " + (err.response ? err.response.data : err.toString()));
+            }); // Catch and log errors
+    }
+}, { scheduled: false });
+
+bedrockRequestTask.start();
 
 
 const createOwnerLowTrafficTask = cron.schedule('* * * * *', () => {

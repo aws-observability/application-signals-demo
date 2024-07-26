@@ -24,8 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.samples.petclinic.customers.aws.KinesisService;
-import org.springframework.samples.petclinic.customers.aws.SqsService;
+import org.springframework.samples.petclinic.customers.aws.*;
 import org.springframework.samples.petclinic.customers.model.Owner;
 import org.springframework.samples.petclinic.customers.model.OwnerRepository;
 import org.springframework.samples.petclinic.customers.model.Pet;
@@ -67,6 +66,24 @@ class PetResourceTest {
 
     @MockBean
     RestTemplate restTemplate;
+
+    @MockBean
+    BedrockAgentV1Service bedrockAgentV1Service;
+
+    @MockBean
+    BedrockAgentV2Service bedrockAgentV2Service;
+
+    @MockBean
+    BedrockRuntimeV1Service bedrockRuntimeV1Service;
+
+    @MockBean
+    BedrockRuntimeV2Service bedrockRuntimeV2Service;
+
+    @MockBean
+    BedrockV1Service bedrockV1Service;
+
+    @MockBean
+    BedrockV2Service bedrockV2Service;
 
     @Test
     void shouldGetAPetInJSonFormat() throws Exception {

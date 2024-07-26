@@ -3,6 +3,7 @@
 package org.springframework.samples.petclinic.api.boundary.web;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.samples.petclinic.api.application.*;
 import org.springframework.samples.petclinic.api.dto.*;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/api/")
 public class ApiController {
 
@@ -56,6 +58,11 @@ public class ApiController {
         return customersServiceClient.getPet(ownerId, petId);
     }
 
+    @GetMapping(value = "customer/diagnose/owners/{ownerId}/pets/{petId}")
+    public Mono<Void> diagnosePet(final @PathVariable int ownerId, final @PathVariable int petId) {
+        log.info("DEBUG: Inside the diagnose API - diagnosePet");
+        return customersServiceClient.diagnosePet(ownerId, petId);
+    }
     @PutMapping("customer/owners/{ownerId}/pets/{petId}")
     public Mono<Void> updatePet(final @PathVariable int ownerId, final @PathVariable int petId, @RequestBody PetRequest petRequest) {
         return customersServiceClient.updatePet(ownerId, petId, petRequest);
