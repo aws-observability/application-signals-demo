@@ -21,17 +21,27 @@ spec:
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: Development
+            - name: "ASPNETCORE_URLS"
+              value: "http://+:8089"
             - name: eureka__client__serviceUrl
               value: discovery-server
             - name: spring__application__name
               value: payment-service-dotnet
+            - name: eureka__instance__preferIpAddress
+              value: "true"
+            - name: eureka__instance__port
+              value: "8089"
+            - name: eureka__instance__instanceId
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
-            - containerPort: 8080
+            - containerPort: 8089
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 8089
             initialDelaySeconds: 10
             periodSeconds: 60
       restartPolicy: Always

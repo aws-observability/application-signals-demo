@@ -8,7 +8,7 @@ spec:
   ports:
     - name: "80"
       port: 80
-      targetPort: 8800
+      targetPort: 8089
   selector:
     io.kompose.service: payment-service-dotnet
 status:
