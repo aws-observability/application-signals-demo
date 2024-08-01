@@ -3,6 +3,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
+using Microsoft.AspNetCore.Mvc;
 using PetClinic.PaymentService;
 using Steeltoe.Discovery.Client;
 
@@ -41,11 +42,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseHealthChecks("/healthz");
 
-app.MapGet("/owners/{ownerId:regex(^.*$)}/pets/{petId}/payments",
+app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments",
     async (
-        string ownerId,
-        string petId,
-        IPetClinicContext context) =>
+        int ownerId,
+        int petId,
+        [FromServices] IPetClinicContext context) =>
     {
         var petResponse = await context.HttpClient.GetAsync($"http:/customers-service/api/customer/owners/{ownerId}/pets/{petId}");
 
@@ -64,16 +65,16 @@ app.MapGet("/owners/{ownerId:regex(^.*$)}/pets/{petId}/payments",
             payments.AddRange(page);
         } while (!request.IsDone);
 
-        return Results.Ok(payments.Where(x => x.PetId == petId));
+        return Results.Ok(payments.Where(x => x.PetId == petId).ToList());
     }
 );
 
-app.MapGet("/owners/{ownerId:regex(^.*$)}/pets/{petId}/payments/{paymentId}",
+app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments/{paymentId}",
     async (
-        string ownerId,
-        string petId,
+        int ownerId,
+        int petId,
         string paymentId,
-        IPetClinicContext context) =>
+        [FromServices] IPetClinicContext context) =>
     {
         var petResponse = await context.HttpClient.GetAsync($"http:/customers-service/api/customer/owners/{ownerId}/pets/{petId}");
 
@@ -88,12 +89,12 @@ app.MapGet("/owners/{ownerId:regex(^.*$)}/pets/{petId}/payments/{paymentId}",
     }
 );
 
-app.MapPost("/owners/{ownerId:regex(^.*$)}/pets/{petId}/payments/",
+app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
     async (
-        string ownerId,
-        string petId,
+        int ownerId,
+        int petId,
         Payment payment,
-        IPetClinicContext context) =>
+       [FromServices] IPetClinicContext context) =>
     {
         var petResponse = await context.HttpClient.GetAsync($"http:/customers-service/api/customer/owners/{ownerId}/pets/{petId}");
 
@@ -102,9 +103,11 @@ app.MapPost("/owners/{ownerId:regex(^.*$)}/pets/{petId}/payments/",
             return Results.BadRequest();
         }
 
+        payment.PetId = petId;
+
         await context.DynamoDbContext.SaveAsync(payment);
 
-        return Results.Created();
+        return Results.Ok(payment);
     }
 );
 

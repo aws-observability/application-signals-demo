@@ -7,14 +7,17 @@ public record Payment
 {
     [DynamoDBHashKey]
     [DynamoDBProperty("id")]
-    public required string Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
 
     [DynamoDBProperty]
-    public required string PetId { get; set; }
+    public int? PetId { get; set; }
 
     [DynamoDBProperty]
-    public required DateTime PaymentDate { get; set; }
+    public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
 
     [DynamoDBProperty]
     public required double Amount { get; set; }
+
+    [DynamoDBProperty]
+    public string? Notes { get; set; }
 }

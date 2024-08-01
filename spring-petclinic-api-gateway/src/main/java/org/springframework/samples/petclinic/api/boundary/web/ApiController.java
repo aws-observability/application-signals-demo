@@ -27,6 +27,7 @@ public class ApiController {
     private final VisitsServiceClient visitsServiceClient;
     private final InsuranceServiceClient insuranceServiceClient;
     private final BillingServiceClient billingServiceClient;
+    private final PaymentClient paymentClient;
 
     @GetMapping(value = "customer/owners")
     public Flux<OwnerDetails> getOwners() {
@@ -63,8 +64,10 @@ public class ApiController {
         log.info("DEBUG: Inside the diagnose API - diagnosePet");
         return customersServiceClient.diagnosePet(ownerId, petId);
     }
+
     @PutMapping("customer/owners/{ownerId}/pets/{petId}")
-    public Mono<Void> updatePet(final @PathVariable int ownerId, final @PathVariable int petId, @RequestBody PetRequest petRequest) {
+    public Mono<Void> updatePet(final @PathVariable int ownerId, final @PathVariable int petId,
+            @RequestBody PetRequest petRequest) {
         return customersServiceClient.updatePet(ownerId, petId, petRequest);
     }
 
@@ -84,33 +87,53 @@ public class ApiController {
     }
 
     @PostMapping(value = "visit/owners/{ownerId}/pets/{petId}/visits")
-    public Mono<String> addVisit(final @PathVariable int ownerId, final @PathVariable int petId, final @RequestBody VisitDetails visitDetails) {
+    public Mono<String> addVisit(final @PathVariable int ownerId, final @PathVariable int petId,
+            final @RequestBody VisitDetails visitDetails) {
         return visitsServiceClient.addVisitForOwnersPets(ownerId, petId, visitDetails);
     }
+
     @GetMapping(value = "insurance/insurances")
-    public Flux<InsuranceDetail> getInsurance(){
+    public Flux<InsuranceDetail> getInsurance() {
         return insuranceServiceClient.getInsurances();
     }
 
     @GetMapping(value = "billing/billings")
-    public Flux<BillingDetail> getBillings(){
+    public Flux<BillingDetail> getBillings() {
         return billingServiceClient.getBillings();
     }
 
     @PostMapping(value = "insurance/pet-insurances")
-    public Mono<Void> addPetInsurance(final @RequestBody PetInsurance petInsurance){
+    public Mono<Void> addPetInsurance(final @RequestBody PetInsurance petInsurance) {
         System.out.println(petInsurance.toString());
         return insuranceServiceClient.addPetInsurance(petInsurance);
     }
 
     @PutMapping(value = "insurance/pet-insurances/{petId}")
-    public Mono<PetInsurance> updatePetInsurance(final @PathVariable int petId, final @RequestBody PetInsurance petInsurance){
+    public Mono<PetInsurance> updatePetInsurance(final @PathVariable int petId,
+            final @RequestBody PetInsurance petInsurance) {
         return insuranceServiceClient.updatePetInsurance(petId, petInsurance);
     }
 
     @GetMapping(value = "insurance/pet-insurances/{petId}")
-    public Mono<PetInsurance> getPetInsurance(final @PathVariable int petId){
+    public Mono<PetInsurance> getPetInsurance(final @PathVariable int petId) {
         return insuranceServiceClient.getPetInsurance(petId);
+    }
+
+    @GetMapping(value = "payments/owners/{ownerId}/pets/{petId}")
+    public Flux<PaymentDetail> getPayments(final @PathVariable int ownerId, final @PathVariable int petId) {
+        return paymentClient.getPayments(ownerId, petId);
+    }
+
+    @GetMapping(value = "payments/owners/{ownerId}/pets/{petId}/{paymentId}")
+    public Mono<PaymentDetail> getPaymentById(final @PathVariable int ownerId, final @PathVariable int petId,
+            final @PathVariable int paymentId) {
+        return paymentClient.getPaymentById(ownerId, petId, paymentId);
+    }
+
+    @PostMapping(value = "payments/owners/{ownerId}/pets/{petId}")
+    public Mono<PaymentDetail> addPayment(final @PathVariable int ownerId, final @PathVariable int petId,
+            final @RequestBody PaymentDetail paymentDetail) {
+        return paymentClient.addPayment(ownerId, petId, paymentDetail);
     }
 
 }
