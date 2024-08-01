@@ -48,7 +48,7 @@ app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments",
         int petId,
         [FromServices] IPetClinicContext context) =>
     {
-        var petResponse = await context.HttpClient.GetAsync($"http:/customers-service/api/customer/owners/{ownerId}/pets/{petId}");
+        var petResponse = await context.HttpClient.GetAsync($"http://customers-service/api/customer/owners/{ownerId}/pets/{petId}");
 
         if (!petResponse.IsSuccessStatusCode)
         {
@@ -76,7 +76,7 @@ app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments/{paymentId}",
         string paymentId,
         [FromServices] IPetClinicContext context) =>
     {
-        var petResponse = await context.HttpClient.GetAsync($"http:/customers-service/api/customer/owners/{ownerId}/pets/{petId}");
+        var petResponse = await context.HttpClient.GetAsync($"http://customers-service/api/customer/owners/{ownerId}/pets/{petId}");
 
         if (!petResponse.IsSuccessStatusCode)
         {
@@ -96,7 +96,7 @@ app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
         Payment payment,
        [FromServices] IPetClinicContext context) =>
     {
-        var petResponse = await context.HttpClient.GetAsync($"http:/customers-service/api/customer/owners/{ownerId}/pets/{petId}");
+        var petResponse = await context.HttpClient.GetAsync($"http://customers-service/api/customer/owners/{ownerId}/pets/{petId}");
 
         if (!petResponse.IsSuccessStatusCode)
         {
