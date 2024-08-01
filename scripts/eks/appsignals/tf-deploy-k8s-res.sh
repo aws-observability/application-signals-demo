@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CLUSTER_NAME=${1:-"python-apm-demo"}
-REGION=${2:-"us-east-1"}
+REGION=${2:-"us-west-2"}
 NAMESPACE=${3:-"default"}
 OPERATION=${4:-"apply"}
 ACCOUNT_ID=`aws sts get-caller-identity | jq .Account -r`

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service-dotnet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: payment-service-dotnet
+  template:
+    metadata:
+      labels:
+        io.kompose.service: payment-service-dotnet
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "true"
+    spec:
+      serviceAccountName: visits-service-account
+      containers:
+        - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/dotnet-petclinic-payment:latest
+          name: payment-service-dotnet
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: eureka__client__serviceUrl
+              value: discovery-server
+            - name: spring__application__name
+              value: payment-service-dotnet
+          ports:
+            - containerPort: 8080
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 60
+      restartPolicy: Always
