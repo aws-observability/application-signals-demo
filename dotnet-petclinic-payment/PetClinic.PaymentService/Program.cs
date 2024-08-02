@@ -39,7 +39,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseHealthChecks("/healthz");
 
 app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments",
