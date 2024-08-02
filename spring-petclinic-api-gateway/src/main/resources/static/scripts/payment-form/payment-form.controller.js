@@ -29,12 +29,12 @@ angular.module("paymentForm").controller("paymentFormController", [
         data = {
           amount: self.amount,
           notes: self.notes,
+          id: paymentId,
         };
       } else {
         data = {
           amount: self.amount,
           notes: self.notes,
-          id: paymentId,
         };
       }
 
