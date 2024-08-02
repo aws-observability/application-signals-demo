@@ -24,10 +24,19 @@ angular.module("paymentForm").controller("paymentFormController", [
 
     self.submit = function () {
       let url = `api/payments/owners/${ownerId}/pets/${petId}`;
-      let data = {
-        amount: self.amount,
-        notes: self.notes,
-      };
+      let data = {};
+      if (paymentId !== undefined) {
+        data = {
+          amount: self.amount,
+          notes: self.notes,
+        };
+      } else {
+        data = {
+          amount: self.amount,
+          notes: self.notes,
+          id: paymentId,
+        };
+      }
 
       $http.post(url, data).then(function () {
         $state.go("petEdit", { ownerId: ownerId, petId: petId });
