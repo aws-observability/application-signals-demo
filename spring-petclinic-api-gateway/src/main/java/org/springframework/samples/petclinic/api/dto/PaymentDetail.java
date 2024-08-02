@@ -16,4 +16,6 @@ public class PaymentDetail {
     private Date paymentDate;
 
     private Double amount;
+
+    private String notes;
 }

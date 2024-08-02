@@ -132,8 +132,8 @@ public class ApiController {
 
     @PostMapping(value = "payments/owners/{ownerId}/pets/{petId}")
     public Mono<PaymentDetail> addPayment(final @PathVariable int ownerId, final @PathVariable int petId,
-            final @RequestBody PaymentDetail paymentDetail) {
-        return paymentClient.addPayment(ownerId, petId, paymentDetail);
+            final @RequestBody PaymentAdd paymentAdd) {
+        return paymentClient.addPayment(ownerId, petId, paymentAdd);
     }
 
 }

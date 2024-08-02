@@ -4,7 +4,7 @@
     <div class="form-group">
         <label class="col-sm-2 control-label">Owner</label>
         <div class="col-sm-6">
-            <p class="form-control-static">{{$ctrl.pet.owner}}</p>
+            <p class="form-control-static">{{$ctrl.pet.owner.name}}</p>
         </div>
     </div>
 
@@ -51,6 +51,10 @@
     </div>
 </form>
 
+<hr/>
+<h3>Payments
+    <a style="position: relative; float:right;" ui-sref="addPayment({ownerId: $ctrl.ownerId, petId: $ctrl.pet.id})">add new payment</a>
+</h3>
 <table class="table table-striped">
     <tr>
         <th>
@@ -61,10 +65,6 @@
         </th>
         <th>
             Notes
-
-            &nbsp;
-            &nbsp;
-            <a ui-sref="addPayment({ownerId: $ctrl.owner.id, petId: pet.id})">Add new payment</a>
         </th>
     </tr>
     <tr ng-repeat="paymnet in $ctrl.payments track by paymnet.id">

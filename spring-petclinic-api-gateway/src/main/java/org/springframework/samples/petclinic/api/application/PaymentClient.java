@@ -22,6 +22,7 @@ package org.springframework.samples.petclinic.api.application;
 import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.samples.petclinic.api.dto.PaymentAdd;
 import org.springframework.samples.petclinic.api.dto.PaymentDetail;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -48,10 +49,10 @@ public class PaymentClient {
                 .bodyToMono(PaymentDetail.class);
     }
 
-    public Mono<PaymentDetail> addPayment(final int ownerId, final int petId, final PaymentDetail paymentDetail) {
+    public Mono<PaymentDetail> addPayment(final int ownerId, final int petId, final PaymentAdd paymentAdd) {
         return webClientBuilder.build().post()
                 .uri("http://payment-service/owners/{ownerId}/pets/{petId}/payments", ownerId, petId)
-                .body(Mono.just(paymentDetail), PaymentDetail.class)
+                .body(Mono.just(paymentAdd), PaymentAdd.class)
                 .retrieve()
                 .bodyToMono(PaymentDetail.class);
     }

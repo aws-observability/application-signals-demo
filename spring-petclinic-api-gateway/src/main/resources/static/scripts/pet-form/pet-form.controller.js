@@ -7,6 +7,7 @@ angular.module("petForm").controller("PetFormController", [
   function ($http, $state, $stateParams) {
     let self = this;
     let ownerId = $stateParams.ownerId || 0;
+    self.ownerId = ownerId;
 
     $http
       .get("api/customer/petTypes")
