@@ -18,12 +18,12 @@ angular.module("paymentForm").controller("paymentFormController", [
         self.notes = resp.data.description;
       });
     } else {
-      self.amount = 10;
+      self.amount = "";
       self.notes = "";
     }
 
     self.submit = function () {
-      let url = `payments/owners/${ownerId}/pets/${petId}`;
+      let url = `api/payments/owners/${ownerId}/pets/${petId}`;
       let data = {
         amount: self.amount,
         notes: self.notes,
