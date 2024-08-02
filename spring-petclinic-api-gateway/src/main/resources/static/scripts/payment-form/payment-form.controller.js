@@ -30,7 +30,7 @@ angular.module("paymentForm").controller("paymentFormController", [
       };
 
       $http.post(url, data).then(function () {
-        $state.go("petEdit", { ownerId: $ctrl.owner.id, petId: pet.id });
+        $state.go("petEdit", { ownerId: ownerId, petId: petId });
       });
     };
   },

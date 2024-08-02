@@ -126,7 +126,7 @@ public class ApiController {
 
     @GetMapping(value = "payments/owners/{ownerId}/pets/{petId}/{paymentId}")
     public Mono<PaymentDetail> getPaymentById(final @PathVariable int ownerId, final @PathVariable int petId,
-            final @PathVariable int paymentId) {
+            final @PathVariable String paymentId) {
         return paymentClient.getPaymentById(ownerId, petId, paymentId);
     }
 

@@ -41,7 +41,7 @@ public class PaymentClient {
                 .bodyToFlux(PaymentDetail.class);
     }
 
-    public Mono<PaymentDetail> getPaymentById(final int ownerId, final int petId, final int paymentId) {
+    public Mono<PaymentDetail> getPaymentById(final int ownerId, final int petId, final String paymentId) {
         return webClientBuilder.build().get()
                 .uri("http://payment-service/owners/{ownerId}/pets/{petId}/payments/{paymentId}", ownerId, petId,
                         paymentId)
