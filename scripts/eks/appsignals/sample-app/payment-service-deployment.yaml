@@ -24,17 +24,16 @@ spec:
             - name: "ASPNETCORE_URLS"
               value: "http://+:8089"
             - name: eureka__client__serviceUrl
-              value: discovery-server
+              value: "http://discovery-server:8761/eureka/"
+            - name: eureka__client__shouldFetchRegistry
+              value: "true"
             - name: spring__application__name
-              value: payment-service-dotnet
+              value: payment-service
             - name: eureka__instance__preferIpAddress
               value: "true"
             - name: eureka__instance__port
               value: "8089"
-            - name: eureka__instance__instanceId
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+
           ports:
             - containerPort: 8089
           imagePullPolicy: Always
@@ -44,4 +43,5 @@ spec:
               port: 8089
             initialDelaySeconds: 10
             periodSeconds: 60
+
       restartPolicy: Always
