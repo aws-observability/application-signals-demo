@@ -35,6 +35,7 @@ angular.module("paymentForm").controller("paymentFormController", [
         data = {
           amount: self.amount,
           notes: self.notes,
+          id: null,
         };
       }
 

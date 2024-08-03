@@ -103,6 +103,7 @@ app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
         }
 
         payment.PetId = petId;
+        payment.Id ??= Guid.NewGuid().ToString();
 
         await context.DynamoDbContext.SaveAsync(payment);
 
