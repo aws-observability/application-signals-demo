@@ -15,11 +15,13 @@ angular.module("paymentForm").controller("paymentFormController", [
       let url = `api/payments/owners/${ownerId}/pets/${petId}/${paymentId}`;
       $http.get(url).then(function (resp) {
         self.amount = resp.data.amount;
-        self.notes = resp.data.description;
+        self.notes = resp.data.notes;
       });
+      self.benLabel = "Update";
     } else {
       self.amount = "";
       self.notes = "";
+      self.benLabel = "Add New";
     }
 
     self.submit = function () {
