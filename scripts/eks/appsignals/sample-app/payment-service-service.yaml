@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    io.kompose.service: payment-service-dotnet
+  name: payment-service-dotnet
+spec:
+  ports:
+    - name: "80"
+      port: 80
+      targetPort: 8089
+  selector:
+    io.kompose.service: payment-service-dotnet
+status:
+  loadBalancer: {}

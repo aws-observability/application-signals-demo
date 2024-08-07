@@ -49,3 +49,8 @@ aws ecr create-repository --repository-name traffic-generator --region ${REGION}
 docker build -t traffic-generator ./traffic-generator --no-cache
 docker tag traffic-generator:latest ${REPOSITORY_PREFIX}/traffic-generator:latest
 docker push ${REPOSITORY_PREFIX}/traffic-generator:latest
+
+aws ecr create-repository --repository-name dotnet-petclinic-payment --region ${REGION} --no-cli-pager || true
+docker build -t dotnet-petclinic-payment ./dotnet-petclinic-payment/PetClinic.PaymentService --no-cache
+docker tag dotnet-petclinic-payment:latest ${REPOSITORY_PREFIX}/dotnet-petclinic-payment:latest
+docker push ${REPOSITORY_PREFIX}/dotnet-petclinic-payment:latest
