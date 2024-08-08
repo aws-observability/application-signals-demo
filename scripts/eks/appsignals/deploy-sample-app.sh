@@ -33,6 +33,12 @@ if [[ $OPERATION == "apply" ]]; then
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonBedrockFullAccess \
         --approve \
         --override-existing-serviceaccounts
+
+    aws dynamodb create-table \
+    --table-name PetClinicPayment \
+    --attribute-definitions AttributeName=id,AttributeType=S\
+    --key-schema AttributeName=id,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
 else
     echo "Deleting ServiceAccount"
     eksctl delete iamserviceaccount \
