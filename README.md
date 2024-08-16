@@ -113,7 +113,7 @@ Please be aware that this sample application includes a publicly accessible Appl
 5. Create Canaries and SLOs
 
    ``` shell
-   endpoint=$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')
+   endpoint="http://$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
    cd scripts/eks/appsignals/
    ./create-canaries.sh $AWS_REGION create $endpoint
    ./create-slo.sh $TF_VAR_cluster_name $AWS_REGION
