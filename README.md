@@ -1,4 +1,4 @@
-# Introduction
+# Introduction - MODIFIED
 This is a modified version of the [spring-petclinic-microservices](https://github.com/spring-petclinic/spring-petclinic-microservices) Spring Boot sample application. 
 Our modifications focus on showcasing the capabilities of Application Signals within a Spring Boot environment.
 If your interest lies in exploring the broader aspects of the Spring Boot stack, we recommend visiting the original repository at [spring-petclinic-microservices](https://github.com/spring-petclinic/spring-petclinic-microservices).
