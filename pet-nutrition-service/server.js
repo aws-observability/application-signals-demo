@@ -17,10 +17,10 @@ async function main() {
   // POST: Create a new NutritionFact
   app.post('/nutrition', async (req, res) => {
     try {
-      const { pet_id, notes } = req.body;
-      const newNutritionFact = new NutritionFact({ pet_id, notes });
+      const { pet_type, facts } = req.body;
+      const newNutritionFact = new NutritionFact({ pet_type, facts });
       const savedFact = await newNutritionFact.save();
-      req.log.info(`saved nutrition fact for ${pet_id}`)
+      req.log.info(`saved nutrition fact for ${pet_type}`)
       res.status(201).json(savedFact);
     } catch (error) {
       req.log.error(error);
@@ -28,13 +28,13 @@ async function main() {
     }
   });
 
-  // GET: Find a NutritionFact by pet_id
-  app.get('/nutrition/:pet_id', async (req, res) => {
+  // GET: Find a NutritionFact by pet_type
+  app.get('/nutrition/:pet_type', async (req, res) => {
     try {
-      const { pet_id } = req.params;
-      const fact = await NutritionFact.findOne({ pet_id });
+      const { pet_type } = req.params;
+      const fact = await NutritionFact.findOne({ pet_type });
       if (!fact) {
-        return res.status(404).json({ message: 'nutrition fact not found for the given pet_id' });
+        return res.status(404).json({ message: 'nutrition fact not found for the given pet_type' });
       }
       res.status(200).json(fact);
     } catch (error) {
