@@ -129,3 +129,36 @@ resource "aws_dynamodb_table" "apm_test_table" {
   }
 
 }
+
+resource "aws_docdb_subnet_group" "service" {
+  name       = "petclinic" # TODO: tfvar
+  subnet_ids = ["${module.vpc.private_subnets}"]
+}
+
+resource "aws_docdb_cluster_instance" "service" {
+  count              = 1
+  identifier         = "petclinic-1" # TODO: tfvar
+  cluster_identifier = "${aws_docdb_cluster.service.id}"
+  instance_class     = "db.r4.large" # TODO: tfvar
+}
+
+resource "aws_docdb_cluster" "service" {
+  skip_final_snapshot     = true
+  db_subnet_group_name    = "${aws_docdb_subnet_group.service.name}"
+  cluster_identifier      = "petclinic"
+  engine                  = "docdb"
+  master_username         = "petclinic_admin"
+  master_password         = "asdfqwer" # TODO: more secure? right now same as rds for simplicity...
+  db_cluster_parameter_group_name = "${aws_docdb_cluster_parameter_group.service.name}"
+  vpc_security_group_ids = ["${module.vpc.default_security_group_id}"] 
+}
+
+resource "aws_docdb_cluster_parameter_group" "service" {
+  family = "docdb3.6"
+  name = "petclinic"
+
+  parameter {
+    name  = "tls"
+    value = "disabled"
+  }
+}
