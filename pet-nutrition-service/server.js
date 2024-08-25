@@ -7,7 +7,7 @@ const NutritionFact = require('./nutrition-fact')
 
 main().catch(err => console.log(err));
 
-async function main() {
+async function main () {
   const app = express();
 
   // Middlware
@@ -58,6 +58,7 @@ async function main() {
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
+    require('./eureka-client')('pet-nutrition-service', PORT);
     console.log(`server running on port ${PORT}`);
   });
 }
