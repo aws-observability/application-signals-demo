@@ -105,3 +105,15 @@ resource "aws_ecr_repository" "petclinic-billing-service" {
     encryption_type = "KMS"
   }
 }
+
+resource "aws_ecr_repository" "petclinic-nutrition-service" {
+  name                 = "nodejs-petclinic-nutrition-service"
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  encryption_configuration {
+    encryption_type = "KMS"
+  }
+}
