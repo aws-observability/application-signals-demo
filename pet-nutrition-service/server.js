@@ -58,7 +58,7 @@ async function main () {
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    require('./eureka-client')('pet-nutrition-service', PORT);
+    require('./eureka-client')('nutrition-service', PORT);
     console.log(`server running on port ${PORT}`);
   });
 }
