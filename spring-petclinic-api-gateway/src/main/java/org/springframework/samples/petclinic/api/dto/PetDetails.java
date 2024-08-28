@@ -35,5 +35,4 @@ public class PetDetails {
     private PetType type;
 
     private final List<VisitDetails> visits = new ArrayList<>();
-
 }
