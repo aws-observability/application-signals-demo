@@ -33,17 +33,20 @@ docker push ${REPOSITORY_PREFIX}/springcommunity/spring-petclinic-admin-server:l
 
 
 aws ecr create-repository --repository-name python-petclinic-insurance-service --region ${REGION} --no-cli-pager || true
-
 docker build -t insurance-service ./pet_clinic_insurance_service --no-cache
 docker tag insurance-service:latest ${REPOSITORY_PREFIX}/python-petclinic-insurance-service:latest
 docker push ${REPOSITORY_PREFIX}/python-petclinic-insurance-service:latest
 
 
 aws ecr create-repository --repository-name python-petclinic-billing-service --region ${REGION} --no-cli-pager || true
-
 docker build -t billing-service ./pet_clinic_billing_service --no-cache
 docker tag billing-service:latest ${REPOSITORY_PREFIX}/python-petclinic-billing-service:latest
 docker push ${REPOSITORY_PREFIX}/python-petclinic-billing-service:latest
+
+aws ecr create-repository --repository-name nodejs-petclinic-nutrition-service --region ${REGION} --no-cli-pager || true
+docker build -t nutrition-service ./pet-nutrition-service --no-cache
+docker tag nutrition-service:latest ${REPOSITORY_PREFIX}/nodejs-petclinic-nutrition-service:latest
+docker push ${REPOSITORY_PREFIX}/nodejs-petclinic-nutrition-service:latest
 
 aws ecr create-repository --repository-name traffic-generator --region ${REGION} --no-cli-pager || true
 docker build -t traffic-generator ./traffic-generator --no-cache
