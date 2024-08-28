@@ -2,7 +2,7 @@ const logger = require('pino')();
 const axios = require('axios');
 const ip = require('ip');
 
-const URL = process.env.EUREKA_SERVICE_URL || `http://localhost:8761/eureka`;
+const URL = process.env.EUREKA_SERVER_URL || `http://localhost:8761/eureka`;
 
 /**
  * Register with Eureka server.
