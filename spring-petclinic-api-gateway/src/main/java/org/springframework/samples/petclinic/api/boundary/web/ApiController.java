@@ -27,6 +27,7 @@ public class ApiController {
     private final VisitsServiceClient visitsServiceClient;
     private final InsuranceServiceClient insuranceServiceClient;
     private final BillingServiceClient billingServiceClient;
+    private final NutritionServiceClient nutritionServiceClient;
 
     @GetMapping(value = "customer/owners")
     public Flux<OwnerDetails> getOwners() {
@@ -111,6 +112,11 @@ public class ApiController {
     @GetMapping(value = "insurance/pet-insurances/{petId}")
     public Mono<PetInsurance> getPetInsurance(final @PathVariable int petId){
         return insuranceServiceClient.getPetInsurance(petId);
+    }
+
+    @GetMapping(value = "nutrition/facts/{petType}")
+    public Mono<PetNutrition> getNutrition(final @PathVariable String petType) {
+        return nutritionServiceClient.getPetNutrition(petType);
     }
 
 }

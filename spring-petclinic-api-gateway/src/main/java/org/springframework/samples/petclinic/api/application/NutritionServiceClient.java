@@ -41,5 +41,4 @@ public class NutritionServiceClient {
                 .retrieve()
                 .bodyToMono(PetNutrition.class);
     }
-
 }
