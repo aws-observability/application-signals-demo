@@ -14,20 +14,6 @@ async function main () {
   app.use(logger());
   app.use(express.json());
 
-  // POST: Create a new NutritionFact
-  app.post('/nutrition', async (req, res) => {
-    try {
-      const { pet_type, facts } = req.body;
-      const newNutritionFact = new NutritionFact({ pet_type, facts });
-      const savedFact = await newNutritionFact.save();
-      req.log.info(`saved nutrition fact for ${pet_type}`)
-      res.status(201).json(savedFact);
-    } catch (error) {
-      req.log.error(error);
-      res.status(500).json({ message: 'failed to save nutrition fact', error });
-    }
-  });
-
   // GET: Find a NutritionFact by pet_type
   app.get('/nutrition/:pet_type', async (req, res) => {
     try {
@@ -59,6 +45,7 @@ async function main () {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     require('./eureka-client')('nutrition-service', PORT);
+    require('./db-seed')();
     console.log(`server running on port ${PORT}`);
   });
 }
