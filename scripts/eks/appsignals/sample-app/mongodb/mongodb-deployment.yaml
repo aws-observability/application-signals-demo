@@ -41,7 +41,7 @@ spec:
             - containerPort: 27017
               hostPort: 27017
               protocol: TCP
-          reources: {}
+          resources: {}
           volumeMounts:
             - mountPath: /data/db
               name: mongodb-data

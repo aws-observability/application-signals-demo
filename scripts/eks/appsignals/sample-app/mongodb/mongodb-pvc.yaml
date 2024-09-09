@@ -5,7 +5,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ebs-sc
+  storageClassName: ebs-sc-mongodb
   resources:
     requests:
       storage: 1Gi
