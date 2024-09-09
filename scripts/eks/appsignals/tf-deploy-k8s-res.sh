@@ -12,7 +12,6 @@ cd "$(dirname "$0")"
 cd ../../../terraform/eks/
 
 db_endpoint=`terraform output -raw postgres_endpoint`
-documentdb_endpoint=`terraform output -raw documentdb_endpoint`
 
 host=$(echo $db_endpoint | awk -F ':' '{print $1}')
 port=$(echo $db_endpoint | awk -F ':' '{print $2}')
