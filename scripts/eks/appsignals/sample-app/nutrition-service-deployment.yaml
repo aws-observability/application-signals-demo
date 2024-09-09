@@ -22,7 +22,7 @@ spec:
             - name: EUREKA_SERVER_URL
               value: discovery-server
             - name: MONGO_URI
-              value: ${DOCDB_URI}
+              value: mongodb://admin:admin@mongodb:27017/test
           ports:
             - containerPort: 3000
           imagePullPolicy: Always
