@@ -11,7 +11,7 @@ const URL = process.env.EUREKA_SERVER_URL || `http://localhost:8761/eureka`;
 module.exports = function (app, port) {
   axios.post(`${URL}/apps/${app}/`, {
     instance: {
-      hostName: `localhost`,
+      hostName: ip.address(),
       instanceId: `${app}-${port}`,
       vipAddress: `${app}`,
       app: `${app.toUpperCase()}`,
