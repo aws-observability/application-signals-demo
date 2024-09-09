@@ -19,7 +19,6 @@ angular.module('ownerDetails')
             for(let i = 0; i < self.owner.pets.length; i ++){
                 let pet = self.owner.pets[i];
                 $http.get('api/insurance/pet-insurances/' + pet.id + '/').then(function (response){
-                    //promiseDone[i] = true;
                     self.owner.pets[i].insurance_name = response.data.insurance_name;
                 }).catch(function (err) {
                     self.owner.pets[i].insurance_name = "";
@@ -29,9 +28,7 @@ angular.module('ownerDetails')
             // add nutrition details
             for(let i = 0; i < self.owner.pets.length; i ++){
                 let pet = self.owner.pets[i];
-                console.log(pet);
                 $http.get('api/nutrition/facts/' + pet.type.name + '/').then(function (response){
-                    console.log(response);
                     promiseDone[i] = true;
                     self.owner.pets[i].nutritionFacts = response.data.facts;
                 }).catch(function (err) {
