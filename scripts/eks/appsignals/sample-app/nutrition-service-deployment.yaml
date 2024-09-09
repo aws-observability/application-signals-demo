@@ -16,7 +16,7 @@ spec:
     spec:
       serviceAccountName: visits-service-account
       containers:
-        - image: 111122223333.dkr.ecr.us-east-2.amazonaws.com/nodejs-petclinic-nutrition-service:latest
+        - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/nodejs-petclinic-nutrition-service:latest
           name: nutrition-service-nodejs
           env:
             - name: EUREKA_SERVER_URL
