@@ -3,3 +3,4 @@ kind: StorageClass
 metadata:
   name: ebs-sc-mongodb
 provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
