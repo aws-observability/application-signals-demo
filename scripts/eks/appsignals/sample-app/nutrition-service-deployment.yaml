@@ -20,7 +20,7 @@ spec:
           name: nutrition-service-nodejs
           env:
             - name: EUREKA_SERVER_URL
-              value: http://discovery-server:8761/eureka/
+              value: http://discovery-server:8761/eureka
             - name: MONGO_URI
               value: mongodb://admin:admin@mongodb:27017/
           ports:
