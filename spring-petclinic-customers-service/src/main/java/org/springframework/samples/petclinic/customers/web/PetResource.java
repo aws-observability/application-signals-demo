@@ -153,7 +153,7 @@ class PetResource {
         // enrich with nutrition
         PetNutrition petNutrition = null;
         try{
-            ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType(), PetNutrition.class);
+            ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
             petNutrition = response.getBody();
         }
         catch (Exception ex){
