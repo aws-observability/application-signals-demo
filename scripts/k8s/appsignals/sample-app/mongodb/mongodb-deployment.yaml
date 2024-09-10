@@ -6,7 +6,6 @@ metadata:
   annotations:
     kompose.cmd: kompose convert -f docker-compose.yaml
     kompose.version: 1.31.2 (HEAD)
-  creationTimestamp: null
   labels:
     io.kompose.service: mongodb
   name: mongodb
@@ -22,7 +21,6 @@ spec:
       annotations:
         kompose.cmd: kompose convert -f docker-compose.yaml
         kompose.version: 1.31.2 (HEAD)
-      creationTimestamp: null
       labels:
         io.kompose.service: mongodb
     spec:
@@ -41,7 +39,7 @@ spec:
             - containerPort: 27017
               hostPort: 27017
               protocol: TCP
-          reources: {}
+          resources: {}
           volumeMounts:
             - mountPath: /data/db
               name: mongodb-data
@@ -49,6 +47,6 @@ spec:
       volumes:
         - name: mongodb-data
           persistentVolumeClaim:
-            claimName: mongodb
+            claimName:  mongodb-pvc-data
 status: {}
 
