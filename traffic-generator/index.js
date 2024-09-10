@@ -13,6 +13,15 @@ function getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const postPaymentData = (amount, notes) => {
+    const url = `${baseUrl}/api/payments/owners/1/pets/1`;
+    const data = {
+        amount: amount,
+        notes: notes
+    };
+
+    return axios.post(url, data, { timeout: 10000 });
+}
 
 const postVisitData = (date, description) => {
     const url = `${baseUrl}/api/visit/owners/7/pets/9/visits`;
@@ -160,3 +169,42 @@ for (let i = 0; i < 2; i++) {
 }, { scheduled: false });
 
 postPetsHighTrafficTask.start();
+
+const lowTrafficPaymentTask = cron.schedule('* * * * *', () => {
+    const lowLoad = getRandomNumber(lowLoadMinRequests, lowLoadMaxRequests);
+    for (let i = 0; i < lowLoad; i++) {
+        console.log('send low load traffic payment: ' + (i + 1))
+        sleep(2 * 1000)
+        postPaymentData(100, `low-traffic-payment-${i + 1}`)
+            .catch(err => {
+                console.error("Failed to post /api/payments/owners/1/pets/1, error: " + (err.response ? err.response.data : err.toString()));
+
+            }); // Catch and log errors
+        axios.get(`${baseUrl}/api/payments/owners/1/pets/1`, { timeout: 10000 })
+            .catch(err => {
+                console.error(`${baseUrl}/api/payments/owners/1/pets/1, error: ` + (err.response ? err.response.data : err.toString()));
+            }); // Catch and log errors
+    }
+}, { scheduled: false });
+
+lowTrafficPaymentTask.start();
+
+const generateHighPaymentLoad = async () => {
+    const highLoad = getRandomNumber(highLoadMinRequests, highLoadMaxRequests);
+    for (let i = 0; i < highLoad; i++) {
+        console.log('send high traffic payment: ' + (i + 1))
+        postPaymentData(200, `high-traffic-payment-${i + 1}`)
+            .catch(err => {
+                console.error("Failed to post /api/payments/owners/1/pets/1, error: " + (err.response ? err.response.data : err.toString()));
+            }); // Catch and log errors
+    }
+    scheduleHighPaymentLoad();  // Schedule the next high load
+}
+
+const scheduleHighPaymentLoad = () => {
+    const delay = getRandomNumber(burstMinDelay, burstMaxDelay) * 60 * 1000;
+    setTimeout(generateHighPaymentLoad, delay);
+}
+
+// Start with a high load
+scheduleHighPaymentLoad();

@@ -72,3 +72,6 @@ check_if_step_failed "There was an error deleting the dynamodb table apm_test."
 
 aws dynamodb delete-table --table-name BillingInfo --region $REGION
 check_if_step_failed "There was an error deleting the dynamodb table BillingInfo."
+
+aws dynamodb delete-table --table-name PetClinicPayment --region $REGION
+check_if_step_failed "There was an error deleting the dynamodb table PetClinicPayment."

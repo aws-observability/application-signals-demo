@@ -32,7 +32,7 @@ export AWS_DEFAULT_REGION=$REGION
 SG_NAME="ec2-demo-security-group"
 IAM_ROLE_NAME="ec2-demo-role-${REGION}"
 INSTANCE_PROFILE="ec2-demo-instance-profile"
-INSTANCE_NAMES=("setup" "pet-clinic-frontend" "vets" "customers" "visits" "insurances" "billings")
+INSTANCE_NAMES=("setup" "pet-clinic-frontend" "vets" "customers" "visits" "insurances" "billings" "payments")
 KEY_NAME="ec2-demo-key-pair"
 CLOUDWATCH_AGENT_DOWNLOAD_URL="https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 JAVA_INSTRUMENTATION_AGENT_DOWNLOAD_URL="https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
@@ -512,6 +512,47 @@ sleep 60
 
 }
 
+function run_payments() {
+
+  aws dynamodb create-table \
+    --table-name PetClinicPayment \
+    --region ${REGION} \
+    --attribute-definitions AttributeName=id,AttributeType=S\
+    --key-schema AttributeName=id,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+
+  PRIVATE_IP_OF_SETUP_INSTANCE=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=setup" "Name=instance-state-name,Values=running" \
+    --query "Reservations[*].Instances[*].PrivateIpAddress" \
+    --output text)
+
+  # Retrieve public IP of the instance
+  setup_ip=$(aws ec2 describe-instances \
+      --filters "Name=tag:Name,Values=payments" "Name=instance-state-name,Values=running" \
+      --query "Reservations[*].Instances[*].PublicIpAddress" \
+      --output text)
+
+  # TODO
+  ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$setup_ip <<EOF
+      sudo yum install git tmux wget -y &&
+      git clone -b add-dotnet-payment-service https://github.com/ulili5/application-signals-demo.git &&
+      cd application-signals-demo/scripts/ec2/appsignals &&
+      wget $CLOUDWATCH_AGENT_DOWNLOAD_URL &&
+      sudo rpm -U ./amazon-cloudwatch-agent.rpm &&
+      sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:cloudwatch-agent.json
+EOF
+
+  service_name="payments-service-ec2-dotnet"
+  # SSH again to start tmux session
+  ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$setup_ip << EOF
+    tmux new -s payments -d
+    tmux send-keys -t payments 'cd application-signals-demo/dotnet-petclinic-payment/PetClinic.PaymentService' C-m
+    tmux send-keys -t payments "./ec2-setup.sh $PRIVATE_IP_OF_SETUP_INSTANCE $service_name" C-m
+EOF
+sleep 60
+
+}
+
 function print_url() {
   dns_name=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=pet-clinic-frontend" "Name=instance-state-name,Values=running" \
@@ -554,6 +595,8 @@ function delete_resources() {
     echo "Deleting resources..."
     
     delete_database
+
+    aws dynamodb delete-table --table-name PetClinicPayment --region $REGION
 
     # Delete EC2 instances
     declare -a instance_ids=()
@@ -641,6 +684,7 @@ else
     create_database
     run_insurances
     run_billings
+    run_payments
     generate_traffic
     print_url
 fi
