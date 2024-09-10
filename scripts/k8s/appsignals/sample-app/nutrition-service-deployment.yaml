@@ -11,8 +11,8 @@ spec:
     metadata:
       labels:
         io.kompose.service: nutrition-service-nodejs
-      annotations:
-        instrumentation.opentelemetry.io/inject-nodejs: 'true'
+      # annotations:
+      #   instrumentation.opentelemetry.io/inject-nodejs: 'true'
     spec:
       serviceAccountName: visits-service-account
       containers:
@@ -20,9 +20,9 @@ spec:
           name: nutrition-service-nodejs
           env:
             - name: EUREKA_SERVER_URL
-              value: discovery-server
+              value: http://discovery-server:8761/eureka
             - name: MONGO_URI
-              value: ${DOCDB_URI}
+              value: mongodb://admin:admin@mongodb:27017/
           ports:
             - containerPort: 3000
           imagePullPolicy: Always
