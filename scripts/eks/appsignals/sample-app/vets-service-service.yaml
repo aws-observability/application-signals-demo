@@ -4,7 +4,6 @@ metadata:
   annotations:
     kompose.cmd: kompose convert -f ../docker-compose-eks.yml
     kompose.version: 1.27.0 (b0ed6a2c9)
-  creationTimestamp: null
   labels:
     io.kompose.service: vets-service-java
   name: vets-service-java
