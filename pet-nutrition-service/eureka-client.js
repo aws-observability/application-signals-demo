@@ -1,8 +1,23 @@
 const logger = require('pino')();
 const axios = require('axios');
+const axiosRetry = require('axios-retry');
 const ip = require('ip');
 
 const URL = process.env.EUREKA_SERVER_URL || `http://localhost:8761/eureka`;
+
+/**
+ * Retry configuration.
+ */
+
+axiosRetry.default(axios, { 
+  retries: Infinity, 
+  retryDelay: axiosRetry.exponentialDelay,
+  onRetry: (n, error) => {
+    logger.info(`eureka retry attempt: ${n}`);
+  }
+});
+
+
 
 /**
  * Register with Eureka server.
