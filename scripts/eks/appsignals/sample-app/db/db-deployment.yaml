@@ -6,7 +6,6 @@ metadata:
   annotations:
     kompose.cmd: kompose convert -f docker-compose.yaml
     kompose.version: 1.31.2 (HEAD)
-  creationTimestamp: null
   labels:
     io.kompose.service: db
   name: db
@@ -22,7 +21,6 @@ spec:
       annotations:
         kompose.cmd: kompose convert -f docker-compose.yaml
         kompose.version: 1.31.2 (HEAD)
-      creationTimestamp: null
       labels:
         io.kompose.network/vehicleinventoryapp-default: "true"
         io.kompose.service: db

@@ -45,9 +45,12 @@ fi
 ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 
 kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/db/
+kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/mongodb/
+
 host=db.$NAMESPACE.svc.cluster.local
 
 sleep 60
+
 
 for config in $(ls ./sample-app/*.yaml)
 do
