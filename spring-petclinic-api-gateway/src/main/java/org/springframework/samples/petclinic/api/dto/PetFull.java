@@ -21,5 +21,7 @@ public class PetFull {
 
     private Float price;
 
+    private String nutritionFacts;
+
     private final List<VisitDetails> visits = new ArrayList<>();
 }

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ebs-sc-mongodb
+  resources:
+    requests:
+      storage: 100Mi
