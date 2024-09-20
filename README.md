@@ -78,7 +78,7 @@ Please be aware that this sample application includes a publicly accessible Appl
    ``` shell
 
    export TF_VAR_cluster_name=app-signals-demo
-   export TF_VAR_cloudwatch_observability_addon_version=v1.10.0-eksbuild.2
+   export TF_VAR_cloudwatch_observability_addon_version=v2.1.0-eksbuild.1
 
    terraform init -backend-config="bucket=${TFSTATE_BUCKET}" -backend-config="key=${TFSTATE_KEY}" -backend-config="region=${TFSTATE_REGION}"
 

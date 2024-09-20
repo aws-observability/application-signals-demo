@@ -220,7 +220,7 @@ EOF
 
 
 # wait for the woker to join the cluster
-sleep 5m
+sleep 300
 
 }
 
@@ -317,7 +317,7 @@ function delete_resources() {
 
     aws iam delete-role --role-name $IAM_ROLE_NAME
 
-    sleep 5m
+    sleep 300
     # Delete security groups
     sg_id=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SG_NAME" --query 'SecurityGroups[0].GroupId' --output text)
     if [ ! -z "$sg_id" ]; then
