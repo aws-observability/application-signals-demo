@@ -170,21 +170,17 @@ for (let i = 0; i < 2; i++) {
 
 postPetsHighTrafficTask.start();
 
-const lowTrafficPaymentTask = cron.schedule('* * * * *', () => {
-    const lowLoad = getRandomNumber(lowLoadMinRequests, lowLoadMaxRequests);
-    for (let i = 0; i < lowLoad; i++) {
-        console.log('send low load traffic payment: ' + (i + 1))
-        sleep(2 * 1000)
-        postPaymentData(100, `low-traffic-payment-${i + 1}`)
-            .catch(err => {
-                console.error("Failed to post /api/payments/owners/1/pets/1, error: " + (err.response ? err.response.data : err.toString()));
+const lowTrafficPaymentTask = cron.schedule('*/2 * * * *', () => {
+    console.log('add 1 payment every 2 minutes');
+    postPaymentData(100, `low-traffic-payment`)
+        .catch(err => {
+            console.error("Failed to post /api/payments/owners/1/pets/1, error: " + (err.response ? err.response.data : err.toString()));
 
-            }); // Catch and log errors
-        axios.get(`${baseUrl}/api/payments/owners/1/pets/1`, { timeout: 10000 })
-            .catch(err => {
-                console.error(`${baseUrl}/api/payments/owners/1/pets/1, error: ` + (err.response ? err.response.data : err.toString()));
-            }); // Catch and log errors
-    }
+        }); // Catch and log errors
+    axios.get(`${baseUrl}/api/payments/owners/1/pets/1`, { timeout: 10000 })
+        .catch(err => {
+            console.error(`${baseUrl}/api/payments/owners/1/pets/1, error: ` + (err.response ? err.response.data : err.toString()));
+        }); // Catch and log errors
 }, { scheduled: false });
 
 lowTrafficPaymentTask.start();
