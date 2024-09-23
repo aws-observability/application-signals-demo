@@ -514,12 +514,19 @@ sleep 60
 
 function run_payments() {
 
-  aws dynamodb create-table \
-    --table-name PetClinicPayment \
-    --region ${REGION} \
-    --attribute-definitions AttributeName=id,AttributeType=S\
-    --key-schema AttributeName=id,KeyType=HASH \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+  DB_NAME=PetClinicPayment
+
+  if aws dynamodb describe-table --table-name $DB_NAME --region ${REGION} 2>/dev/null; then
+    echo "DynamoDB Table: $DB_NAME found, Skipping DynamoDB table creation ..."
+  else 
+    echo "DynamoDB Table: $DB_NAME not found, Creating DynamoDB table ..."
+    aws dynamodb create-table \
+      --table-name PetClinicPayment \
+      --region ${REGION} \
+      --attribute-definitions AttributeName=id,AttributeType=S\
+      --key-schema AttributeName=id,KeyType=HASH \
+      --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+  fi
 
   PRIVATE_IP_OF_SETUP_INSTANCE=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=setup" "Name=instance-state-name,Values=running" \
@@ -647,7 +654,7 @@ function delete_resources() {
 
 
     # Detach and delete IAM policies and role
-    policy_arns=("arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess" "arn:aws:iam::aws:policy/AmazonKinesisFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess")
+    policy_arns=("arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess" "arn:aws:iam::aws:policy/AmazonKinesisFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore")
     for arn in "${policy_arns[@]}"
     do
       echo $arn

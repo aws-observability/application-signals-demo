@@ -76,12 +76,19 @@ function create_resources() {
     aws iam attach-role-policy --role-name $IAM_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
     aws iam put-role-policy --role-name $IAM_ROLE_NAME --policy-name "allow-ecr-access" --policy-document file://allow-ecr-access.json
 
-    aws dynamodb create-table \
-    --table-name PetClinicPayment \
-    --region $REGION \
-    --attribute-definitions AttributeName=id,AttributeType=S\
-    --key-schema AttributeName=id,KeyType=HASH \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+    DB_NAME=PetClinicPayment
+
+    if aws dynamodb describe-table --table-name $DB_NAME --region ${REGION} 2>/dev/null; then
+      echo "DynamoDB Table: $DB_NAME found, Skipping DynamoDB table creation ..."
+    else 
+      echo "DynamoDB Table: $DB_NAME not found, Creating DynamoDB table ..."
+      aws dynamodb create-table \
+        --table-name PetClinicPayment \
+        --region ${REGION} \
+        --attribute-definitions AttributeName=id,AttributeType=S\
+        --key-schema AttributeName=id,KeyType=HASH \
+        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+    fi
 
     # Create instance profile
     aws iam create-instance-profile --instance-profile-name $INSTANCE_PROFILE
