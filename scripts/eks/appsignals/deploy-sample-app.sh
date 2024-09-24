@@ -34,11 +34,19 @@ if [[ $OPERATION == "apply" ]]; then
         --approve \
         --override-existing-serviceaccounts
 
-    aws dynamodb create-table \
-    --table-name PetClinicPayment \
-    --attribute-definitions AttributeName=id,AttributeType=S\
-    --key-schema AttributeName=id,KeyType=HASH \
-    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+    DB_NAME=PetClinicPayment
+
+    if aws dynamodb describe-table --table-name $DB_NAME --region ${REGION} 2>/dev/null; then
+        echo "DynamoDB Table: $DB_NAME found, Skipping DynamoDB table creation ..."
+    else 
+        echo "DynamoDB Table: $DB_NAME not found, Creating DynamoDB table ..."
+        aws dynamodb create-table \
+        --table-name PetClinicPayment \
+        --region ${REGION} \
+        --attribute-definitions AttributeName=id,AttributeType=S\
+        --key-schema AttributeName=id,KeyType=HASH \
+        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+    fi
 else
     echo "Deleting ServiceAccount"
     eksctl delete iamserviceaccount \
@@ -51,9 +59,12 @@ fi
 ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 
 kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/db/
+kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/mongodb/
+
 host=db.$NAMESPACE.svc.cluster.local
 
 sleep 60
+
 
 for config in $(ls ./sample-app/*.yaml)
 do

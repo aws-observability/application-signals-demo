@@ -56,7 +56,17 @@ docker build -t billing-service ./pet_clinic_billing_service --no-cache
 docker tag billing-service:latest ${repo_uri}:latest
 docker push ${repo_uri}:latest
 
+repo_uri=$(get_repo_link nodejs-petclinic-nutrition-service   )
+docker build -t nutrition-service ./pet-nutrition-service --no-cache
+docker tag nutrition-service:latest ${repo_uri}:latest
+docker push ${repo_uri}:latest
+
 repo_uri=$(get_repo_link traffic-generator  )
 docker build -t traffic-generator ./traffic-generator --no-cache
 docker tag traffic-generator:latest ${repo_uri}:latest
+docker push ${repo_uri}:latest
+
+repo_uri=$(get_repo_link dotnet-petclinic-payment  )
+docker build -t dotnet-petclinic-payment ./dotnet-petclinic-payment/PetClinic.PaymentService --no-cache
+docker tag dotnet-petclinic-payment:latest ${repo_uri}:latest
 docker push ${repo_uri}:latest

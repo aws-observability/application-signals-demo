@@ -78,7 +78,7 @@ Please be aware that this sample application includes a publicly accessible Appl
    ``` shell
 
    export TF_VAR_cluster_name=app-signals-demo
-   export TF_VAR_cloudwatch_observability_addon_version=v1.5.1-eksbuild.1
+   export TF_VAR_cloudwatch_observability_addon_version=v2.1.0-eksbuild.1
 
    terraform init -backend-config="bucket=${TFSTATE_BUCKET}" -backend-config="key=${TFSTATE_KEY}" -backend-config="region=${TFSTATE_REGION}"
 
@@ -113,7 +113,7 @@ Please be aware that this sample application includes a publicly accessible Appl
 5. Create Canaries and SLOs
 
    ``` shell
-   endpoint=$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')
+   endpoint="http://$(kubectl get ingress -o json  --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
    cd scripts/eks/appsignals/
    ./create-canaries.sh $AWS_REGION create $endpoint
    ./create-slo.sh $TF_VAR_cluster_name $AWS_REGION

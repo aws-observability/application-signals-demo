@@ -4,7 +4,6 @@ metadata:
   annotations:
     kompose.cmd: kompose convert -f ../docker-compose-eks.yml
     kompose.version: 1.27.0 (b0ed6a2c9)
-  creationTimestamp: null
   labels:
     io.kompose.service: customers-service-java
   name: customers-service-java
@@ -19,7 +18,6 @@ spec:
       annotations:
         kompose.cmd: kompose convert -f ../docker-compose-eks.yml
         kompose.version: 1.27.0 (b0ed6a2c9)
-      creationTimestamp: null
       labels:
         io.kompose.service: customers-service-java
       annotations:

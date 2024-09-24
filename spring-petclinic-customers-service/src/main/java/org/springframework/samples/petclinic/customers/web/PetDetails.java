@@ -48,6 +48,8 @@ class PetDetails {
 
     private Float price;
 
+    private String nutritionFacts;
+
     PetDetails(Pet pet) {
         this.id = pet.getId();
         this.name = pet.getName();
@@ -56,6 +58,7 @@ class PetDetails {
         this.type = pet.getType();
         this.insurance_id = 0;
         this.insurance_name = "";
+        this.nutritionFacts = "";
         this.price = 0F;
     }
 }
