@@ -34,19 +34,6 @@ if [[ $OPERATION == "apply" ]]; then
         --approve \
         --override-existing-serviceaccounts
 
-    DB_NAME=PetClinicPayment
-
-    if aws dynamodb describe-table --table-name $DB_NAME --region ${REGION} 2>/dev/null; then
-        echo "DynamoDB Table: $DB_NAME found, Skipping DynamoDB table creation ..."
-    else 
-        echo "DynamoDB Table: $DB_NAME not found, Creating DynamoDB table ..."
-        aws dynamodb create-table \
-        --table-name PetClinicPayment \
-        --region ${REGION} \
-        --attribute-definitions AttributeName=id,AttributeType=S\
-        --key-schema AttributeName=id,KeyType=HASH \
-        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
-    fi
 else
     echo "Deleting ServiceAccount"
     eksctl delete iamserviceaccount \

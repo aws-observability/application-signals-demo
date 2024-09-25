@@ -513,21 +513,6 @@ sleep 60
 }
 
 function run_payments() {
-
-  DB_NAME=PetClinicPayment
-
-  if aws dynamodb describe-table --table-name $DB_NAME --region ${REGION} 2>/dev/null; then
-    echo "DynamoDB Table: $DB_NAME found, Skipping DynamoDB table creation ..."
-  else 
-    echo "DynamoDB Table: $DB_NAME not found, Creating DynamoDB table ..."
-    aws dynamodb create-table \
-      --table-name PetClinicPayment \
-      --region ${REGION} \
-      --attribute-definitions AttributeName=id,AttributeType=S\
-      --key-schema AttributeName=id,KeyType=HASH \
-      --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
-  fi
-
   PRIVATE_IP_OF_SETUP_INSTANCE=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=setup" "Name=instance-state-name,Values=running" \
     --query "Reservations[*].Instances[*].PrivateIpAddress" \
