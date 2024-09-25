@@ -111,4 +111,20 @@ app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
     }
 );
 
+app.MapDelete("/clean-db", async ([FromServices] IPetClinicContext context) =>
+{
+    await context.CleanDB();
+
+    return Results.Ok();
+});
+
+InitializeDB();
+
 await app.RunAsync();
+
+async void InitializeDB()
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<IPetClinicContext>();
+    await context.InitializeDB();
+}
