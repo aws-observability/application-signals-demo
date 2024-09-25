@@ -5,7 +5,7 @@ module "db" {
   #checkov:skip=CKV_AWS_338:demo only, log retention is not required
   #checkov:skip=CKV_AWS_304:demo only, secret rotation is not required
 
-  source = "git::https://github.com/terraform-aws-modules/terraform-aws-rds?ref=0a4405c039d0149fe05bfe8f19a1bbbba17ceb0d"
+  source  = "git::https://github.com/terraform-aws-modules/terraform-aws-rds?ref=0a4405c039d0149fe05bfe8f19a1bbbba17ceb0d"
 
   identifier = "petclinic-database"
 
@@ -22,15 +22,15 @@ module "db" {
   # NOTE: Do NOT use 'user' as the value for 'username' as it throws:
   # "Error creating DB Instance: InvalidParameterValue: MasterUsername
   # user cannot be used as it is a reserved word used by the engine"
-  db_name                     = "postgres"
+  db_name  = "postgres"
   manage_master_user_password = false
-  username                    = "djangouser"
-  password                    = "asdfqwer"
-  port                        = 5432
+  username = "djangouser"
+  password = "asdfqwer"
+  port     = 5432
 
   # setting manage_master_user_password_rotation to false after it
   # has been set to true previously disables automatic rotation
-  manage_master_user_password_rotation = false
+  manage_master_user_password_rotation              = false
   # master_user_password_rotate_immediately           = false
   # master_user_password_rotation_schedule_expression = "rate(15 days)"
 
@@ -72,6 +72,8 @@ module "db" {
   db_parameter_group_tags = {
     "Sensitive" = "low"
   }
+
+  depends_on = [ module.vpc ]
 }
 
 resource "aws_dynamodb_table" "billing_table" {
@@ -86,7 +88,7 @@ resource "aws_dynamodb_table" "billing_table" {
   range_key      = "timestamp"
 
   point_in_time_recovery {
-    enabled = true
+   enabled = true
   }
 
   # server_side_encryption {
@@ -116,7 +118,7 @@ resource "aws_dynamodb_table" "apm_test_table" {
   hash_key       = "id"
 
   point_in_time_recovery {
-    enabled = true
+   enabled = true
   }
 
   # server_side_encryption {
@@ -141,7 +143,7 @@ resource "aws_dynamodb_table" "payment_table" {
   hash_key       = "id"
 
   point_in_time_recovery {
-    enabled = true
+   enabled = true
   }
 
   # server_side_encryption {

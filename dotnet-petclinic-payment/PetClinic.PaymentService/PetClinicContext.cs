@@ -34,7 +34,7 @@ public class PetClinicContext(
         try
         {
             //Check if DynamoDB Table exists
-            await DynamoDbContext.ScanAsync<Payment>(default).GetRemainingAsync();
+            await AmazonDynamoDBClient.DescribeTableAsync(new DescribeTableRequest { TableName = "PetClinicPayment" });
             Logger.LogInformation("DynamoDB Table exists");
         }
         catch (ResourceNotFoundException ex)
@@ -46,8 +46,7 @@ public class PetClinicContext(
             if ((ex.ErrorCode == "ResourceNotFoundException" || ex.StatusCode == System.Net.HttpStatusCode.BadRequest) && match.Success)
             {
                 Logger.LogError(ex, "DynamoDB Table does not exist");
-                string tableName = match.Groups[1].Value.Trim();
-                Logger.LogInformation("Extracted table name: {tableName}", tableName);
+                string tableName = "PetClinicPayment";
                 Logger.LogInformation("Creating DynamoDB Table: {tableName}", tableName);
 
                 //Create DynamoDb Table
@@ -102,7 +101,7 @@ public class PetClinicContext(
 
     }
 
-    public Task CleanDB()
+    public async Task CleanDB()
     {
         try
         {
@@ -112,14 +111,28 @@ public class PetClinicContext(
                 {
                     TableName = att.TableName
                 };
-                return AmazonDynamoDBClient.DeleteTableAsync(request);
+                await AmazonDynamoDBClient.DeleteTableAsync(request);
+
+                try
+                {
+                    while (true)
+                    {
+                        await Task.Delay(5000);
+                        await AmazonDynamoDBClient.DescribeTableAsync(new DescribeTableRequest { TableName = "PetClinicPayment" });
+                    }
+                }
+                catch (ResourceNotFoundException ex)
+                {
+                    Logger.LogInformation("This is after clear");
+                    Logger.LogInformation(ex.ToString());
+
+                    await InitializeDB();
+                }
             }
         }
         catch (System.Exception ex)
         {
             Logger.LogError(ex, "Error cleaning DynamoDB");
         }
-
-        return Task.CompletedTask;
     }
 }

@@ -16,9 +16,9 @@ module "vpc" {
   name = var.cluster_name
   cidr = "10.0.0.0/16"
 
-  azs              = [data.aws_availability_zones.available.names[0], data.aws_availability_zones.available.names[1], data.aws_availability_zones.available.names[2]]
-  private_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets   = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  azs             = [data.aws_availability_zones.available.names[0], data.aws_availability_zones.available.names[1], data.aws_availability_zones.available.names[2]]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
   database_subnets = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
 
   enable_nat_gateway     = true
@@ -33,18 +33,30 @@ module "vpc" {
   }
   public_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
-    "kubernetes.io/role/elb"                    = 1
+    "kubernetes.io/role/elb" = 1
   }
 }
 
-resource "aws_security_group_rule" "example" {
-  #checkov:skip=CKV_AWS_23:low priority, skip
-  type              = "ingress"
-  from_port         = 5432
-  to_port           = 5432
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+resource "aws_vpc_security_group_ingress_rule" "rds-eks" {
   security_group_id = module.vpc.default_security_group_id
+
+  cidr_ipv4   = "0.0.0.0/0"
+  from_port   = 5432
+  ip_protocol = "tcp"
+  to_port     = 5432
+
+  depends_on = [ module.vpc ]
+}
+
+resource "aws_vpc_security_group_egress_rule" "eks-rds" {
+  security_group_id = module.vpc.default_security_group_id
+
+  cidr_ipv4   = "0.0.0.0/0"
+  from_port   = 5432
+  ip_protocol = "tcp"
+  to_port     = 5432
+
+  depends_on = [ module.vpc ]
 }
 
 
@@ -63,7 +75,7 @@ module "eks" {
   #checkov:skip=CKV_AWS_356:demo only, no resource limitation is required
   #checkov:skip=CKV_TF_1:sub-module hash key ignored
 
-  source = "git::https://github.com/terraform-aws-modules/terraform-aws-eks.git?ref=1627231af669796669ce83e0a4672a7e6d94a0b3"
+  source  = "git::https://github.com/terraform-aws-modules/terraform-aws-eks.git?ref=1627231af669796669ce83e0a4672a7e6d94a0b3"
 
   cluster_version                 = "1.29"
   cluster_name                    = var.cluster_name
@@ -157,30 +169,24 @@ module "eks" {
   tags = {
     "karpenter.sh/discovery" = var.cluster_name
   }
-  depends_on = [module.vpc]
+  depends_on = [ module.vpc ]
 }
 
 module "demo_service_account" {
   #checkov:skip=CKV_TF_1:sub-module hash key ignored
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
 
-  create_role  = true
-  role_name    = "DemoServiceRole-${var.cluster_name}"
-  provider_url = replace(module.eks.oidc_provider, "https://", "")
-  role_policy_arns = [
-    "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
-    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-    "arn:aws:iam::aws:policy/AmazonKinesisFullAccess",
-    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
-    "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
-  ]
+  create_role                   = true
+  role_name                     = "DemoServiceRole-${var.cluster_name}"
+  provider_url                  = replace(module.eks.oidc_provider, "https://", "")
+  role_policy_arns              = ["arn:aws:iam::aws:policy/AmazonSQSFullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonKinesisFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess", "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"]
   oidc_fully_qualified_subjects = ["system:serviceaccount:default:visits-service-account"]
 }
 
 resource "kubernetes_service_account" "demo_service_account" {
   #checkov:skip=CKV_K8S_21:demo only, use default namespace
   metadata {
-    name = "visits-service-account"
+    name      = "visits-service-account"
     annotations = {
       "eks.amazonaws.com/role-arn" = module.demo_service_account.iam_role_arn
     }
@@ -190,9 +196,9 @@ resource "kubernetes_service_account" "demo_service_account" {
 resource "kubernetes_secret" "demo_service_account" {
   #checkov:skip=CKV_K8S_21:demo only, use default namespace
   metadata {
-    name = "serviceaccount-token-secret"
+    name      = "serviceaccount-token-secret"
     annotations = {
-      "kubernetes.io/service-account.name" = kubernetes_service_account.demo_service_account.metadata.0.name
+      "kubernetes.io/service-account.name"      = kubernetes_service_account.demo_service_account.metadata.0.name
     }
   }
   type                           = "kubernetes.io/service-account-token"
@@ -203,11 +209,11 @@ resource "kubernetes_secret" "demo_service_account" {
 resource "aws_kinesis_stream" "apm_test_stream" {
   #checkov:skip=CKV_AWS_43:demo only, not encryption is needed
   #checkov:skip=CKV_AWS_185:demo only, not encryption is needed
-  name        = "apm_test"
-  shard_count = 1
+  name             = "apm_test"
+  shard_count      = 1
 }
 
 resource "aws_sqs_queue" "apm_test_queue" {
   #checkov:skip=CKV_AWS_27:demo only, not encryption is needed
-  name = "apm_test"
+  name                      = "apm_test"
 }

@@ -56,4 +56,11 @@ public class PaymentClient {
                 .retrieve()
                 .bodyToMono(PaymentDetail.class);
     }
+
+    public Mono<PaymentDetail> cleanPaymentTable() {
+        return webClientBuilder.build().delete()
+                .uri("http://payment-service/clean-db")
+                .retrieve()
+                .bodyToMono(PaymentDetail.class);
+    }
 }

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.samples.petclinic.api.application.*;
 import org.springframework.samples.petclinic.api.dto.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -135,6 +136,11 @@ public class ApiController {
     public Mono<PaymentDetail> addPayment(final @PathVariable int ownerId, final @PathVariable int petId,
             final @RequestBody PaymentAdd paymentAdd) {
         return paymentClient.addPayment(ownerId, petId, paymentAdd);
+    }
+
+    @DeleteMapping(value = "payments/clean-db")
+    public Mono<PaymentDetail> cleanPaymentTable() {
+        return paymentClient.cleanPaymentTable();
     }
 
     @GetMapping(value = "nutrition/facts/{petType}")

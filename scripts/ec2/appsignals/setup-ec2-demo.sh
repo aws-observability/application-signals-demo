@@ -554,6 +554,7 @@ EOF
   ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ec2-user@$setup_ip << EOF
     tmux new -s payments -d
     tmux send-keys -t payments 'cd application-signals-demo/dotnet-petclinic-payment/PetClinic.PaymentService' C-m
+    tmux send-keys -t payments 'chmod +x ec2-setup.sh'
     tmux send-keys -t payments "./ec2-setup.sh $PRIVATE_IP_OF_SETUP_INSTANCE $service_name" C-m
 EOF
 sleep 60
