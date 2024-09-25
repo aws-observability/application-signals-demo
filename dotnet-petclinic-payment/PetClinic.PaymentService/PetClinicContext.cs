@@ -121,11 +121,8 @@ public class PetClinicContext(
                         await AmazonDynamoDBClient.DescribeTableAsync(new DescribeTableRequest { TableName = "PetClinicPayment" });
                     }
                 }
-                catch (ResourceNotFoundException ex)
+                catch (ResourceNotFoundException)
                 {
-                    Logger.LogInformation("This is after clear");
-                    Logger.LogInformation(ex.ToString());
-
                     await InitializeDB();
                 }
             }
