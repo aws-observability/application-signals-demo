@@ -13,7 +13,6 @@ export eureka__instance__port=8080
 export ASPNETCORE_URLS="http://+:8080"
 export ASPNETCORE_ENVIRONMENT=Development
 
-dotnet add package OpenTelemetry.AutoInstrumentation
 dotnet add package AWS.Distro.OpenTelemetry.AutoInstrumentation
 
 dotnet build --runtime linux-x64
