@@ -50,15 +50,6 @@ LOAD_BALANCER_ARN="arn:aws:elasticloadbalancing:${REGION}:000111222333:loadbalan
 LOAD_BALANCER_DNS="ecs-pet-clinic-lb-${REGION}-000111222333.us-east-1.elb.amazonaws.com"
 ECR_IMAGE_PREFIX="000111222333.dkr.ecr.us-east-1.amazonaws.com"
 
-VPC_ID="vpc-073c48be423af5150"
-SUBNET_IDS="subnet-0a18f3700d2eafc52	subnet-03d8b6a26bca5c25f	subnet-03a8d564e64200394	subnet-0fd0377f4b84dc8e0"
-SECURITY_GROUP_ID="sg-05f9c38863c836987"
-LOAD_BALANCER_ARN="arn:aws:elasticloadbalancing:us-west-2:007003802740:loadbalancer/app/ecs-pet-clinic-lb-us-west-2/1ae62d0cf10b1de2"
-LOAD_BALANCER_DNS="ecs-pet-clinic-lb-us-west-2-463149261.us-west-2.elb.amazonaws.com"
-ECR_IMAGE_PREFIX="public.ecr.aws/u8q5x3l1"
-ACCOUNT_ID="007003802740"
-
-
 function create_resources() {
     echo "Creating resources..."
     # Get the default VPC
@@ -92,7 +83,7 @@ function create_resources() {
 
 
     # Create an ECS Task role and attach policies
-    aws iam create-role --role-name $IAM_TASK_ROLE_NAME --assume-role-policy-document file://trust-policy.json
+    aws iam create-role --role-name $IAM_TASK_ROLE_NAME --assume-role-policy-document file://trust-policy.json > /dev/null
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
@@ -102,7 +93,7 @@ function create_resources() {
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
 
     # Create an ECS Task Execution role and attach policies
-    aws iam create-role --role-name $IAM_EXECUTION_ROLE_NAME --assume-role-policy-document file://trust-policy.json
+    aws iam create-role --role-name $IAM_EXECUTION_ROLE_NAME --assume-role-policy-document file://trust-policy.json > /dev/null
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonKinesisFullAccess"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonS3FullAccess"
@@ -140,7 +131,7 @@ function create_resources() {
     done
 
     # Creat ECS cluster
-    aws ecs create-cluster --cluster-name ${CLUSTER}
+    aws ecs create-cluster --cluster-name ${CLUSTER} > /dev/null
 
     # Get ECR image prefix
     ECR_IMAGE_PREFIX=$(aws ecr-public describe-repositories --repository-names traffic-generator --region us-east-1 --query 'repositories[0].repositoryUri' --output text | cut -d'/' -f1,2)
@@ -280,13 +271,13 @@ function run_api_gateway() {
       --health-check-interval-seconds 240 \
       --health-check-timeout-seconds 60 \
       --healthy-threshold-count 5 \
-      --unhealthy-threshold-count 2
+      --unhealthy-threshold-count 2 > /dev/null
 
   aws elbv2 create-listener \
     --load-balancer-arn $LOAD_BALANCER_ARN \
     --protocol HTTP \
     --port 8080 \
-    --default-actions Type=forward,TargetGroupArn=$api_gateway_target_group_arn
+    --default-actions Type=forward,TargetGroupArn=$api_gateway_target_group_arn > /dev/null
 
   adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
   adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
@@ -449,7 +440,7 @@ function create_database() {
       --no-multi-az \
       --backup-retention-period 0 \
       --tags Key=Name,Value=$db_instance_identifier \
-      --output text
+      --output text > /dev/null
 
   echo "DB instance creation initiated..."
 
@@ -464,7 +455,7 @@ function create_database() {
     --group-id $security_group \
     --protocol tcp \
     --port 5432 \
-    --source-group $security_group
+    --source-group $security_group > /dev/null
 
 }
 
@@ -1131,11 +1122,3 @@ else
     print_url
 
 fi
-
-
-#  cd scripts/ecs/appsignals
-#./setup-ecs-demo.sh --region=us-west-2
-#./setup-ecs-demo.sh --operation=delete --region=us-west-2
-#./mvnw clean install -P buildDocker -pl spring-petclinic-admin-server,spring-petclinic-api-gateway -am -DskipTests
-#./mvnw clean install -P buildDocker -pl spring-petclinic-customers-service,spring-petclinic-visits-service -am -DskipTests
-#./push-public-ecr.sh
