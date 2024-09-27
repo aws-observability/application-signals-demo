@@ -1,0 +1,35 @@
+{
+  "family": "config-server",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "config-server",
+      "image": "config-server-image",
+      "portMappings": [
+        {
+          "containerPort": 8888,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/pet-clinic-config-server",
+          "awslogs-create-group": "true",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "cpu": 256,
+      "memory": 512
+    }
+  ],
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-task-role-us-west-2",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-execution-role-us-west-2"
+}

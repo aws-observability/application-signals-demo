@@ -1,0 +1,41 @@
+{
+  "family": "discovery-server",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "discovery-server",
+      "image": "discovery-server-image",
+      "portMappings": [
+        {
+          "containerPort": 8761,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "CONFIG_SERVER_URL",
+          "value": "http://config-server.ecs-petclinic:8888"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/pet-clinic-discovery-server",
+          "awslogs-create-group": "true",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "cpu": 256,
+      "memory": 512
+    }
+  ],
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-task-role-us-west-2",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-execution-role-us-west-2"
+}
