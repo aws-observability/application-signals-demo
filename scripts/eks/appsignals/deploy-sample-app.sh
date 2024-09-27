@@ -33,6 +33,7 @@ if [[ $OPERATION == "apply" ]]; then
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonBedrockFullAccess \
         --approve \
         --override-existing-serviceaccounts
+
 else
     echo "Deleting ServiceAccount"
     eksctl delete iamserviceaccount \

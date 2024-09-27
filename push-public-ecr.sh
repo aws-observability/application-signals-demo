@@ -65,3 +65,8 @@ repo_uri=$(get_repo_link traffic-generator  )
 docker build -t traffic-generator ./traffic-generator --no-cache
 docker tag traffic-generator:latest ${repo_uri}:latest
 docker push ${repo_uri}:latest
+
+repo_uri=$(get_repo_link dotnet-petclinic-payment  )
+docker build -t dotnet-petclinic-payment ./dotnet-petclinic-payment/PetClinic.PaymentService --no-cache
+docker tag dotnet-petclinic-payment:latest ${repo_uri}:latest
+docker push ${repo_uri}:latest

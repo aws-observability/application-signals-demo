@@ -50,3 +50,32 @@
         </div>
     </div>
 </form>
+
+<hr/>
+<h3>Payments
+    <a style="position: relative; float:right;" ui-sref="addPayment({ownerId: $ctrl.ownerId, petId: $ctrl.pet.id})">add new payment</a>
+</h3>
+<table class="table table-striped">
+    <tr>
+        <th>
+            Date
+        </th>
+        <th>
+            Amount
+        </th>
+        <th>
+            Notes
+        </th>
+        <th>
+
+        </th>
+    </tr>
+    <tr ng-repeat="paymnet in $ctrl.payments track by paymnet.id">
+        <td>{{paymnet.paymentDate | date:'yyyy MMM dd'}}</td>
+        <td>{{paymnet.amount}}</td>
+        <td>{{paymnet.notes}}</td>
+        <td>
+            <a style="position: relative; float:right;" ui-sref="editPayment({ownerId: $ctrl.ownerId, petId: $ctrl.pet.id, paymentId: paymnet.id})">edit</a>
+        </td>
+    </tr>
+</table>

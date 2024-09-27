@@ -13,6 +13,15 @@ function getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const postPaymentData = (amount, notes) => {
+    const url = `${baseUrl}/api/payments/owners/1/pets/1`;
+    const data = {
+        amount: amount,
+        notes: notes
+    };
+
+    return axios.post(url, data, { timeout: 10000 });
+}
 
 const postVisitData = (date, description) => {
     const url = `${baseUrl}/api/visit/owners/7/pets/9/visits`;
@@ -160,3 +169,28 @@ for (let i = 0; i < 2; i++) {
 }, { scheduled: false });
 
 postPetsHighTrafficTask.start();
+
+const lowTrafficPaymentTask = cron.schedule('*/2 * * * *', () => {
+    console.log('add 1 payment every 2 minutes');
+    postPaymentData(100, `low-traffic-payment`)
+        .catch(err => {
+            console.error("Failed to post /api/payments/owners/1/pets/1, error: " + (err.response ? err.response.data : err.toString()));
+
+        }); // Catch and log errors
+    axios.get(`${baseUrl}/api/payments/owners/1/pets/1`, { timeout: 10000 })
+        .catch(err => {
+            console.error(`${baseUrl}/api/payments/owners/1/pets/1, error: ` + (err.response ? err.response.data : err.toString()));
+        }); // Catch and log errors
+}, { scheduled: false });
+
+lowTrafficPaymentTask.start();
+
+const clearPaymentTableTask = cron.schedule('0 */6 * * *', () => {
+    console.log('clear payment table every 6 hours');
+    axios.delete(`${baseUrl}/api/payments/clean-db`, { timeout: 10000 })
+        .catch(err => {
+            console.error(`${baseUrl}/api/payments/clean-db, error: ` + (err.response ? err.response.data : err.toString()));
+        }); // Catch and log errors
+}, { scheduled: false });
+
+clearPaymentTableTask.start();

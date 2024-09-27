@@ -37,14 +37,26 @@ module "vpc" {
   }
 }
 
-resource "aws_security_group_rule" "example" {
-  #checkov:skip=CKV_AWS_23:low priority, skip
-  type              = "ingress"
-  from_port         = 5432
-  to_port           = 5432
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+resource "aws_vpc_security_group_ingress_rule" "rds-eks" {
   security_group_id = module.vpc.default_security_group_id
+
+  cidr_ipv4   = "0.0.0.0/0"
+  from_port   = 5432
+  ip_protocol = "tcp"
+  to_port     = 5432
+
+  depends_on = [ module.vpc ]
+}
+
+resource "aws_vpc_security_group_egress_rule" "eks-rds" {
+  security_group_id = module.vpc.default_security_group_id
+
+  cidr_ipv4   = "0.0.0.0/0"
+  from_port   = 5432
+  ip_protocol = "tcp"
+  to_port     = 5432
+
+  depends_on = [ module.vpc ]
 }
 
 
