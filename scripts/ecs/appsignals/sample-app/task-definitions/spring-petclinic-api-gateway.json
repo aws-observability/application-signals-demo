@@ -71,7 +71,7 @@
         },
         {
           "name": "API_GATEWAY_IP",
-          "value": "ecs-pet-clinic-lb-us-west-2-463101650.us-west-2.elb.amazonaws.com"
+          "value": "api_gateway_ip"
         }
       ],
       "mountPoints": [
