@@ -19,7 +19,7 @@
       "environment": [
         {
           "name": "CONFIG_SERVER_URL",
-          "value": "http://config-server.ecs-petclinic:8888"
+          "value": "http://config-server-cluster-name.ecs-petclinic:8888"
         }
       ],
       "essential": true,

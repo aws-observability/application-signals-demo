@@ -39,7 +39,7 @@
         },
         {
           "name": "CONFIG_SERVER_URL",
-          "value": "http://config-server.ecs-petclinic:8888"
+          "value": "http://config-server-cluster-name.ecs-petclinic:8888"
         },
         {
           "name": "OTEL_RESOURCE_ATTRIBUTES",
@@ -67,7 +67,7 @@
         },
         {
           "name": "DISCOVERY_SERVER_URL",
-          "value": "http://discovery-server.ecs-petclinic:8761/eureka"
+          "value": "http://discovery-server-cluster-name.ecs-petclinic:8761/eureka"
         },
         {
           "name": "API_GATEWAY_IP",

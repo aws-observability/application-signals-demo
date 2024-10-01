@@ -61,11 +61,11 @@
         },
         {
           "name": "EUREKA_SERVER_URL",
-          "value": "discovery-server.ecs-petclinic"
+          "value": "discovery-server-cluster-name.ecs-petclinic"
         },
         {
           "name": "INSURANCE_SERVICE_IP",
-          "value": "insurance-service.ecs-petclinic"
+          "value": "insurance-service-cluster-name.ecs-petclinic"
         },
         {
           "name": "DB_NAME",

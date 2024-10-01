@@ -63,15 +63,15 @@
         },
         {
           "name": "DISCOVERY_SERVER_URL",
-          "value": "http://discovery-server.ecs-petclinic:8761/eureka"
+          "value": "http://discovery-server-cluster-name.ecs-petclinic:8761/eureka"
         },
         {
           "name": "VETS_SERVICE_IP",
-          "value": "vets-service.ecs-petclinic"
+          "value": "vets-service-cluster-name.ecs-petclinic"
         },
         {
           "name": "CONFIG_SERVER_URL",
-          "value": "http://config-server.ecs-petclinic:8888"
+          "value": "http://config-server-cluster-name.ecs-petclinic:8888"
         }
       ],
       "mountPoints": [

@@ -40,15 +40,18 @@ IAM_TASK_ROLE_NAME="ecs-pet-clinic-task-role-${REGION}"
 IAM_EXECUTION_ROLE_NAME="ecs-pet-clinic-execution-role-${REGION}"
 LOAD_BALANCER_NAME="ecs-pet-clinic-lb-${REGION}"
 OUTPUT_FILE="ecs-pet-clinic-vars.txt"
-account_id="000111222333"
+adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
+adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
+adot_python_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
+adot_python_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$adot_python_image_tag"
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
-VPC_ID="vpc-0000000000aaaaaaa"
-SUBNET_IDS="subnet-0000000000aaaaaaa subnet-1111111111bbbbbbb"
-SECURITY_GROUP_ID="sg-0000000000aaaaaaa"
-LOAD_BALANCER_ARN="arn:aws:elasticloadbalancing:${REGION}:000111222333:loadbalancer/app/${LOAD_BALANCER_NAME}"
-LOAD_BALANCER_DNS="ecs-pet-clinic-lb-${REGION}-000111222333.us-east-1.elb.amazonaws.com"
-ECR_IMAGE_PREFIX="000111222333.dkr.ecr.us-east-1.amazonaws.com"
+VPC_ID=""
+SUBNET_IDS=""
+SECURITY_GROUP_ID=""
+LOAD_BALANCER_ARN=""
+LOAD_BALANCER_DNS=""
+ECR_IMAGE_PREFIX=""
 
 function create_resources() {
     echo "Creating resources..."
@@ -91,17 +94,15 @@ function create_resources() {
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
 
     # Create an ECS Task Execution role and attach policies
     aws iam create-role --role-name $IAM_EXECUTION_ROLE_NAME --assume-role-policy-document file://trust-policy.json > /dev/null
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonKinesisFullAccess"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 
@@ -143,6 +144,8 @@ function create_resources() {
     echo "LOAD_BALANCER_DNS=\"$LOAD_BALANCER_DNS\"" >> $OUTPUT_FILE
     echo "ECR_IMAGE_PREFIX=\"$ECR_IMAGE_PREFIX\"" >> $OUTPUT_FILE
     echo "ACCOUNT_ID=\"$ACCOUNT_ID\"" >> $OUTPUT_FILE
+    echo "adot_java_image=\"$adot_java_image\"" >> $OUTPUT_FILE
+    echo "adot_python_image=\"$adot_python_image\"" >> $OUTPUT_FILE
 
     # Confirm the output file has been written
     echo "Variables written to $OUTPUT_FILE"
@@ -160,7 +163,7 @@ function run_config_server() {
 
   namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
   service_discovery_id=$(aws servicediscovery create-service \
-      --name config-server \
+      --name config-server-$CLUSTER \
       --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
       --health-check-custom-config FailureThreshold=2 \
       --query "Service.Id" --output text)
@@ -186,6 +189,7 @@ function run_config_server() {
 
 function run_discovery_server() {
   sed -i '' "s|\"discovery-server-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-discovery-server\"|" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
 
@@ -193,7 +197,7 @@ function run_discovery_server() {
 
   namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
   service_discovery_id=$(aws servicediscovery create-service \
-      --name discovery-server \
+      --name discovery-server-$CLUSTER \
       --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
       --health-check-custom-config FailureThreshold=2 \
       --query "Service.Id" --output text)
@@ -219,10 +223,9 @@ function run_discovery_server() {
 }
 
 function run_admin_server() {
-  adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-  adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-admin-server.json
   sed -i '' "s|\"admin-server-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-admin-server\"|" ./sample-app/task-definitions/spring-petclinic-admin-server.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-admin-server.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-admin-server.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-admin-server.json
 
@@ -230,7 +233,7 @@ function run_admin_server() {
 
   namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
   service_discovery_id=$(aws servicediscovery create-service \
-      --name admin-server \
+      --name admin-server-$CLUSTER \
       --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
       --health-check-custom-config FailureThreshold=2 \
       --query "Service.Id" --output text)
@@ -279,11 +282,10 @@ function run_api_gateway() {
     --port 8080 \
     --default-actions Type=forward,TargetGroupArn=$api_gateway_target_group_arn > /dev/null
 
-  adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-  adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
   sed -i '' "s|\"api_gateway_ip\"|\"${LOAD_BALANCER_DNS}\"|" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
   sed -i '' "s|\"api-gateway-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-api-gateway\"|" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
 
@@ -309,7 +311,7 @@ function run_vets_service() {
   namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
 
   service_discovery_id=$(aws servicediscovery create-service \
-      --name vets-service \
+      --name vets-service-$CLUSTER \
       --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
       --health-check-custom-config FailureThreshold=2 \
       --query "Service.Id" --output text)
@@ -318,11 +320,10 @@ function run_vets_service() {
     --id $service_discovery_id \
     --query 'Service.Arn' --output text)
 
-  adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-  adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-vets-service.json
   sed -i '' "s|\"vets-service-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-vets-service\"|" ./sample-app/task-definitions/spring-petclinic-vets-service.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-vets-service.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-vets-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-vets-service.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-vets-service.json > /dev/null
@@ -345,7 +346,7 @@ function run_customers_service() {
   namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
 
   service_discovery_id=$(aws servicediscovery create-service \
-      --name customers-service \
+      --name customers-service-$CLUSTER \
       --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
       --health-check-custom-config FailureThreshold=2 \
       --query "Service.Id" --output text)
@@ -354,10 +355,9 @@ function run_customers_service() {
     --id $service_discovery_id \
     --query 'Service.Arn' --output text)
 
-  adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-  adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-customers-service.json
   sed -i '' "s|\"customers-service-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-customers-service\"|" ./sample-app/task-definitions/spring-petclinic-customers-service.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-customers-service.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-customers-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-customers-service.json
 
@@ -380,7 +380,7 @@ function run_visits_service() {
   namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
 
   service_discovery_id=$(aws servicediscovery create-service \
-      --name visits-service \
+      --name visits-service-$CLUSTER \
       --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
       --health-check-custom-config FailureThreshold=2 \
       --query "Service.Id" --output text)
@@ -389,10 +389,9 @@ function run_visits_service() {
     --id $service_discovery_id \
     --query 'Service.Arn' --output text)
 
-  adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-  adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-visits-service.json
   sed -i '' "s|\"visits-service-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-visits-service\"|" ./sample-app/task-definitions/spring-petclinic-visits-service.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-visits-service.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-visits-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-visits-service.json
 
@@ -472,10 +471,9 @@ function run_insurance_service() {
     --id $insurance_service_id \
     --query 'Service.Arn' --output text)
 
-  adot_python_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-  adot_python_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$adot_python_image_tag"
   sed -i '' "s|\"adot-python-image\"|\"${adot_python_image}\"|" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
   sed -i '' "s|\"insurance-service-image\"|\"${ECR_IMAGE_PREFIX}/python-petclinic-insurance-service\"|" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
 
@@ -510,10 +508,9 @@ function run_billing_service() {
     --id $billing_service_id \
     --query 'Service.Arn' --output text)
 
-  adot_python_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-  adot_python_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$adot_python_image_tag"
   sed -i '' "s|\"adot-python-image\"|\"${adot_python_image}\"|" ./sample-app/task-definitions/spring-petclinic-billing-service.json
   sed -i '' "s|\"billing-service-image\"|\"${ECR_IMAGE_PREFIX}/python-petclinic-billing-service\"|" ./sample-app/task-definitions/spring-petclinic-billing-service.json
+  sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
   sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
 
@@ -746,7 +743,7 @@ function delete_visits_service() {
       done
 
       service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='visits-service'].Id" \
+         --query "Services[?Name=='visits-service-$CLUSTER'].Id" \
          --output text)
 
       aws servicediscovery delete-service --id $service_discovery_id
@@ -792,7 +789,7 @@ function delete_customers_service() {
       done
 
       service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='customers-service'].Id" \
+         --query "Services[?Name=='customers-service-$CLUSTER'].Id" \
          --output text)
 
       aws servicediscovery delete-service --id $service_discovery_id
@@ -838,7 +835,7 @@ function delete_vets_service() {
       done
 
       service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='vets-service'].Id" \
+         --query "Services[?Name=='vets-service-$CLUSTER'].Id" \
          --output text)
 
       aws servicediscovery delete-service --id $service_discovery_id
@@ -934,7 +931,7 @@ function delete_admin_server() {
       done
 
       service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='admin-server'].Id" \
+         --query "Services[?Name=='admin-server-$CLUSTER'].Id" \
          --output text)
 
       aws servicediscovery delete-service --id $service_discovery_id
@@ -979,7 +976,7 @@ function delete_discovery_server() {
       done
 
       service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='discovery-server'].Id" \
+         --query "Services[?Name=='discovery-server-$CLUSTER'].Id" \
          --output text)
 
       aws servicediscovery delete-service --id $service_discovery_id
@@ -1026,7 +1023,7 @@ function delete_config_server() {
       done
 
       service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='config-server'].Id" \
+         --query "Services[?Name=='config-server-$CLUSTER'].Id" \
          --output text)
 
       aws servicediscovery delete-service --id $service_discovery_id
@@ -1055,7 +1052,7 @@ function delete_resources() {
     aws servicediscovery delete-namespace --id $namespace_id
 
     # Detach and delete IAM policies for ECS Task role
-    task_role_policy_arns=("arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole" "arn:aws:iam::aws:policy/AmazonECS_FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess")
+    task_role_policy_arns=("arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole" "arn:aws:iam::aws:policy/AmazonECS_FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess")
     for arn in "${task_role_policy_arns[@]}"
     do
       echo $arn
@@ -1064,7 +1061,7 @@ function delete_resources() {
     aws iam delete-role --role-name $IAM_TASK_ROLE_NAME
 
     # Detach and delete IAM policies for ECS Task Execution role
-    task_execution_role_policy_arns=("arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess" "arn:aws:iam::aws:policy/AmazonKinesisFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" "arn:aws:iam::aws:policy/AmazonECS_FullAccess")
+    task_execution_role_policy_arns=("arn:aws:iam::aws:policy/AmazonKinesisFullAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" "arn:aws:iam::aws:policy/AmazonECS_FullAccess")
     for arn in "${task_execution_role_policy_arns[@]}"
     do
       echo $arn
