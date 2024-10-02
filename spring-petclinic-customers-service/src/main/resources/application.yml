@@ -25,3 +25,14 @@ spring:
     activate:
       on-profile: docker
     import: configserver:http://config-server:8888
+
+---
+# Prod profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+eureka:
+  instance:
+    ipAddress: ${CUSTOMER_SERVICE_IP:customer-service}

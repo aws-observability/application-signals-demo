@@ -20,3 +20,11 @@ spring:
         activate:
             on-profile: docker
         import: configserver:http://config-server:8888
+
+---
+# Prod profile
+spring:
+    config:
+        activate:
+            on-profile: prod
+        import: configserver:${CONFIG_SERVER_URL:http://config-server:8888}

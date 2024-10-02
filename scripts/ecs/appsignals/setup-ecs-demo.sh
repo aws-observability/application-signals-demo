@@ -88,23 +88,20 @@ function create_resources() {
     # Create an ECS Task role and attach policies
     aws iam create-role --role-name $IAM_TASK_ROLE_NAME --assume-role-policy-document file://trust-policy.json > /dev/null
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
-    aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
     aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
+    aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+    aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+    aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonBedrockFullAccess"
+    aws iam attach-role-policy --role-name $IAM_TASK_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonKinesisFullAccess"
 
     # Create an ECS Task Execution role and attach policies
     aws iam create-role --role-name $IAM_EXECUTION_ROLE_NAME --assume-role-policy-document file://trust-policy.json > /dev/null
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonKinesisFullAccess"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
     aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-    aws iam attach-role-policy --role-name $IAM_EXECUTION_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 
     operation_id=$(aws servicediscovery create-private-dns-namespace \
       --name ecs-petclinic \
@@ -1052,7 +1049,7 @@ function delete_resources() {
     aws servicediscovery delete-namespace --id $namespace_id
 
     # Detach and delete IAM policies for ECS Task role
-    task_role_policy_arns=("arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole" "arn:aws:iam::aws:policy/AmazonECS_FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess")
+    task_role_policy_arns=("arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole" "arn:aws:iam::aws:policy/AmazonECS_FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess")
     for arn in "${task_role_policy_arns[@]}"
     do
       echo $arn

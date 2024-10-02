@@ -181,25 +181,19 @@ The following instructions set up an kubernetes cluster on 2 EC2 instances (one 
 # ECS Demo
 The following instructions set up an ECS cluster with all services running in Fargate. You can run these steps in your personal AWS account to follow along (Not recommended for production usage).
 
-1. Apply Patch to services configurations for ECS integration.
+1. Build container images and push them to public ECR repo
 
    ``` shell
-   cd scripts/ecs/appsignals && ./patch-ecs-app.sh
-   ``` 
-
-2. Build container images and push them to public ECR repo
-
-   ``` shell
-   cd ../../../ && ./mvnw clean install -P buildDocker && ./push-public-ecr.sh
+   ./mvnw clean install -P buildECS && ./push-public-ecr.sh
    ```
 
-3. Set up a ECS cluster and deploy sample app. Replace `region-name` with the region you choose.
+2. Set up a ECS cluster and deploy sample app. Replace `region-name` with the region you choose.
 
    ``` shell
-   cd scripts/ecs/appsignals && ./setup-ecs-demo.sh --region=us-west-2
+   cd scripts/ecs/appsignals && ./setup-ecs-demo.sh --region=region-name
    ``` 
 
-4. Clean up after you are done with the sample app. Replace `region-name` with the same value that you use in previous step.
+3. Clean up after you are done with the sample app. Replace `region-name` with the same value that you use in previous step.
    ```
-   cd scripts/k8s/appsignals/ && ./setup-ecs-demo.sh --operation=delete --region=us-west-2
+   cd scripts/ecs/appsignals/ && ./setup-ecs-demo.sh --operation=delete --region=region-name
    ```

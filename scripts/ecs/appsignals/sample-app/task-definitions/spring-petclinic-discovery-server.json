@@ -20,6 +20,10 @@
         {
           "name": "CONFIG_SERVER_URL",
           "value": "http://config-server-cluster-name.ecs-petclinic:8888"
+        },
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
         }
       ],
       "essential": true,
