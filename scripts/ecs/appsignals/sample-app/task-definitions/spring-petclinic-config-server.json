@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "config-server",
-      "image": "public.ecr.aws/u8q5x3l1/springcommunity/spring-petclinic-config-server",
+      "image": "config-server-image",
       "portMappings": [
         {
           "containerPort": 8888,
@@ -28,7 +28,7 @@
         "options": {
           "awslogs-group": "/ecs/pet-clinic-config-server",
           "awslogs-create-group": "true",
-          "awslogs-region": "us-west-2",
+          "awslogs-region": "region-name",
           "awslogs-stream-prefix": "ecs"
         }
       },
@@ -36,6 +36,6 @@
       "memory": 512
     }
   ],
-  "taskRoleArn": "arn:aws:iam::007003802740:role/ecs-pet-clinic-task-role-us-west-2",
-  "executionRoleArn": "arn:aws:iam::007003802740:role/ecs-pet-clinic-execution-role-us-west-2"
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-execution-role-region-name"
 }

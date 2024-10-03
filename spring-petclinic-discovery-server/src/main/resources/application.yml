@@ -26,5 +26,5 @@ spring:
 spring:
     config:
         activate:
-            on-profile: prod
+            on-profile: ecs
         import: configserver:${CONFIG_SERVER_URL:http://config-server:8888}

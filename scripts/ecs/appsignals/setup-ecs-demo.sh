@@ -12,18 +12,18 @@ do
 case $i in
     --operation=*)
     OPERATION="${i#*=}"
-    shift # past argument=value
+    shift
     ;;
     --region=*)
     REGION="${i#*=}"
-    shift # past argument=value
+    shift
     ;;
     --cluster=*)
     CLUSTER="${i#*=}"
-    shift # past argument=value
+    shift
     ;;
     *)
-          # unknown option
+
     ;;
 esac
 done
@@ -40,12 +40,14 @@ IAM_TASK_ROLE_NAME="ecs-pet-clinic-task-role-${REGION}"
 IAM_EXECUTION_ROLE_NAME="ecs-pet-clinic-execution-role-${REGION}"
 LOAD_BALANCER_NAME="ecs-pet-clinic-lb-${REGION}"
 OUTPUT_FILE="ecs-pet-clinic-vars.txt"
+ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 adot_java_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
 adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$adot_java_image_tag"
 adot_python_image_tag=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
 adot_python_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$adot_python_image_tag"
+master_username="djangouser"
+master_password=$(LC_ALL=C tr -dc 'A-Za-z0-9_' < /dev/urandom | head -c 10; echo)
 
-ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
 VPC_ID=""
 SUBNET_IDS=""
 SECURITY_GROUP_ID=""
@@ -143,6 +145,7 @@ function create_resources() {
     echo "ACCOUNT_ID=\"$ACCOUNT_ID\"" >> $OUTPUT_FILE
     echo "adot_java_image=\"$adot_java_image\"" >> $OUTPUT_FILE
     echo "adot_python_image=\"$adot_python_image\"" >> $OUTPUT_FILE
+    echo "master_password=\"$master_password\"" >> $OUTPUT_FILE
 
     # Confirm the output file has been written
     echo "Variables written to $OUTPUT_FILE"
@@ -151,107 +154,76 @@ function create_resources() {
 
 }
 
-function run_config_server() {
-  sed -i '' "s|\"config-server-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-config-server\"|" ./sample-app/task-definitions/spring-petclinic-config-server.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-config-server.json
-  sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-config-server.json
+function create_service() {
+  # This file sets up the Petclinic sample app on the ECS platform, where each service is registered with Eureka using its
+  # IP and port, exposing the health check endpoint at: http://<service_ip>:<port>/actuator/health.
+  # If the actuator/health check fails, the service is automatically deregistered from Eureka.
 
-  aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-config-server.json > /dev/null
+  # In ECS, the application cannot be accessed using the instance IP (since each task has its own IP) or the container name.
+  # We use service discovery to expose the app using the <service_name.namespace> format. This makes the health check accessible via:
+  # http://<service_name.namespace>:<port>/actuator/health.
+  # For example, for the vets-service, the endpoint would be:http://vets-service.ecs-petclinic:<port>/actuator/health.
 
+  local service_name=$1
+  # Get the namespace ID for the specified namespace
   namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
+
+  # Create the service and capture the service discovery ID
   service_discovery_id=$(aws servicediscovery create-service \
-      --name config-server-$CLUSTER \
+      --name "$service_name-$CLUSTER" \
       --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
       --health-check-custom-config FailureThreshold=2 \
       --query "Service.Id" --output text)
 
+  # Get the registry ARN for the newly created service
   registryArn=$(aws servicediscovery get-service \
-    --id $service_discovery_id \
+    --id "$service_discovery_id" \
     --query 'Service.Arn' --output text)
 
   aws ecs create-service \
-      --service-name config-server \
-      --task-definition config-server \
+      --service-name $service_name \
+      --task-definition $service_name \
       --service-registries registryArn=$registryArn \
       --desired-count 1 \
       --launch-type FARGATE \
       --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
       --cluster $CLUSTER > /dev/null
+}
 
+function run_config_server() {
+  sed -i '' "s|\"config-server-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-config-server\"|" ./sample-app/task-definitions/spring-petclinic-config-server.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-config-server.json
+  sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-config-server.json
+
+  aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-config-server.json > /dev/null
+  create_service "config-server"
   echo "Waiting for the config server to be accessible..."
   sleep 180
-  echo "Config server is now accessible!"
-
 }
 
 function run_discovery_server() {
   sed -i '' "s|\"discovery-server-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-discovery-server\"|" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-discovery-server.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-discovery-server.json > /dev/null
-
-  namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
-  service_discovery_id=$(aws servicediscovery create-service \
-      --name discovery-server-$CLUSTER \
-      --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
-      --health-check-custom-config FailureThreshold=2 \
-      --query "Service.Id" --output text)
-
-  registryArn=$(aws servicediscovery get-service \
-    --id $service_discovery_id \
-    --query 'Service.Arn' --output text)
-
-  aws ecs create-service \
-      --service-name discovery-server \
-      --task-definition discovery-server \
-      --service-registries registryArn=$registryArn \
-      --desired-count 1 \
-      --launch-type FARGATE \
-      --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-      --cluster $CLUSTER > /dev/null
-
+  create_service "discovery-server"
   echo "Waiting for the discovery server to be accessible..."
   sleep 180
-
-  echo "discovery server is now accessible!"
-
 }
 
 function run_admin_server() {
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-admin-server.json
   sed -i '' "s|\"admin-server-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-admin-server\"|" ./sample-app/task-definitions/spring-petclinic-admin-server.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-admin-server.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-admin-server.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-admin-server.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-admin-server.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-admin-server.json > /dev/null
-
-  namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
-  service_discovery_id=$(aws servicediscovery create-service \
-      --name admin-server-$CLUSTER \
-      --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
-      --health-check-custom-config FailureThreshold=2 \
-      --query "Service.Id" --output text)
-
-  registryArn=$(aws servicediscovery get-service \
-    --id $service_discovery_id \
-    --query 'Service.Arn' --output text)
-
-  aws ecs create-service \
-      --service-name admin-server \
-      --task-definition admin-server \
-      --service-registries registryArn=$registryArn \
-      --desired-count 1 \
-      --launch-type FARGATE \
-      --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-      --cluster $CLUSTER > /dev/null
-
+  create_service "admin-server"
+  echo "Waiting for the Admin server to be accessible..."
   sleep 120
-
-  echo "Finished deploying admin server!"
-
 }
 
 function run_api_gateway() {
@@ -283,7 +255,7 @@ function run_api_gateway() {
   sed -i '' "s|\"api_gateway_ip\"|\"${LOAD_BALANCER_DNS}\"|" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
   sed -i '' "s|\"api-gateway-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-api-gateway\"|" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-api-gateway.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-api-gateway.json > /dev/null
@@ -301,108 +273,44 @@ function run_api_gateway() {
   sleep 240
 
   echo "Frontened server is now accessible!"
-
 }
 
 function run_vets_service() {
-  namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
-
-  service_discovery_id=$(aws servicediscovery create-service \
-      --name vets-service-$CLUSTER \
-      --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
-      --health-check-custom-config FailureThreshold=2 \
-      --query "Service.Id" --output text)
-
-  registryArn=$(aws servicediscovery get-service \
-    --id $service_discovery_id \
-    --query 'Service.Arn' --output text)
-
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-vets-service.json
   sed -i '' "s|\"vets-service-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-vets-service\"|" ./sample-app/task-definitions/spring-petclinic-vets-service.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-vets-service.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-vets-service.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-vets-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-vets-service.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-vets-service.json > /dev/null
-
-  aws ecs create-service \
-      --service-name vets-service \
-      --task-definition vets-service \
-      --desired-count 1 \
-      --launch-type FARGATE \
-      --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-      --service-registries registryArn=$registryArn \
-      --cluster $CLUSTER > /dev/null
-
+  create_service "vets-service"
+  registryArn=$(create_service_discovery "vets-service-$CLUSTER")
   echo "Waiting for the Vets server to be accessible..."
   sleep 180
-
 }
 
 function run_customers_service() {
-  namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
-
-  service_discovery_id=$(aws servicediscovery create-service \
-      --name customers-service-$CLUSTER \
-      --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
-      --health-check-custom-config FailureThreshold=2 \
-      --query "Service.Id" --output text)
-
-  registryArn=$(aws servicediscovery get-service \
-    --id $service_discovery_id \
-    --query 'Service.Arn' --output text)
-
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-customers-service.json
   sed -i '' "s|\"customers-service-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-customers-service\"|" ./sample-app/task-definitions/spring-petclinic-customers-service.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-customers-service.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-customers-service.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-customers-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-customers-service.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-customers-service.json > /dev/null
-
-  aws ecs create-service \
-      --service-name customers-service \
-      --task-definition customers-service \
-      --desired-count 1 \
-      --launch-type FARGATE \
-      --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-      --service-registries registryArn=$registryArn \
-      --cluster $CLUSTER > /dev/null
-
+  create_service "customers-service"
   echo "Waiting for the Customers server to be accessible..."
   sleep 180
 }
 
 function run_visits_service() {
-  namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
-
-  service_discovery_id=$(aws servicediscovery create-service \
-      --name visits-service-$CLUSTER \
-      --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
-      --health-check-custom-config FailureThreshold=2 \
-      --query "Service.Id" --output text)
-
-  registryArn=$(aws servicediscovery get-service \
-    --id $service_discovery_id \
-    --query 'Service.Arn' --output text)
-
   sed -i '' "s|\"adot-java-image\"|\"${adot_java_image}\"|" ./sample-app/task-definitions/spring-petclinic-visits-service.json
   sed -i '' "s|\"visits-service-image\"|\"${ECR_IMAGE_PREFIX}/springcommunity/spring-petclinic-visits-service\"|" ./sample-app/task-definitions/spring-petclinic-visits-service.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-visits-service.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-visits-service.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-visits-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-visits-service.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-visits-service.json > /dev/null
-
-  aws ecs create-service \
-      --service-name visits-service \
-      --task-definition visits-service \
-      --desired-count 1 \
-      --launch-type FARGATE \
-      --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-      --service-registries registryArn=$registryArn \
-      --cluster $CLUSTER > /dev/null
-
+  create_service "visits-service"
   echo "Waiting for the Visits server to be accessible..."
   sleep 180
 }
@@ -417,8 +325,6 @@ function create_database() {
 
   # Create the DB instance using the new DB subnet group
   db_instance_identifier="petclinic-python"
-  master_username="djangouser"
-  master_password="asdfqwer"
   echo "the password for the database is: $master_password"
 
   security_group=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SG_NAME" --query 'SecurityGroups[*].GroupId' --output text)
@@ -430,7 +336,7 @@ function create_database() {
       --engine-version "14" \
       --allocated-storage 20 \
       --master-username $master_username \
-      --master-user-password "asdfqwer" \
+      --master-user-password $master_password \
       --db-subnet-group-name $db_subnet_group_name \
       --vpc-security-group-ids $security_group \
       --no-multi-az \
@@ -456,75 +362,38 @@ function create_database() {
 }
 
 function run_insurance_service() {
-  namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
-
-  insurance_service_id=$(aws servicediscovery create-service \
-      --name insurance-service \
-      --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
-      --health-check-custom-config FailureThreshold=2 \
-      --query "Service.Id" --output text)
-
-  registryArn=$(aws servicediscovery get-service \
-    --id $insurance_service_id \
-    --query 'Service.Arn' --output text)
-
   sed -i '' "s|\"adot-python-image\"|\"${adot_python_image}\"|" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
   sed -i '' "s|\"insurance-service-image\"|\"${ECR_IMAGE_PREFIX}/python-petclinic-insurance-service\"|" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
+  sed -i '' "s|db-user-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
 
   rds_endpoint=`aws rds describe-db-instances --db-instance-identifier petclinic-python --query "DBInstances[*].Endpoint.Address" --output text`
   sed -i '' "s|\"db_service_host\"|\"${rds_endpoint}\"|" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
+  sed -i '' "s|db-user-name|${master_username}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
+  sed -i '' "s|db-user-password|${master_password}|g" ./sample-app/task-definitions/spring-petclinic-insurance-service.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-insurance-service.json > /dev/null
-
-  aws ecs create-service \
-      --service-name insurance-service \
-      --task-definition insurance-service \
-      --desired-count 1 \
-      --launch-type FARGATE \
-      --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-      --service-registries registryArn=$registryArn \
-      --cluster $CLUSTER > /dev/null
-
+  create_service "insurance-service"
   echo "Waiting for the Insurance server to be accessible..."
   sleep 180
 }
 
 function run_billing_service() {
-  namespace_id=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='ecs-petclinic'].Id" --output text)
-
-  billing_service_id=$(aws servicediscovery create-service \
-      --name billing-service \
-      --dns-config "NamespaceId=$namespace_id,RoutingPolicy=WEIGHTED,DnsRecords=[{Type=A,TTL=300}]" \
-      --health-check-custom-config FailureThreshold=2 \
-      --query "Service.Id" --output text)
-
-  registryArn=$(aws servicediscovery get-service \
-    --id $billing_service_id \
-    --query 'Service.Arn' --output text)
-
   sed -i '' "s|\"adot-python-image\"|\"${adot_python_image}\"|" ./sample-app/task-definitions/spring-petclinic-billing-service.json
   sed -i '' "s|\"billing-service-image\"|\"${ECR_IMAGE_PREFIX}/python-petclinic-billing-service\"|" ./sample-app/task-definitions/spring-petclinic-billing-service.json
   sed -i '' "s|cluster-name|${CLUSTER}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
   sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
 
   rds_endpoint=`aws rds describe-db-instances --db-instance-identifier petclinic-python --query "DBInstances[*].Endpoint.Address" --output text`
   sed -i '' "s|\"db_service_host\"|\"${rds_endpoint}\"|" ./sample-app/task-definitions/spring-petclinic-billing-service.json
+    sed -i '' "s|db-user-name|${master_username}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
+    sed -i '' "s|db-user-password|${master_password}|g" ./sample-app/task-definitions/spring-petclinic-billing-service.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-billing-service.json > /dev/null
-
-  aws ecs create-service \
-      --service-name billing-service \
-      --task-definition billing-service \
-      --desired-count 1 \
-      --launch-type FARGATE \
-      --network-configuration "awsvpcConfiguration={subnets=[$(echo $SUBNET_IDS | tr -s ' ' ',')],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-      --service-registries registryArn=$registryArn \
-      --cluster $CLUSTER > /dev/null
-
+  create_service "billing-service"
   echo "Waiting for the Billing server to be accessible..."
   sleep 180
 }
@@ -532,7 +401,7 @@ function run_billing_service() {
 function generate_traffic() {
   sed -i '' "s|\"discovery-server-url\"|\"http://${LOAD_BALANCER_DNS}:8080\"|" ./sample-app/task-definitions/traffic-generator.json
   sed -i '' "s|\"traffic-generator-image\"|\"${ECR_IMAGE_PREFIX}/traffic-generator\"|" ./sample-app/task-definitions/traffic-generator.json
-  sed -i '' "s|us-west-2|${REGION}|g" ./sample-app/task-definitions/traffic-generator.json
+  sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/traffic-generator.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/traffic-generator.json > /dev/null
 
@@ -550,6 +419,57 @@ function generate_traffic() {
 
 function print_url() {
   echo "Visit the sample app at this url: http://${LOAD_BALANCER_DNS}:8080"
+}
+
+function delete_service() {
+      local service_name=$1
+      echo "Deleting $service_name..."
+
+      # Delete the ECS service
+      aws ecs update-service \
+          --cluster $CLUSTER \
+          --service $service_name \
+          --desired-count 0 > /dev/null
+
+      aws ecs delete-service \
+          --cluster $CLUSTER \
+          --service $service_name \
+          --force > /dev/null
+
+      # Wait for the service to be deleted
+      while true; do
+          STATUS=$(aws ecs describe-services \
+              --cluster $CLUSTER \
+              --services $service_name \
+              --query 'services[0].status' \
+              --output text)
+
+          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
+              echo "$service_name deleted successfully."
+              break
+          else
+              echo "Waiting for service deletion..."
+              sleep 20
+          fi
+      done
+
+      # Get all task definitions for the specified family
+      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix $service_name --query "taskDefinitionArns" --output text)
+
+      # Loop through each task definition and deregister it
+      for TASK_DEF in $TASK_DEFINITIONS; do
+          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
+      done
+
+      echo $service_name
+
+      discovery_service_id=$(aws servicediscovery list-services \
+         --query "Services[?Name=='$service_name-$CLUSTER'].Id" \
+         --output text)
+
+      aws servicediscovery delete-service --id $discovery_service_id
+
+      echo "$service_name deleted."
 }
 
 function delete_traffic() {
@@ -577,121 +497,24 @@ function delete_traffic() {
       echo "All resources deleted."
 }
 
-function delete_billing_service() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service billing-service \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service billing-service \
-          --force > /dev/null
-
-      # Wait for the service to be deleted
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services billing-service \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "billing service deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix billing-service --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      billing_service_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='billing-service'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $billing_service_id
-
-      echo "All resources deleted."
-}
-
-function delete_insurance_service() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service insurance-service \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service insurance-service \
-          --force > /dev/null
-
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services insurance-service \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "insurance service deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix insurance-service --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      insurance_service_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='insurance-service'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $insurance_service_id
-
-      echo "All resources deleted."
-}
-
 function delete_database() {
     # Configuration variables
     db_instance_identifier="petclinic-python"
     db_subnet_group_name="my-db-subnet-group"
     security_group=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SG_NAME" --query 'SecurityGroups[*].GroupId' --output text)
 
-    # Step 1: Delete the RDS instance
     echo "Deleting DB instance..."
     aws rds delete-db-instance \
         --db-instance-identifier $db_instance_identifier \
         --skip-final-snapshot  \
         --output text
 
-    # Wait for the DB instance to be completely deleted
     echo "Waiting for DB instance to be deleted..."
     aws rds wait db-instance-deleted --db-instance-identifier $db_instance_identifier
 
-    # Step 2: Delete the DB subnet group
     echo "Deleting DB subnet group..."
     aws rds delete-db-subnet-group --db-subnet-group-name $db_subnet_group_name
 
-    # Step 3: Revoke security group ingress (if necessary)
     echo "Revoking security group ingress rules..."
     aws ec2 revoke-security-group-ingress \
         --group-id $security_group \
@@ -700,144 +523,6 @@ function delete_database() {
         --source-group $security_group
 
     echo "All specified database resources have been deleted."
-}
-
-function delete_visits_service() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service visits-service \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service visits-service \
-          --force > /dev/null
-
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services visits-service \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "visits service deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix visits-service --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='visits-service-$CLUSTER'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $service_discovery_id
-
-      echo "All resources deleted."
-}
-
-function delete_customers_service() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service customers-service \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service customers-service \
-          --force > /dev/null
-
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services customers-service \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "customers service deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix customers-service --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='customers-service-$CLUSTER'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $service_discovery_id
-
-      echo "All resources deleted."
-}
-
-function delete_vets_service() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service vets-service \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service vets-service \
-          --force > /dev/null
-
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services vets-service \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "customers service deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix vets-service --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='vets-service-$CLUSTER'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $service_discovery_id
-
-      echo "All resources deleted."
 }
 
 function delete_api_gateway() {
@@ -889,145 +574,6 @@ function delete_api_gateway() {
       echo "All resources deleted."
 }
 
-function delete_admin_server() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service admin-server \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service admin-server \
-          --force > /dev/null
-      echo "ECS service deleted."
-
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services admin-server \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "admin service deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix admin-server --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='admin-server-$CLUSTER'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $service_discovery_id
-}
-
-function delete_discovery_server() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service discovery-server \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service discovery-server \
-          --force > /dev/null
-      echo "ECS service deleted."
-
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services discovery-server \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "discovery service deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix discovery-server --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='discovery-server-$CLUSTER'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $service_discovery_id
-
-      echo "All resources deleted."
-}
-
-function delete_config_server() {
-      echo "Deleting resources..."
-      # Delete the ECS service
-      aws ecs update-service \
-          --cluster $CLUSTER \
-          --service config-server \
-          --desired-count 0 > /dev/null
-
-      aws ecs delete-service \
-          --cluster $CLUSTER \
-          --service config-server \
-          --force > /dev/null
-      echo "ECS service deleted."
-
-      while true; do
-          STATUS=$(aws ecs describe-services \
-              --cluster $CLUSTER \
-              --services config-server \
-              --query 'services[0].status' \
-              --output text)
-
-          if [ "$STATUS" == "INACTIVE" ] || [ "$STATUS" == "None" ]; then
-              echo "config server deleted successfully."
-              break
-          else
-              echo "Waiting for service deletion..."
-              sleep 20
-          fi
-      done
-
-      # Get all task definitions for the specified family
-      TASK_DEFINITIONS=$(aws ecs list-task-definitions --family-prefix config-server --query "taskDefinitionArns" --output text)
-
-      # Loop through each task definition and deregister it
-      for TASK_DEF in $TASK_DEFINITIONS; do
-          aws ecs deregister-task-definition --task-definition $TASK_DEF > /dev/null
-      done
-
-      service_discovery_id=$(aws servicediscovery list-services \
-         --query "Services[?Name=='config-server-$CLUSTER'].Id" \
-         --output text)
-
-      aws servicediscovery delete-service --id $service_discovery_id
-
-      echo "All resources deleted."
-}
-
 function delete_resources() {
     echo "Deleting resources..."
 
@@ -1049,7 +595,7 @@ function delete_resources() {
     aws servicediscovery delete-namespace --id $namespace_id
 
     # Detach and delete IAM policies for ECS Task role
-    task_role_policy_arns=("arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole" "arn:aws:iam::aws:policy/AmazonECS_FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess")
+    task_role_policy_arns=("arn:aws:iam::aws:policy/AmazonKinesisFullAccess" "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole" "arn:aws:iam::aws:policy/AmazonECS_FullAccess" "arn:aws:iam::aws:policy/AmazonSQSFullAccess" "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess" "arn:aws:iam::aws:policy/AmazonRDSFullAccess" "arn:aws:iam::aws:policy/AmazonS3FullAccess" "arn:aws:iam::aws:policy/AmazonBedrockFullAccess")
     for arn in "${task_role_policy_arns[@]}"
     do
       echo $arn
@@ -1058,7 +604,7 @@ function delete_resources() {
     aws iam delete-role --role-name $IAM_TASK_ROLE_NAME
 
     # Detach and delete IAM policies for ECS Task Execution role
-    task_execution_role_policy_arns=("arn:aws:iam::aws:policy/AmazonKinesisFullAccess" "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess" "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" "arn:aws:iam::aws:policy/AmazonECS_FullAccess")
+    task_execution_role_policy_arns=("arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy" "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy")
     for arn in "${task_execution_role_policy_arns[@]}"
     do
       echo $arn
@@ -1089,16 +635,16 @@ function delete_resources() {
 # Execute based on operation
 if [ "$OPERATION" == "delete" ]; then
     delete_traffic
-    delete_billing_service
-    delete_insurance_service
+    delete_service "billing-service"
+    delete_service "insurance-service"
     delete_database
-    delete_visits_service
-    delete_customers_service
-    delete_vets_service
+    delete_service "visits-service"
+    delete_service "customers-service"
+    delete_service "vets-service"
     delete_api_gateway
-    delete_admin_server
-    delete_discovery_server
-    delete_config_server
+    delete_service "admin-server"
+    delete_service "discovery-server"
+    delete_service "config-server"
     delete_resources
 else
     create_resources

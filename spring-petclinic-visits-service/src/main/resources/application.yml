@@ -27,7 +27,7 @@ spring:
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: ecs
 
 eureka:
   instance:
