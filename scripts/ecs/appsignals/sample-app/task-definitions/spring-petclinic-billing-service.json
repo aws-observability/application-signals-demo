@@ -73,11 +73,11 @@
         },
         {
           "name": "DB_USER",
-          "value": "djangouser"
+          "value": "db-user-name"
         },
         {
           "name": "DB_USER_PASSWORD",
-          "value": "asdfqwer"
+          "value": "db-user-password"
         },
         {
           "name": "DATABASE_PROFILE",
@@ -104,19 +104,9 @@
         "options": {
           "awslogs-group": "/ecs/pet-clinic-billing-service",
           "awslogs-create-group": "true",
-          "awslogs-region": "us-west-2",
+          "awslogs-region": "region-name",
           "awslogs-stream-prefix": "ecs"
         }
-      },
-      "healthCheck": {
-        "command": [
-          "CMD-SHELL",
-          "curl -f http://localhost:8800/billings/ || exit 1"
-        ],
-        "interval": 60,
-        "timeout": 10,
-        "retries": 5,
-        "startPeriod": 3
       },
       "mountPoints": [
         {
@@ -161,7 +151,7 @@
         "options": {
           "awslogs-group": "/ecs/ecs-cwagent-billing-service",
           "awslogs-create-group": "true",
-          "awslogs-region": "us-west-2",
+          "awslogs-region": "region-name",
           "awslogs-stream-prefix": "ecs"
         }
       }
@@ -177,6 +167,6 @@
       "name": "opentelemetry-auto-instrumentation-python"
     }
   ],
-  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-demo-task-role-us-west-2",
-  "executionRoleArn": "arn:aws:iam::000111222333:role/ec2-demo-execution-role-us-west-2"
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-demo-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ec2-demo-execution-role-region-name"
 }

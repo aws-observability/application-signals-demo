@@ -46,12 +46,12 @@
         "options": {
           "awslogs-group": "/ecs/traffic-generator",
           "awslogs-create-group": "true",
-          "awslogs-region": "us-west-2",
+          "awslogs-region": "region-name",
           "awslogs-stream-prefix": "ecs"
         }
       }
     }
   ],
-  "taskRoleArn": "arn:aws:iam::007003802740:role/ecs-demo-task-role-us-west-2",
-  "executionRoleArn": "arn:aws:iam::007003802740:role/ec2-demo-execution-role-us-west-2"
+  "taskRoleArn": "arn:aws:iam::007003802740:role/ecs-demo-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::007003802740:role/ec2-demo-execution-role-region-name"
 }

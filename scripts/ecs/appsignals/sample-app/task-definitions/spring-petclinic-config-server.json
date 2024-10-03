@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "config-server",
-      "image": "config-server-image",
+      "image": "public.ecr.aws/u8q5x3l1/springcommunity/spring-petclinic-config-server",
       "portMappings": [
         {
           "containerPort": 8888,
@@ -19,7 +19,7 @@
       "environment": [
         {
           "name": "SPRING_PROFILES_ACTIVE",
-          "value": "prod"
+          "value": "ecs"
         }
       ],
       "essential": true,
@@ -36,6 +36,6 @@
       "memory": 512
     }
   ],
-  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-task-role-us-west-2",
-  "executionRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-execution-role-us-west-2"
+  "taskRoleArn": "arn:aws:iam::007003802740:role/ecs-pet-clinic-task-role-us-west-2",
+  "executionRoleArn": "arn:aws:iam::007003802740:role/ecs-pet-clinic-execution-role-us-west-2"
 }

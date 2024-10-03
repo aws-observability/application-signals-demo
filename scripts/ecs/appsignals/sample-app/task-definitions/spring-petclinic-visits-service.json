@@ -59,7 +59,7 @@
         },
         {
           "name": "SPRING_PROFILES_ACTIVE",
-          "value": "prod"
+          "value": "ecs"
         },
         {
           "name": "CONFIG_SERVER_URL",
@@ -87,7 +87,7 @@
         "options": {
           "awslogs-group": "/ecs/pet-clinic-visits-service",
           "awslogs-create-group": "true",
-          "awslogs-region": "us-west-2",
+          "awslogs-region": "region-name",
           "awslogs-stream-prefix": "ecs"
         }
       },
@@ -136,7 +136,7 @@
         "options": {
           "awslogs-group": "/ecs/ecs-cwagent-visits-service",
           "awslogs-create-group": "true",
-          "awslogs-region": "us-west-2",
+          "awslogs-region": "region-name",
           "awslogs-stream-prefix": "ecs"
         }
       },
@@ -148,6 +148,6 @@
       "name": "opentelemetry-auto-instrumentation"
     }
   ],
-  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-demo-task-role-us-west-2",
-  "executionRoleArn": "arn:aws:iam::000111222333:role/ec2-demo-execution-role-us-west-2"
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-demo-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ec2-demo-execution-role-region-name"
 }
