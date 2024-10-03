@@ -119,7 +119,6 @@
     {
       "name": "init",
       "image": "adot-python-image",
-      "cpu": 0,
       "essential": false,
       "command": [
         "cp",
@@ -138,12 +137,11 @@
     {
       "name": "ecs-cwagent",
       "image": "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest",
-      "cpu": 0,
       "essential": true,
       "environment": [
         {
           "name": "CW_CONFIG_CONTENT",
-          "value": "{\"agent\": {\"debug\": true}, \"traces\": {\"traces_collected\": {\"application_signals\": {\"enabled\": true}}}, \"logs\": {\"metrics_collected\": {\"application_signals\": {\"enabled\": true}}}}"
+          "value": "{\"traces\": {\"traces_collected\": {\"application_signals\": {}}}, \"logs\": {\"metrics_collected\": {\"application_signals\": {}}}}"
         }
       ],
       "logConfiguration": {

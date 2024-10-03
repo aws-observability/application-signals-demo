@@ -97,40 +97,31 @@
     {
       "name": "init",
       "image": "adot-java-image",
-      "cpu": 0,
-      "portMappings": [],
       "essential": false,
       "command": [
         "cp",
         "/javaagent.jar",
         "/otel-auto-instrumentation/javaagent.jar"
       ],
-      "environment": [],
       "mountPoints": [
         {
           "sourceVolume": "opentelemetry-auto-instrumentation",
           "containerPath": "/otel-auto-instrumentation",
           "readOnly": false
         }
-      ],
-      "volumesFrom": [],
-      "systemControls": []
+      ]
     },
     {
       "name": "ecs-cwagent",
       "image": "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest",
-      "cpu": 0,
       "memory": 128,
-      "portMappings": [],
       "essential": true,
       "environment": [
         {
           "name": "CW_CONFIG_CONTENT",
-          "value": "{\"agent\": {\"debug\": true}, \"traces\": {\"traces_collected\": {\"application_signals\": {\"enabled\": true}}}, \"logs\": {\"metrics_collected\": {\"application_signals\": {\"enabled\": true}}}}"
+          "value": "{\"traces\": {\"traces_collected\": {\"application_signals\": {}}}, \"logs\": {\"metrics_collected\": {\"application_signals\": {}}}}"
         }
       ],
-      "mountPoints": [],
-      "volumesFrom": [],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -139,8 +130,7 @@
           "awslogs-region": "region-name",
           "awslogs-stream-prefix": "ecs"
         }
-      },
-      "systemControls": []
+      }
     }
   ],
   "volumes": [
