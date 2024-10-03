@@ -184,7 +184,7 @@ The following instructions set up an ECS cluster with all services running in Fa
 1. Build container images and push them to public ECR repo
 
    ``` shell
-   ./mvnw clean install -P buildECS && ./push-public-ecr.sh
+   ./mvnw clean install -P buildDocker && ./push-public-ecr.sh
    ```
 
 2. Set up a ECS cluster and deploy sample app. Replace `region-name` with the region you choose.
