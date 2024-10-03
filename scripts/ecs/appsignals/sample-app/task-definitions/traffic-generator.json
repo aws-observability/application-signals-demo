@@ -1,0 +1,57 @@
+{
+  "family": "traffic-generator",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "traffic-generator",
+      "image": "public.ecr.aws/u8q5x3l1/traffic-generator",
+      "essential": true,
+      "environment": [
+        {
+          "name": "URL",
+          "value": "discovery-service-url"
+        },
+        {
+          "name": "HIGH_LOAD_MAX",
+          "value": "1600"
+        },
+        {
+          "name": "HIGH_LOAD_MIN",
+          "value": "800"
+        },
+        {
+          "name": "BURST_DELAY_MAX",
+          "value": "80"
+        },
+        {
+          "name": "BURST_DELAY_MIN",
+          "value": "60"
+        },
+        {
+          "name": "LOW_LOAD_MAX",
+          "value": "60"
+        },
+        {
+          "name": "LOW_LOAD_MIN",
+          "value": "30"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/traffic-generator",
+          "awslogs-create-group": "true",
+          "awslogs-region": "region-name",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "taskRoleArn": "arn:aws:iam::007003802740:role/ecs-demo-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::007003802740:role/ec2-demo-execution-role-region-name"
+}

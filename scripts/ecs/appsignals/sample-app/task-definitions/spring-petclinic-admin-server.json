@@ -1,0 +1,53 @@
+{
+  "family": "admin-server",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "admin-server",
+      "image": "admin-server-image",
+      "portMappings": [
+        {
+          "containerPort": 9090,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "CONFIG_SERVER_URL",
+          "value": "http://config-server-cluster-name.ecs-petclinic:8888"
+        },
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "ecs"
+        },
+        {
+          "name": "DISCOVERY_SERVER_URL",
+          "value": "http://discovery-server-cluster-name.ecs-petclinic:8761/eureka"
+        },
+        {
+          "name": "ADMIN_IP",
+          "value": "admin-server-cluster-name.ecs-petclinic"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/pet-clinic-admin-server",
+          "awslogs-create-group": "true",
+          "awslogs-region": "region-name",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "cpu": 256,
+      "memory": 512
+    }
+  ],
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-execution-role-region-name"
+}

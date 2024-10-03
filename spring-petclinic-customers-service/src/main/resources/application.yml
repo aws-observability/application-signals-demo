@@ -1,4 +1,4 @@
-spring:
+ecs-pet-clinic-vars.txtspring:
   application:
     name: customers-service
   config:
@@ -25,3 +25,14 @@ spring:
     activate:
       on-profile: docker
     import: configserver:http://config-server:8888
+
+---
+# Prod profile
+spring:
+  config:
+    activate:
+      on-profile: ecs
+
+eureka:
+  instance:
+    ipAddress: ${CUSTOMER_SERVICE_IP:customer-service}
