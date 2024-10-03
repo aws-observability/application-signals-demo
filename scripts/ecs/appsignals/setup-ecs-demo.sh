@@ -48,12 +48,17 @@ adot_python_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-pyt
 master_username="djangouser"
 master_password=$(LC_ALL=C tr -dc 'A-Za-z0-9_' < /dev/urandom | head -c 10; echo)
 
-VPC_ID=""
-SUBNET_IDS=""
-SECURITY_GROUP_ID=""
-LOAD_BALANCER_ARN=""
-LOAD_BALANCER_DNS=""
-ECR_IMAGE_PREFIX=""
+VPC_ID="vpc-073c48be423af5150"
+SUBNET_IDS="subnet-0a18f3700d2eafc52	subnet-03d8b6a26bca5c25f	subnet-03a8d564e64200394	subnet-0fd0377f4b84dc8e0"
+SECURITY_GROUP_ID="sg-0c2fe01fef93a5584"
+LOAD_BALANCER_ARN="arn:aws:elasticloadbalancing:us-west-2:007003802740:loadbalancer/app/ecs-pet-clinic-lb-us-west-2/98caae0531317a88"
+LOAD_BALANCER_DNS="ecs-pet-clinic-lb-us-west-2-1229719218.us-west-2.elb.amazonaws.com"
+ECR_IMAGE_PREFIX="public.ecr.aws/u8q5x3l1"
+ACCOUNT_ID="007003802740"
+adot_java_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.32.3"
+adot_python_image="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.5.0"
+master_password="asdfqwer"
+
 
 function create_resources() {
     echo "Creating resources..."
@@ -284,7 +289,6 @@ function run_vets_service() {
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/spring-petclinic-vets-service.json > /dev/null
   create_service "vets-service"
-  registryArn=$(create_service_discovery "vets-service-$CLUSTER")
   echo "Waiting for the Vets server to be accessible..."
   sleep 180
 }
@@ -647,10 +651,10 @@ if [ "$OPERATION" == "delete" ]; then
     delete_service "config-server"
     delete_resources
 else
-    create_resources
-    run_config_server
-    run_discovery_server
-    run_admin_server
+#    create_resources
+#    run_config_server
+#    run_discovery_server
+#    run_admin_server
     run_api_gateway
     run_vets_service
     run_customers_service
