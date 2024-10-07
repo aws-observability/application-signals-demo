@@ -52,6 +52,6 @@
       }
     }
   ],
-  "taskRoleArn": "arn:aws:iam::007003802740:role/ecs-demo-task-role-region-name",
-  "executionRoleArn": "arn:aws:iam::007003802740:role/ec2-demo-execution-role-region-name"
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-execution-role-region-name"
 }
