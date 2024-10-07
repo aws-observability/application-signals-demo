@@ -53,7 +53,7 @@ SUBNET_IDS=""
 SECURITY_GROUP_ID=""
 LOAD_BALANCER_ARN=""
 LOAD_BALANCER_DNS=""
-ECR_IMAGE_PREFIX="""
+ECR_IMAGE_PREFIX=""
 
 
 function create_resources() {
