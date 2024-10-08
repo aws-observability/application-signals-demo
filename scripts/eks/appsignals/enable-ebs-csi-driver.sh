@@ -39,7 +39,7 @@ eksctl create iamserviceaccount \
     --namespace kube-system \
     --cluster ${CLUSTER_NAME} \
     --region ${REGION} \
-    --role-name AmazonEKS_EBS_CSI_DriverRole \
+    --role-name AmazonEKS_EBS_CSI_DriverRole_${REGION} \
     --role-only \
     --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
     --approve
@@ -56,7 +56,7 @@ if [[ "${result}" == *"No addon: "* ]];  then
         --cluster-name ${CLUSTER_NAME} \
         --addon-name aws-ebs-csi-driver \
         --region ${REGION} \
-        --service-account-role-arn arn:aws:iam::$ACCOUNT_ID:role/AmazonEKS_EBS_CSI_DriverRole
+        --service-account-role-arn arn:aws:iam::$ACCOUNT_ID:role/AmazonEKS_EBS_CSI_DriverRole_${REGION}
     # wait until the aws-ebs-csi-driver add-on is active    
     # Fetch the initial status
     status=$(aws eks describe-addon --cluster-name ${CLUSTER_NAME} --addon-name aws-ebs-csi-driver --region ${REGION} | grep '"status":' | awk -F '"' '{print $4}')
