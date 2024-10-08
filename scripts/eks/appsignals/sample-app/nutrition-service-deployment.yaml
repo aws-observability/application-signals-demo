@@ -11,8 +11,8 @@ spec:
     metadata:
       labels:
         io.kompose.service: nutrition-service-nodejs
-       annotations:
-         instrumentation.opentelemetry.io/inject-nodejs: 'true'
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: 'true'
     spec:
       serviceAccountName: visits-service-account
       containers:
