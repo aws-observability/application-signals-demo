@@ -1,4 +1,4 @@
-ecs-pet-clinic-vars.txtspring:
+spring:
   application:
     name: customers-service
   config:
