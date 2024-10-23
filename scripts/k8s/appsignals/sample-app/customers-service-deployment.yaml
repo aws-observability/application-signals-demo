@@ -34,6 +34,7 @@ spec:
             - org.springframework.boot.loader.JarLauncher
           image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-customers-service:latest
           securityContext:
+            runAsUser: 1005
             runAsNonRoot: true
             allowPrivilegeEscalation: false
           name: customers-service-java

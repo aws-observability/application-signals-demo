@@ -24,6 +24,7 @@ spec:
       containers:
         - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-config-server:latest
           securityContext:
+            runAsUser: 1005
             runAsNonRoot: true
             allowPrivilegeEscalation: false
           name: config-server

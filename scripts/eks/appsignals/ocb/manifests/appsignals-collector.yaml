@@ -1,0 +1,178 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "namespaces", "endpoints"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets", "daemonsets", "deployments", "statefulsets"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["nodes/stats", "configmaps", "events"]
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["update"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: otel-collector-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: appsignals-collector
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: otel-collector-role
+  apiGroup: rbac.authorization.k8s.io
+---
+
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: appsignals
+spec:
+  # mode: daemonset
+  image: public.ecr.aws/d8u3t5w4/appsignals-otel-collector:latest
+  config: |
+    extensions:
+      awsproxy:
+      health_check:
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      otlp/application_signals:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4316
+
+    processors:
+      awsapplicationsignals:
+        resolvers:
+          - platform: eks
+            name: appsignals-ocb-demo-u
+
+    exporters:
+      awsxray/application_signals:
+        region: 'us-east-1'
+        index_all_attributes: false
+        indexed_attributes:
+          - aws.local.service
+          - aws.local.operation
+          - aws.local.environment
+          - aws.remote.service
+          - aws.remote.operation
+          - aws.remote.environment
+          - aws.remote.resource.identifier
+          - aws.remote.resource.type
+
+      awsemf:
+        region: 'us-east-1'
+        log_group_name: "/aws/application-signals/custom"
+        namespace: "ApplicationSignalsCustom"
+        dimension_rollup_option: "NoDimensionRollup"    
+
+      awsemf/application_signals:
+        region: 'us-east-1'
+        log_group_name: "/aws/application-signals/data"
+        namespace: "ApplicationSignals"
+        dimension_rollup_option: "NoDimensionRollup"
+        version: "1"
+        local_mode: true
+        metric_declarations:
+          - dimensions:
+              - [Environment, Service, Operation]
+              - [Environment, Service]
+            label_matchers:
+              - label_names:
+                  - Telemetry.Source
+                regex: '^(ServerSpan|LocalRootSpan)$'
+            metric_name_selectors:
+              - Latency
+              - Fault
+              - Error
+          - dimensions:
+              - [Environment, Service, Operation, RemoteService, RemoteOperation, RemoteResourceIdentifier, RemoteResourceType]
+              - [Environment, Service, Operation, RemoteService, RemoteOperation]
+              - [Environment, Service, RemoteService]
+              - [Environment, Service, RemoteService, RemoteOperation, RemoteResourceIdentifier, RemoteResourceType]
+              - [Environment, Service, RemoteService, RemoteOperation]
+              - [Environment, Service, RemoteService, RemoteResourceIdentifier, RemoteResourceType]
+              - [RemoteService, RemoteResourceIdentifier, RemoteResourceType]
+              - [RemoteService]
+            label_matchers:
+              - label_names:
+                  - Telemetry.Source
+                regex: '^(ClientSpan|ProducerSpan|ConsumerSpan)$'
+            metric_name_selectors:
+              - Latency
+              - Fault
+              - Error
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp/application_signals]
+          processors: [awsapplicationsignals]
+          exporters: [awsxray/application_signals]
+        metrics:
+          receivers: [otlp/application_signals]
+          processors: [awsapplicationsignals]
+          exporters: [awsemf/application_signals]
+        metrics/2:
+          receivers: [otlp]
+          exporters: [awsemf]
+
+      extensions: [health_check]
+      telemetry:
+        logs:
+          level: debug
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+spec:
+  # OTEL_EXPORTER_OTLP_ENDPOINT
+  exporter: 
+    endpoint: http://appsignals-collector:4318
+  nodejs:
+    image: public.ecr.aws/n7z4r8f9/adot-js-amznlinux:latest
+    env:
+      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: http://appsignals-collector:4316/v1/traces
+      - name: OTEL_AWS_APPLICATION_SIGNALS_ENABLED
+        value: "true"
+      - name: OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT
+        value: http://appsignals-collector:4316/v1/metrics
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "http/protobuf"  
+  java:
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.32.4
+    env:
+      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: http://appsignals-collector:4316/v1/traces
+      - name: OTEL_AWS_APPLICATION_SIGNALS_ENABLED
+        value: "true"
+      - name: OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT
+        value: http://appsignals-collector:4316/v1/metrics
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "http/protobuf"  

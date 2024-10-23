@@ -30,7 +30,7 @@ check_cluster_exists() {
 }
 
 create_cluster() {
-  eksctl create cluster --name $cluster_name --region $region --nodes=2
+  eksctl create cluster --name $cluster_name --region $region --nodes=4 --version=1.27
   if [[ $? -eq 0 ]]; then
     echo "Cluster $cluster_name has been created successfully in region $region"
   else
