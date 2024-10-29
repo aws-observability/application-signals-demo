@@ -1,0 +1,180 @@
+{
+  "family": "insurance-service",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "insurance-service",
+      "image": "insurance-service-image",
+      "essential": true,
+      "environment": [
+        {
+          "name": "DJANGO_SETTINGS_MODULE",
+          "value": "pet_clinic_insurance_service.settings"
+        },
+        {
+          "name": "PYTHONPATH",
+          "value": "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/app:/otel-auto-instrumentation-python"
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
+          "value": "http/protobuf"
+        },
+        {
+          "name": "OTEL_TRACES_SAMPLER_ARG",
+          "value": "endpoint=http://localhost:2000"
+        },
+        {
+          "name": "OTEL_LOGS_EXPORTER",
+          "value": "none"
+        },
+        {
+          "name": "OTEL_PYTHON_CONFIGURATOR",
+          "value": "aws_configurator"
+        },
+        {
+          "name": "OTEL_TRACES_SAMPLER",
+          "value": "xray"
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+          "value": "http://localhost:4316/v1/traces"
+        },
+        {
+          "name": "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT",
+          "value": "http://localhost:4316/v1/metrics"
+        },
+        {
+          "name": "OTEL_AWS_APPLICATION_SIGNALS_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "OTEL_RESOURCE_ATTRIBUTES",
+          "value": "service.name=spring-petclinic-demo-insurance-service"
+        },
+        {
+          "name": "OTEL_METRICS_EXPORTER",
+          "value": "none"
+        },
+        {
+          "name": "OTEL_PYTHON_DISTRO",
+          "value": "aws_distro"
+        },
+        {
+          "name": "EUREKA_SERVER_URL",
+          "value": "discovery-server-cluster-name.ecs-petclinic"
+        },
+        {
+          "name": "INSURANCE_SERVICE_IP",
+          "value": "insurance-service-cluster-name.ecs-petclinic"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "postgres"
+        },
+        {
+          "name": "DB_USER",
+          "value": "db-user-name"
+        },
+        {
+          "name": "DB_USER_PASSWORD",
+          "value": "db-user-password"
+        },
+        {
+          "name": "DATABASE_PROFILE",
+          "value": "postgresql"
+        },
+        {
+          "name": "DB_SERVICE_HOST",
+          "value": "db_service_host"
+        },
+        {
+          "name": "DB_SERVICE_PORT",
+          "value": "5432"
+        }
+      ],
+      "command": ["sh", "-c", "python manage.py migrate && python manage.py loaddata initial_data.json && python manage.py runserver 0.0.0.0:8000 --noreload"],
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/pet-clinic-insurance-service",
+          "awslogs-create-group": "true",
+          "awslogs-region": "region-name",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8000/insurances/ || exit 1"
+        ],
+        "interval": 60,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 3
+      },
+      "mountPoints": [
+        {
+          "sourceVolume": "opentelemetry-auto-instrumentation-python",
+          "containerPath": "/otel-auto-instrumentation-python",
+          "readOnly": false
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "image": "adot-python-image",
+      "essential": false,
+      "command": [
+        "cp",
+        "-a",
+        "/autoinstrumentation/.",
+        "/otel-auto-instrumentation-python"
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "opentelemetry-auto-instrumentation-python",
+          "containerPath": "/otel-auto-instrumentation-python",
+          "readOnly": false
+        }
+      ]
+    },
+    {
+      "name": "ecs-cwagent",
+      "image": "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest",
+      "essential": true,
+      "environment": [
+        {
+          "name": "CW_CONFIG_CONTENT",
+          "value": "{\"traces\": {\"traces_collected\": {\"application_signals\": {}}}, \"logs\": {\"metrics_collected\": {\"application_signals\": {}}}}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ecs-cwagent-insurance-service",
+          "awslogs-create-group": "true",
+          "awslogs-region": "region-name",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "volumes": [
+    {
+      "name": "opentelemetry-auto-instrumentation-python"
+    }
+  ],
+  "taskRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-task-role-region-name",
+  "executionRoleArn": "arn:aws:iam::000111222333:role/ecs-pet-clinic-execution-role-region-name"
+}

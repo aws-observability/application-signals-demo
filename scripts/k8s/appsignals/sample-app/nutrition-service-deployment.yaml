@@ -11,8 +11,8 @@ spec:
     metadata:
       labels:
         io.kompose.service: nutrition-service-nodejs
-      # annotations:
-      #   instrumentation.opentelemetry.io/inject-nodejs: 'true'
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: 'true'
     spec:
       containers:
         - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/nodejs-petclinic-nutrition-service:latest
