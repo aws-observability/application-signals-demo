@@ -64,11 +64,28 @@ public class BedrockRuntimeV2Service {
             InvokeModelResponse response = bedrockRuntimeV2Client.invokeModel(request);
 
             JSONObject responseBody = new JSONObject(response.body().asUtf8String());
-            System.out.println("invokeLlama2 response:" + response.body().asUtf8String());
-            String generatedText = responseBody.getString("generation");
-            int promptTokenCount = responseBody.getInt("prompt_token_count");
-            int generationTokenCount = responseBody.getInt("generation_token_count");
+            System.out.println("invoke Anthropic claude response:" + response.body().asUtf8String());
+            int promptTokenCount = 0;
+            int generationTokenCount = 0;
+            if (responseBody.has("usage")) {
+                JSONObject usage = responseBody.getJSONObject("usage");
+                promptTokenCount = usage.getInt("input_tokens");
+                generationTokenCount = usage.getInt("output_tokens");
+            }
+            String generatedText = "";
+            if (responseBody.has("content")) {
+                JSONArray content = responseBody.getJSONArray("content");
+                if (content.length() > 0) {
+                    JSONObject firstContent = content.getJSONObject(0);
+                    if (firstContent.has("text")) {
+                        String text = firstContent.getString("text");
+                        System.out.println("Anthropic claude response text:" + text);
+                    }
+                }
+
+            }
             String stopReason = responseBody.getString("stop_reason");
+
             System.out.printf("Invoke claude Model response: prompt_token_count: " + promptTokenCount + " generation_token_count: " + generationTokenCount + " stop_reason: " + stopReason);
             return generatedText;
         } catch (Exception e) {
@@ -76,4 +93,5 @@ public class BedrockRuntimeV2Service {
             throw e;
         }
     }
+
 }
