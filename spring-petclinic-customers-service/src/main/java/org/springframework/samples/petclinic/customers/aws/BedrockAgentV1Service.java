@@ -7,6 +7,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.bedrockagent.AWSBedrockAgent;
 import com.amazonaws.services.bedrockagent.AWSBedrockAgentClientBuilder;
 import com.amazonaws.services.bedrockagent.model.*;
+import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
 import java.util.List;
 @Component
@@ -17,12 +18,12 @@ public class BedrockAgentV1Service {
         // AWS web identity is set for EKS clusters, if these are not set then use default credentials
         if (System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE") == null && System.getProperty("aws.webIdentityTokenFile") == null) {
             bedrockAgentV1Client = AWSBedrockAgentClientBuilder.standard()
-                .withRegion(Regions.US_EAST_1) // replace with your desired region
+                .withRegion(Util.REGION_FROM_EC2)
                 .build();
         }
         else {
             bedrockAgentV1Client = AWSBedrockAgentClientBuilder.standard()
-                .withRegion(Regions.US_EAST_1) // replace with your desired region
+                .withRegion(Util.REGION_FROM_EKS)
                 .withCredentials(WebIdentityTokenCredentialsProvider.create())
                 .build();
         }
