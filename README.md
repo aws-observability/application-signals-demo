@@ -181,10 +181,13 @@ The following instructions set up an kubernetes cluster on 2 EC2 instances (one 
 # ECS Demo
 The following instructions set up an ECS cluster with all services running in Fargate. You can run these steps in your personal AWS account to follow along (Not recommended for production usage).
 
-1. Build container images and push them to public ECR repo
-
+1. Build container images and push them to private ECR repo. Replace `region-name` with the region you choose.
+   ```shell
+   export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
+   export REGION=region-name
+   ```
    ``` shell
-   ./mvnw clean install -P buildDocker && ./push-public-ecr.sh
+   ./mvnw clean install -P buildDocker && ./push-ecr.sh
    ```
 
 2. Set up a ECS cluster and deploy sample app. Replace `region-name` with the region you choose.

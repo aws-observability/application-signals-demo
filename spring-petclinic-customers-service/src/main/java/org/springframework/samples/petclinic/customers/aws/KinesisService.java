@@ -30,7 +30,13 @@ public class KinesisService {
 
     public KinesisService() {
         // AWS web identity is set for EKS clusters, if these are not set then use default credentials
-        if (System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE") == null && System.getProperty("aws.webIdentityTokenFile") == null) {
+        if (System.getenv("AWS_DEFAULT_REGION") != null) {
+            String regionName = System.getenv("AWS_DEFAULT_REGION");
+            kinesisClient = KinesisClient.builder()
+                .region(Region.of(regionName))
+                .build();
+        }
+        else if (System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE") == null && System.getProperty("aws.webIdentityTokenFile") == null) {
             kinesisClient = KinesisClient.builder()
                 .region(Region.of(Util.REGION_FROM_EC2))
                 .build();
