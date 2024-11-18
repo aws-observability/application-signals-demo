@@ -402,6 +402,7 @@ function generate_traffic() {
   sed -i '' "s|\"discovery-server-url\"|\"http://${LOAD_BALANCER_DNS}:8080\"|" ./sample-app/task-definitions/traffic-generator.json
   sed -i '' "s|\"traffic-generator-image\"|\"${ECR_IMAGE_PREFIX}/traffic-generator\"|" ./sample-app/task-definitions/traffic-generator.json
   sed -i '' "s|region-name|${REGION}|g" ./sample-app/task-definitions/traffic-generator.json
+  sed -i '' "s|000111222333|${ACCOUNT_ID}|g" ./sample-app/task-definitions/traffic-generator.json
 
   aws ecs register-task-definition --cli-input-json file://sample-app/task-definitions/traffic-generator.json > /dev/null
 
