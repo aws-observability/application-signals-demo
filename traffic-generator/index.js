@@ -194,3 +194,33 @@ const clearPaymentTableTask = cron.schedule('0 */6 * * *', () => {
 }, { scheduled: false });
 
 clearPaymentTableTask.start();
+
+const lowTrafficVetsTask = cron.schedule('*/2 * * * *', () => {
+    console.log('query vet every 2 minutes');
+    axios.get(`${baseUrl}/api/vet/vets`, { timeout: 10000 })
+        .catch(err => {
+            console.error(`${baseUrl}/api/vet/vets, error: ` + (err.response ? err.response.data : err.toString()));
+        }); // Catch and log errors
+}, { scheduled: false });
+
+lowTrafficVetsTask.start();
+
+const lowTrafficInsuranceTask = cron.schedule('*/2 * * * *', () => {
+    console.log('query insurance every 2 minutes');
+    axios.get(`${baseUrl}/api/insurance/insurances`, { timeout: 10000 })
+        .catch(err => {
+            console.error(`${baseUrl}/api/insurance/insurances, error: ` + (err.response ? err.response.data : err.toString()));
+        }); // Catch and log errors
+}, { scheduled: false });
+
+lowTrafficInsuranceTask.start();
+
+const lowTrafficBillingTask = cron.schedule('*/2 * * * *', () => {
+    console.log('query billing every 2 minutes');
+    axios.get(`${baseUrl}/api/billing/billings`, { timeout: 10000 })
+        .catch(err => {
+            console.error(`${baseUrl}/api/billing/billings, error: ` + (err.response ? err.response.data : err.toString()));
+        }); // Catch and log errors
+}, { scheduled: false });
+
+lowTrafficBillingTask.start();

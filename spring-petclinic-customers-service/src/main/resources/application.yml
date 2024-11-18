@@ -36,3 +36,14 @@ spring:
 eureka:
   instance:
     ipAddress: ${CUSTOMER_SERVICE_IP:customer-service}
+
+---
+# EC2 profile
+spring:
+  config:
+    activate:
+      on-profile: ec2
+
+eureka:
+  instance:
+    hostName: ${CUSTOMERS_SERVICE_IP:http://customers.demo.local}
