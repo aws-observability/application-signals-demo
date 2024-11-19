@@ -18,6 +18,10 @@
       ],
       "environment": [
         {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "region-name"
+        },
+        {
           "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
           "value": "http/protobuf"
         },
@@ -39,7 +43,7 @@
         },
         {
           "name": "OTEL_RESOURCE_ATTRIBUTES",
-          "value": "aws.log.group.names=/ecs/pet-clinic-customers-service,service.name=spring-petclinic-demo-customers-service"
+          "value": "aws.log.group.names=/ecs/pet-clinic-customers-service,service.name=customers-service-cluster-name.ecs-petclinic"
         },
         {
           "name": "OTEL_AWS_APPLICATION_SIGNALS_ENABLED",
@@ -70,7 +74,7 @@
           "value": "http://discovery-server-cluster-name.ecs-petclinic:8761/eureka"
         },
         {
-          "name": "CUSTOMERS_SERVICE_IP",
+          "name": "CUSTOMER_SERVICE_IP",
           "value": "customers-service-cluster-name.ecs-petclinic"
         }
       ],

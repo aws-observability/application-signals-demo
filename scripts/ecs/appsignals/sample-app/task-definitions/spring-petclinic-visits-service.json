@@ -39,7 +39,7 @@
         },
         {
           "name": "OTEL_RESOURCE_ATTRIBUTES",
-          "value": "aws.log.group.names=/ecs/pet-clinic-visits-service,service.name=spring-petclinic-demo-visits-service"
+          "value": "aws.log.group.names=/ecs/pet-clinic-visits-service,service.name=visits-service-cluster-name.ecs-petclinic"
         },
         {
           "name": "OTEL_AWS_APPLICATION_SIGNALS_ENABLED",
