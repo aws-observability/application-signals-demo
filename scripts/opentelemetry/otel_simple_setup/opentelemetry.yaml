@@ -1,0 +1,50 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: applicationsignals-otel
+spec:
+  image: otel/opentelemetry-collector-contrib
+  serviceAccount: applicationsignals-otel-collector
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    exporters:
+      otlphttp:
+        #traces_endpoint field follows this pattern https://xray.<region>.amazonaws.com/v1/traces
+        traces_endpoint: https://xray.us-east-1.amazonaws.com/v1/traces 
+        auth:
+          authenticator: sigv4auth
+          
+    extensions:
+      sigv4auth:
+        region: us-east-1
+        service: "xray"
+
+    service:
+      extensions: [sigv4auth]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlphttp]
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+spec:
+  exporter: 
+    endpoint: http://applicationsignals-otel-collector:4318
+  java:
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.32.5
+    # image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.32.1
+    env:
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "http/protobuf"
+      - name: OTEL_TRACES_SAMPLER
+        value: "always_on"
+  

@@ -1,0 +1,597 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "namespaces", "endpoints"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets", "daemonsets", "deployments", "statefulsets"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["nodes/stats", "configmaps", "events"]
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["update"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: otel-collector-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: applicationsignals-otel-collector
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: otel-collector-role
+  apiGroup: rbac.authorization.k8s.io
+---
+
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: applicationsignals-otel
+spec:
+#  mode: daemonset
+  serviceAccount: applicationsignals-otel-collector
+  image: public.ecr.aws/d8u3t5w4/appsignals-otel-collector:latest
+  config: |
+    extensions:
+      awsproxy:
+      sigv4auth:
+        region: "us-east-1"
+        service: "xray"     
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+      otlp/application_signals:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4316
+
+    processors:
+      awsapplicationsignals:
+        resolvers:
+          - platform: eks
+      resourcedetection:
+        detectors:
+          - eks
+          - env
+          - ec2
+        ec2:
+          resource_attributes:
+            cloud.account.id:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+            cloud.platform:
+              enabled: true
+            cloud.provider:
+              enabled: true
+            cloud.region:
+              enabled: true
+            host.id:
+              enabled: true
+            host.image.id:
+              enabled: true
+            host.name:
+              enabled: true
+            host.type:
+              enabled: true
+          tags:
+            - ^kubernetes.io/cluster/.*$
+            - ^aws:autoscaling:groupName
+        ecs:
+          resource_attributes:
+            aws.ecs.cluster.arn:
+              enabled: true
+            aws.ecs.launchtype:
+              enabled: true
+            aws.ecs.task.arn:
+              enabled: true
+            aws.ecs.task.family:
+              enabled: true
+            aws.ecs.task.id:
+              enabled: true
+            aws.ecs.task.revision:
+              enabled: true
+            aws.log.group.arns:
+              enabled: true
+            aws.log.group.names:
+              enabled: true
+            aws.log.stream.arns:
+              enabled: true
+            aws.log.stream.names:
+              enabled: true
+            cloud.account.id:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+            cloud.platform:
+              enabled: true
+            cloud.provider:
+              enabled: true
+            cloud.region:
+              enabled: true
+        eks:
+          resource_attributes:
+            cloud.platform:
+              enabled: true
+            cloud.provider:
+              enabled: true
+            k8s.cluster.name:
+              enabled: true
+      metricstransform/application_signals:
+        transforms:
+        - include: jvm.cpu.recent_utilization
+          action: update
+          new_name: JVMCpuRecentUtilization
+          aggregation_type: ""
+          submatch_case: ""
+          match_type: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.cpu.time
+          action: update
+          new_name: JVMCpuTime
+          aggregation_type: ""
+          submatch_case: ""
+          match_type: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.classes.loaded
+          action: update
+          new_name: JVMClassLoaded
+          aggregation_type: ""
+          submatch_case: ""
+          match_type: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.threads.count
+          action: update
+          new_name: JVMThreadCount
+          aggregation_type: ""
+          submatch_case: ""
+          match_type: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.memory.nonheap.used
+          action: update
+          new_name: JVMMemoryNonHeapUsed
+          aggregation_type: ""
+          submatch_case: ""
+          match_type: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.memory.pool.used_after_last_gc
+          action: update
+          new_name: JVMMemoryUsedAfterLastGC
+          aggregation_type: ""
+          submatch_case: ""
+          match_type: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.memory.heap.used
+          action: update
+          new_name: JVMMemoryHeapUsed
+          aggregation_type: ""
+          submatch_case: ""
+          match_type: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.memory.pool.used
+          action: insert
+          new_name: JVMMemoryOldGenUsed
+          match_type: regexp
+          experimental_match_labels: {"name": ".*Old\\sGen$"}
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.memory.pool.used
+          action: insert
+          new_name: JVMMemorySurvivorSpaceUsed
+          match_type: regexp
+          experimental_match_labels: {"name": ".*Survivor\\sSpace$"}
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.memory.pool.used
+          action: insert
+          new_name: JVMMemoryEdenSpaceUsed
+          match_type: regexp
+          experimental_match_labels: {"name": ".*Eden\\sSpace$"}
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.gc.collections.elapsed
+          action: insert
+          new_name: JVMGCDuration
+          match_type: ""
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.gc.collections.count
+          action: insert
+          new_name: JVMGCCount
+          match_type: ""
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.gc.collections.elapsed
+          action: insert
+          new_name: JVMGCOldGenDuration
+          match_type: strict
+          experimental_match_labels: {"name": "G1 Old Generation"}
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.gc.collections.elapsed
+          action: insert
+          new_name: JVMGCYoungGenDuration
+          match_type: strict
+          experimental_match_labels: {"name": "G1 Young Generation"}
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.gc.collections.count
+          action: insert
+          new_name: JVMGCOldGenCount
+          match_type: strict
+          experimental_match_labels: {"name": "G1 Old Generation"}
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+        - include: jvm.gc.collections.count
+          action: insert
+          new_name: JVMGCYoungGenCount
+          match_type: strict
+          experimental_match_labels: {"name": "G1 Young Generation"}
+          aggregation_type: ""
+          submatch_case: ""
+          operations:
+          - action: aggregate_labels
+            label_set: []
+            aggregation_type: sum
+            experimental_scale: 0
+            label: ""
+            new_label: ""
+            label_value: ""
+            new_value: ""
+          - action: add_label
+            new_label: Telemetry.Source
+            new_value: RuntimeMetric
+            aggregation_type: ""
+            experimental_scale: 0
+            label: ""
+            label_value: ""
+
+    exporters:
+      otlphttp:
+        #traces_endpoint field follows this pattern https://xray.<region>.amazonaws.com/v1/traces
+        traces_endpoint: https://xray.us-east-1.amazonaws.com/v1/traces
+        auth:
+          authenticator: sigv4auth
+
+      awsemf:
+        region: 'us-east-1'
+        log_group_name: "/aws/application-signals/custom"
+        namespace: "ApplicationSignalsCustomPoM"
+        dimension_rollup_option: "NoDimensionRollup"    
+
+      awsemf/application_signals:
+        region: 'us-east-1'
+        log_group_name: "/aws/application-signals/data"
+        namespace: "ApplicationSignals"
+        dimension_rollup_option: "NoDimensionRollup"
+        version: "1"
+        local_mode: true
+        metric_declarations:
+          - dimensions:
+              - [ Environment, Service ]
+            label_matchers:
+              - label_names:
+                  - Telemetry.Source
+                regex: '^RuntimeMetric$'
+                separator: ;
+            metric_name_selectors:
+              - '^.*$'
+
+    service:
+      pipelines:
+        traces/otel:
+          receivers: [otlp]
+          processors: [awsapplicationsignals]
+          exporters: [otlphttp]
+        metrics:
+          receivers: [otlp]
+          processors: 
+          - metricstransform/application_signals
+          - awsapplicationsignals
+          - resourcedetection
+          exporters: [awsemf/application_signals]
+        metrics/2:
+          receivers: [otlp]
+          exporters: [awsemf]
+      extensions: [sigv4auth]
+      telemetry:
+        logs:
+          level: debug
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+spec:
+  # OTEL_EXPORTER_OTLP_ENDPOINT
+  exporter:
+    endpoint: http://applicationsignals-otel-collector:4318
+  nodejs:
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-node:v0.3.0
+    env:
+      # - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      #   value: http://applicationsignals-otel-collector:4316/v1/traces
+      # - name: OTEL_AWS_APPLICATION_SIGNALS_ENABLED
+      #   value: "false"
+      # - name: OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT
+      #   value: http://applicationsignals-otel-collector:4316/v1/metrics
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "http/protobuf"
+      - name: OTEL_TRACES_SAMPLER
+        value: "always_on"
+      - name: OTEL_TRACES_IDGENERATOR
+        value: "xray"
+  java:
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.32.5
+    # image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:1.32.1
+    env:
+
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "http/protobuf"
+      - name: OTEL_TRACES_IDGENERATOR
+        value: "xray"
+      - name: OTEL_TRACES_SAMPLER
+        value: "always_on"
+      # - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      #   value: http://applicationsignals-otel-collector:4316/v1/traces
+      # - name: OTEL_AWS_APPLICATION_SIGNALS_ENABLED
+      #   value: "false"
+      # - name: OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT
+      #   value: http://applicationsignals-otel-collector:4316/v1/metrics
+      # - name: OTEL_JMX_ENABLE
+      #   value: "true"
+      # - name: OTEL_JMX_TARGET_SYSTEM
+      #   value: "jvm"
