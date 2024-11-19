@@ -11,9 +11,9 @@ import com.amazonaws.services.bedrockruntime.model.InvokeModelRequest;
 import com.amazonaws.services.bedrockruntime.model.InvokeModelResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
 import org.springframework.samples.petclinic.customers.Util;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 

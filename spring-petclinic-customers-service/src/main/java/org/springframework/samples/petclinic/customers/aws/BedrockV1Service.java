@@ -5,6 +5,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.bedrock.AmazonBedrock;
 import com.amazonaws.services.bedrock.AmazonBedrockClientBuilder;
 import com.amazonaws.services.bedrock.model.*;
+import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
 import org.springframework.samples.petclinic.customers.Util;
 import java.util.List;

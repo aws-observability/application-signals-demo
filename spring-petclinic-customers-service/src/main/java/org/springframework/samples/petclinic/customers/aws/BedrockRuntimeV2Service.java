@@ -93,5 +93,4 @@ public class BedrockRuntimeV2Service {
             throw e;
         }
     }
-
 }

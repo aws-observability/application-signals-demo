@@ -7,6 +7,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.bedrockagent.AWSBedrockAgent;
 import com.amazonaws.services.bedrockagent.AWSBedrockAgentClientBuilder;
 import com.amazonaws.services.bedrockagent.model.*;
+import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
 import org.springframework.samples.petclinic.customers.Util;
 import java.util.List;
