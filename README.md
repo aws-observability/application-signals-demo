@@ -10,7 +10,7 @@ In the following, we will focus on how customers can set up the current sample a
 This code for sample application is intended for demonstration purposes only. It should not be used in a production environment or in any setting where reliability/security is a concern.
 
 # Prerequisite
-* A Linux or Mac machine with x86-64 (AMD64) architecture is required for building Docker images for the sample application.
+* A Linux machine with x86-64 (AMD64) architecture is required for building Docker images for the sample application.
 * Docker is installed and running on the machine.
 * AWS CLI 2.x is installed. For more information about installing the AWS CLI, see [Install or update the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 * kubectl is installed - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html

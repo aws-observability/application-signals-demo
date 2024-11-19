@@ -12,6 +12,7 @@ import com.amazonaws.services.bedrockruntime.model.InvokeModelResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
+import org.springframework.samples.petclinic.customers.Util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -22,19 +23,22 @@ public class BedrockRuntimeV1Service {
 
     public BedrockRuntimeV1Service() {
         // AWS web identity is set for EKS clusters, if these are not set then use default credentials
-        if (System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE") == null && System.getProperty("aws.webIdentityTokenFile") == null) {
+        if (System.getenv("AWS_DEFAULT_REGION") != null) {
+            String regionName = System.getenv("AWS_DEFAULT_REGION");
             bedrockRuntimeV1Client = AmazonBedrockRuntimeClientBuilder.standard()
-                    .withRegion(Regions.US_WEST_2) // replace with your desired region
+                            .withRegion(regionName)
+                            .build();
+        } else if (System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE") == null && System.getProperty("aws.webIdentityTokenFile") == null) {
+            bedrockRuntimeV1Client = AmazonBedrockRuntimeClientBuilder.standard()
+                    .withRegion(Util.REGION_FROM_EC2)
                     .build();
         }
         else {
-            BasicAWSCredentials awsCreds = new BasicAWSCredentials("access_key_id", "secret_key_id");
             bedrockRuntimeV1Client = AmazonBedrockRuntimeClientBuilder.standard()
-                    .withRegion(Regions.US_WEST_2) // replace with your desired region
+                    .withRegion(Util.REGION_FROM_EKS)
                     .withCredentials(WebIdentityTokenCredentialsProvider.create())
                     .build();
         }
-
     }
 
     public String invokeTitanModel() {
