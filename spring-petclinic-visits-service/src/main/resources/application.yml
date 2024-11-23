@@ -32,14 +32,3 @@ spring:
 eureka:
   instance:
     ipAddress: ${VISITS_SERVICE_IP:visits-service}
-
----
-# EC2 profile
-spring:
-  config:
-    activate:
-      on-profile: ec2
-
-eureka:
-  instance:
-    hostName: ${VISITS_SERVICE_IP:http://visits.demo.local}

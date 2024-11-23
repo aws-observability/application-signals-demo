@@ -107,6 +107,6 @@ tmux send-keys -t visits "export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=
 tmux send-keys -t visits "export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf" C-m
 tmux send-keys -t visits "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces" C-m
 tmux send-keys -t visits "export OTEL_RESOURCE_ATTRIBUTES=\"service.name=${service_name}\"" C-m
-tmux send-keys -t visits "export SPRING_PROFILES_ACTIVE=ec2" C-m
+# tmux send-keys -t visits "export SPRING_PROFILES_ACTIVE=ec2" C-m
 tmux send-keys -t visits "java -jar spring-petclinic-visit*.jar" C-m
 EOF

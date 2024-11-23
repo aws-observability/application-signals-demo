@@ -18,6 +18,9 @@ fi
 
 # Run CDK synth once for all stacks
 if [[ "$ACTION" == "synth" || "$ACTION" == "deploy" ]]; then
+  echo "Running CDK bootstrap"
+  cdk bootstrap
+
   rm -rf cdk.out
   echo "Running CDK synth for all stacks..."
   if cdk synth; then
@@ -38,11 +41,11 @@ if [[ "$ACTION" == "deploy" ]]; then
     echo "Deployment successful for all stacks in the app"
   else
     echo "Deployment failed. Attempting to clean up resources by destroying all stacks..."
-    cdk destroy --all --force
+    cdk destroy --all --force --verbose
   fi
 elif [[ "$ACTION" == "destroy" ]]; then
   echo "Starting CDK destroy for all stacks in the app"
-  cdk destroy --all --force
+  cdk destroy --all --force --verbose
   echo "Destroy complete for all stacks in the app"
 else
   echo "Invalid action: $ACTION. Please use 'synth', 'deploy', or 'destroy'."

@@ -48,6 +48,7 @@ EOC
   -a fetch-config -m ec2 -s \
   -c file:/amazon-cloudwatch-agent.json
 
+
 # Switch to ec2-user to run commands
 sudo -iu ec2-user bash <<'EOF'
 set -x

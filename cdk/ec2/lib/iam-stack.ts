@@ -1,5 +1,3 @@
-// lib/iam-stack.ts
-
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Role, ServicePrincipal, ManagedPolicy, Policy, PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
@@ -58,36 +56,11 @@ export class IAMStack extends cdk.Stack {
 
     // Create a custom policy to allow access to the database secret in Secrets Manager
     const secretAccessPolicy = new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ['secretsmanager:GetSecretValue'],
-        resources: ['arn:aws:secretsmanager:*:*:secret:*'],
+      effect: Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: ['arn:aws:secretsmanager:*:*:secret:*'],
     });
     this.ec2InstanceRole.addToPolicy(secretAccessPolicy);
-
-    // // Define a custom policy for RDS access
-    // this.rdsPolicy = new Policy(this, 'CustomRDSPolicy', {
-    //     policyName: 'CustomRDSPolicy',
-    //     statements: [
-    //     new PolicyStatement({
-    //         effect: Effect.ALLOW,
-    //         actions: [
-    //         'rds:DescribeDBInstances',
-    //         // Add other necessary RDS actions
-    //         ],
-    //         resources: ['*'],
-    //     }),
-    //     new PolicyStatement({
-    //         effect: Effect.ALLOW,
-    //         actions: ['rds-db:connect'],
-    //         resources: [
-    //         'arn:aws:rds-db:*:*:dbuser:*',
-    //     ],
-    //     }),
-    //     ],
-    // });
-
-    // // // Attach the custom policy to the role
-    // this.ec2InstanceRole.attachInlinePolicy(rdsPolicy);
 
     // Output the IAM Role ARN
     new cdk.CfnOutput(this, 'EC2InstanceRoleARN', {

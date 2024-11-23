@@ -31,23 +31,6 @@ export class LoadBalancerStack extends cdk.Stack {
 
     const { vpc, albSecurityGroup, frontendInstance } = props;
 
-    // // Create ALB Security Group
-    // const albSecurityGroup = new SecurityGroup(this, 'ALBSecurityGroup', {
-    //   vpc,
-    //   description: 'Security group for ALB',
-    //   allowAllOutbound: true,
-    // });
-
-    // // Allow inbound HTTP traffic from anywhere
-    // albSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80), 'Allow HTTP traffic from anywhere');
-
-    // // Allow the ALB to connect to the EC2 instances on port 8080
-    // ec2SecurityGroup.addIngressRule(
-    //   albSecurityGroup,
-    //   Port.tcp(8080),
-    //   'Allow ALB to access EC2 instances on port 8080'
-    // );
-
     // Create the Application Load Balancer
     const alb = new ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
       vpc,

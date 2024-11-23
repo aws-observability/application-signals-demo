@@ -37,7 +37,7 @@ export class NetworkStack extends cdk.Stack {
           subnetType: SubnetType.PRIVATE_WITH_NAT,
         },
       ],
-      natGateways: 2, 
+      natGateways: 2,
     });
 
     // Security Group for EC2 Instances
@@ -48,22 +48,14 @@ export class NetworkStack extends cdk.Stack {
       allowAllOutbound: true,
     });
 
-    // Allow inbound traffic from within VPC CIDR on necessary ports
-    // [80, 8080].forEach((port) => {
-    //   this.ec2SecurityGroup.addIngressRule(
-    //     Peer.ipv4(this.vpc.vpcCidrBlock),
-    //     Port.tcp(port),
-    //     `Allow TCP port ${port} from within VPC`,
-    //   );
-    // });
-
-    // Allow all inbound traffic from within the same subnet
-    const privateSubnetCidr = this.vpc.privateSubnets[0].ipv4CidrBlock;
-    this.ec2SecurityGroup.addIngressRule(
-        Peer.ipv4(privateSubnetCidr),
+    // Allow all inbound traffic from within the private subnets
+    for (const privateSubnet of this.vpc.privateSubnets) {
+      this.ec2SecurityGroup.addIngressRule(
+        Peer.ipv4(privateSubnet.ipv4CidrBlock),
         Port.allTraffic(),
-        'Allow all traffic from within the same subnet',
-    );
+        'Allow all traffic from within the private subnets',
+      );
+    }
 
     // Security Group for Public Load Balancer
     this.albSecurityGroup = new SecurityGroup(this, 'ALBSecurityGroup', {
