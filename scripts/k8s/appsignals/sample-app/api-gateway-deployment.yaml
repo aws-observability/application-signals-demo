@@ -39,5 +39,12 @@ spec:
           name: api-gateway-java
           ports:
             - containerPort: 8080
+          env:
+            - name: CONFIG_SERVER_URL
+              value: http://config-server:8888
+            - name: DISCOVERY_SERVER_URL
+              value: http://discovery-server:8761/eureka
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
       restartPolicy: Always
 status: {}
