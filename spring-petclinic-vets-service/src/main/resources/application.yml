@@ -36,3 +36,14 @@ spring:
 eureka:
   instance:
     ipAddress: ${VETS_SERVICE_IP:vets-service}
+
+---
+# EC2 profile
+spring:
+  config:
+    activate:
+      on-profile: ec2
+
+eureka:
+  instance:
+    hostName: ${VETS_SERVICE_IP:http://vets.demo.local}
