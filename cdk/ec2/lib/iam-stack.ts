@@ -58,7 +58,7 @@ export class IAMStack extends cdk.Stack {
     const secretAccessPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
       actions: ['secretsmanager:GetSecretValue'],
-      resources: ['arn:aws:secretsmanager:*:*:secret:*'],
+      resources: ['arn:aws:secretsmanager:*:*:secret:PetClinicDBCredentials-*']
     });
     this.ec2InstanceRole.addToPolicy(secretAccessPolicy);
 

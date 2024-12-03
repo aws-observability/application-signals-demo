@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Install necessary packages
 # retry due to the error like this: "RPM: error: can't create transaction lock on /var/lib/rpm/.rpm.lock (Resource temporarily unavailable)"
@@ -46,6 +46,36 @@ cat <<'EOC' > /amazon-cloudwatch-agent.json
                      }
                   ],
                   "action":"drop"
+               },
+               {
+                  "selectors":[
+                     {
+                        "dimension":"RemoteService",
+                        "match":"setup.demo.local:8761"
+                     }
+                  ],
+                  "replacements":[
+                     {
+                        "target_dimension":"RemoteService",
+                        "value":"discovery-server"
+                     }
+                  ],
+                  "action":"replace"
+               },
+               {
+                  "selectors":[
+                     {
+                        "dimension":"RemoteService",
+                        "match":"setup.demo.local:8888"
+                     }
+                  ],
+                  "replacements":[
+                     {
+                        "target_dimension":"RemoteService",
+                        "value":"config-server"
+                     }
+                  ],
+                  "action":"replace"
                }
             ]
       }
@@ -68,7 +98,7 @@ set -x
 cd ~
 
 # Clone the application repository
-git clone --branch cdk-setup https://github.com/pxaws/application-signals-demo.git
+git clone https://github.com/aws-observability/application-signals-demo.git
 cd application-signals-demo/
 
 # Function to wait for a URL to become accessible

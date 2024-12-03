@@ -18,6 +18,7 @@ fi
 
 # Run CDK synth once for all stacks
 if [[ "$ACTION" == "synth" || "$ACTION" == "deploy" ]]; then
+  npm install
   echo "Running CDK bootstrap"
   cdk bootstrap
 

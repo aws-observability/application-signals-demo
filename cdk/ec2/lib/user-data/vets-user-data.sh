@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 # Install necessary packages
 # retry due to the error like this: "RPM: error: can't create transaction lock on /var/lib/rpm/.rpm.lock (Resource temporarily unavailable)"
 # sometime the ec2 instances are launched too fast that when the script runs something is not really ready
@@ -45,6 +46,36 @@ cat <<'EOC' > /amazon-cloudwatch-agent.json
                      }
                   ],
                   "action":"drop"
+               },
+               {
+                  "selectors":[
+                     {
+                        "dimension":"RemoteService",
+                        "match":"setup.demo.local:8761"
+                     }
+                  ],
+                  "replacements":[
+                     {
+                        "target_dimension":"RemoteService",
+                        "value":"discovery-server"
+                     }
+                  ],
+                  "action":"replace"
+               },
+               {
+                  "selectors":[
+                     {
+                        "dimension":"RemoteService",
+                        "match":"setup.demo.local:8888"
+                     }
+                  ],
+                  "replacements":[
+                     {
+                        "target_dimension":"RemoteService",
+                        "value":"config-server"
+                     }
+                  ],
+                  "action":"replace"
                }
             ]
       }
@@ -65,14 +96,14 @@ set -x
 cd ~
 
 # Clone the application repository
-git clone --branch cdk-setup https://github.com/pxaws/application-signals-demo.git
+git clone https://github.com/aws-observability/application-signals-demo.git
 cd application-signals-demo/
 
 # Build the vets application
 ./mvnw clean install -pl spring-petclinic-vets-service -am -DskipTests
 
 # Download the AWS OpenTelemetry Java Agent
-wget https://github.com/aws-observability/aws-otel-java-instrumentation/releases/download/v1.32.5/aws-opentelemetry-agent.jar -O aws-opentelemetry-agent.jar
+wget https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar -O aws-opentelemetry-agent.jar
 
 # Function to wait for a URL to become accessible
 wait_for_url() {
