@@ -13,6 +13,7 @@ import {
     LogDrivers,
     Protocol,
     Secret as EcsSecret,
+    HealthCheck,
 } from 'aws-cdk-lib/aws-ecs';
 import { Vpc, ISubnet, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 
@@ -27,6 +28,12 @@ interface EcsClusterStackProps extends StackProps {
     readonly subnets: ISubnet[];
     readonly serviceDiscoveryStack: ServiceDiscoveryStack;
     readonly logStack: LogStack;
+    readonly adotJavaImageTag: string;
+    readonly adotPythonImageTag: string;
+    readonly dbSecret: SmSecret;
+    readonly dbInstanceEndpointAddress: string;
+    readonly loadBalancerDnsName: string;
+    readonly loadBalancerTargetGroup: ApplicationTargetGroup;
 }
 
 interface CreateServiceProps {
@@ -55,6 +62,10 @@ export class EcsClusterStack extends Stack {
     private readonly ecrImagePrefix: string;
     private readonly serviceDiscoveryStack: ServiceDiscoveryStack;
     private readonly logStack: LogStack;
+    private readonly adotJavaImageTag: string;
+    private readonly adotPythonImageTag: string;
+    private readonly dbSecret: SmSecret;
+    private readonly dbInstanceEndpointAddress: string;
     private readonly CLUSTER_NAME = 'ecs-pet-clinic-demo';
     private readonly CONFIG_SERVER = 'pet-clinic-config-server';
     private readonly DISCOVERY_SERVER = 'pet-clinic-discovery-server';
@@ -65,8 +76,8 @@ export class EcsClusterStack extends Stack {
     private readonly VETS_SERVICE = 'pet-clinic-vets-service';
     private DISCOVERY_SERVER_CW_CONFIG: MetricTransformationConfig;
     private CONFIG_SERVER_CW_CONFIG: MetricTransformationConfig;
-    private VISIT_SERVICE_CW_CONFIG: MetricTransformationConfig;
-    private VET_SERVICE_CW_CONFIG: MetricTransformationConfig;
+    private VISITS_SERVICE_CW_CONFIG: MetricTransformationConfig;
+    private VETS_SERVICE_CW_CONFIG: MetricTransformationConfig;
     private CUSTOMERS_SERVICE_CW_CONFIG: MetricTransformationConfig;
 
     constructor(scope: Construct, id: string, props: EcsClusterStackProps) {
@@ -78,79 +89,47 @@ export class EcsClusterStack extends Stack {
         });
 
         this.ecrImagePrefix = `${this.account}.dkr.ecr.${this.region}.amazonaws.com`; // retrive ECR image from the private repository
-
+        this.adotJavaImageTag = props.adotJavaImageTag;
+        this.adotPythonImageTag = props.adotPythonImageTag;
+        this.dbSecret = props.dbSecret;
+        this.dbInstanceEndpointAddress = props.dbInstanceEndpointAddress;
         this.securityGroups = props.securityGroups;
         this.ecsTaskRole = props.ecsTaskRole;
         this.ecsTaskExecutionRole = props.ecsTaskExecutionRole;
         this.subnets = props.subnets;
         this.serviceDiscoveryStack = props.serviceDiscoveryStack;
         this.logStack = props.logStack;
+
         this.replaceRemoteServicesNames();
+
+        // Create Config, Discovery and Admin servers
+        this.createConfigServer();
+        this.createDiscoveryServer();
+        this.createAdminServer();
+
+        // Create microservices
+        this.runVetsService();
+        this.runCustomersService();
+        this.runVisitsService();
+        this.runInsuranceService();
+        this.runBillingService();
+
+        // Create pet clinic frontend
+        this.createPetClinicFrontend(props.loadBalancerDnsName, props.loadBalancerTargetGroup);
+
+        // Generate traffic
+        this.generateTraffic(props.loadBalancerDnsName);
 
         new CfnOutput(this, 'EcsClusterArn', { value: this.cluster.clusterArn });
     }
 
-    createService(props: CreateServiceProps) {
-        // 1. create service discovery service
-        const DNSService = this.serviceDiscoveryStack.createService(props.serviceName);
-
-        // 2, create ECS service
-        const ecsService = new FargateService(this, `${props.serviceName}-ecs-service`, {
-            serviceName: props.serviceName,
-            taskDefinition: props.taskDefinition,
-            cluster: this.cluster,
-            securityGroups: this.securityGroups,
-            vpcSubnets: {
-                subnets: this.subnets,
-            },
-            assignPublicIp: true,
-        });
-
-        ecsService.associateCloudMapService({
-            service: DNSService,
-        });
-
-        new CfnOutput(this, `ecsService-${props.serviceName}`, {
-            value: ecsService.serviceName,
-        });
-        console.log(`Ecs Service - ${props.serviceName} is created`);
-    }
-
     createConfigServer() {
-        // Create a log group
-        const configLogGroup = this.logStack.createLogGroup(this.CONFIG_SERVER);
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${this.CONFIG_SERVER}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: this.CONFIG_SERVER,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
+        const configServerConfig = JSON.stringify({
+            image: 'spring-petclinic-config-server',
+            port: 8888,
+            environmentArgs: {},
         });
-
-        // Add Container to Task Definition
-        const container = taskDefinition.addContainer(`${this.CONFIG_SERVER}-container`, {
-            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/springcommunity/spring-petclinic-config-server`),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            environment: {
-                SPRING_PROFILES_ACTIVE: 'ecs',
-            },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: configLogGroup,
-            }),
-        });
-
-        // Add Port Mapping
-        container.addPortMappings({
-            containerPort: 8888,
-            protocol: Protocol.TCP,
-        });
+        const taskDefinition = this.createServerTaskDefinition(this.CONFIG_SERVER, configServerConfig);
 
         // Create ECS service
         this.createService({
@@ -160,43 +139,15 @@ export class EcsClusterStack extends Stack {
     }
 
     createDiscoveryServer() {
-        // Create a log group
-        const discoveryLogGroup = this.logStack.createLogGroup(this.DISCOVERY_SERVER);
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${this.DISCOVERY_SERVER}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: this.DISCOVERY_SERVER,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add Container to Task Definition
-        const container = taskDefinition.addContainer(`${this.DISCOVERY_SERVER}-container`, {
-            image: ContainerImage.fromRegistry(
-                `${this.ecrImagePrefix}/springcommunity/spring-petclinic-discovery-server`,
-            ),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            environment: {
-                SPRING_PROFILES_ACTIVE: 'ecs',
+        const discoveryServerConfig = JSON.stringify({
+            image: 'spring-petclinic-discovery-server',
+            port: 8761,
+            environmentArgs: {
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: discoveryLogGroup,
-            }),
         });
 
-        // Add Port Mapping
-        container.addPortMappings({
-            containerPort: 8761,
-            protocol: Protocol.TCP,
-        });
+        const taskDefinition = this.createServerTaskDefinition(this.DISCOVERY_SERVER, discoveryServerConfig);
 
         // Create ECS service
         this.createService({
@@ -206,43 +157,17 @@ export class EcsClusterStack extends Stack {
     }
 
     createAdminServer() {
-        // Create a log group
-        const adminLogGroup = this.logStack.createLogGroup(this.ADMIN_SERVER);
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${this.ADMIN_SERVER}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: this.ADMIN_SERVER,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add Container to Task Definition
-        const container = taskDefinition.addContainer(`${this.ADMIN_SERVER}-container`, {
-            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/springcommunity/spring-petclinic-admin-server`),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            environment: {
-                SPRING_PROFILES_ACTIVE: 'ecs',
+        const adminServerConfig = JSON.stringify({
+            image: 'spring-petclinic-admin-server',
+            port: 9090,
+            environmentArgs: {
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
                 DISCOVERY_SERVER_URL: `http://${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8761/eureka`,
                 ADMIN_IP: `${this.ADMIN_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: adminLogGroup,
-            }),
         });
 
-        // Add Port Mapping
-        container.addPortMappings({
-            containerPort: 9090,
-            protocol: Protocol.TCP,
-        });
+        const taskDefinition = this.createServerTaskDefinition(this.ADMIN_SERVER, adminServerConfig);
 
         // Create ECS service
         this.createService({
@@ -251,115 +176,25 @@ export class EcsClusterStack extends Stack {
         });
     }
 
-    createApiGateway(loadBalancerDNS: string, adotJavaImageTag: string, targetGroup: ApplicationTargetGroup) {
-        // Create a log group
-        const apiGatewayLogGroup = this.logStack.createLogGroup(this.API_GATEWAY);
-        const cwAgentApiGatewayLogGroup = this.logStack.createLogGroup('ecs-cwagent-api-gateway');
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${this.API_GATEWAY}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: this.API_GATEWAY,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add volume
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation',
-        });
-
-        // Add Container to Task Definition
-        const mainContainer = taskDefinition.addContainer(`${this.API_GATEWAY}-container`, {
-            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/springcommunity/spring-petclinic-api-gateway`),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            environment: {
-                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
-                OTEL_LOGS_EXPORTER: 'none',
-                OTEL_TRACES_SAMPLER: 'xray',
-                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
-                OTEL_PROPAGATORS: 'tracecontext,baggage,b3,xray',
-                OTEL_RESOURCE_ATTRIBUTES: `aws.log.group.names=${apiGatewayLogGroup.logGroupName},service.name=ecs-petclinic-demo-api-gateway`,
-                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
-                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
-                OTEL_METRICS_EXPORTER: 'none',
-                JAVA_TOOL_OPTIONS: ' -javaagent:/otel-auto-instrumentation/javaagent.jar',
-                SPRING_PROFILES_ACTIVE: 'ecs',
+    createPetClinicFrontend(loadBalancerDNS: string, targetGroup: ApplicationTargetGroup) {
+        const frontendConfig: string = JSON.stringify({
+            image: 'spring-petclinic-api-gateway',
+            environmentArgs: {
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
                 DISCOVERY_SERVER_URL: `http://${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8761/eureka`,
-                API_GATEWAY_IP: loadBalancerDNS, // use load balancer dns
+                API_GATEWAY_IP: loadBalancerDNS,
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: apiGatewayLogGroup,
-            }),
+            port: 8080,
+            rules: [
+                this.DISCOVERY_SERVER_CW_CONFIG,
+                this.CONFIG_SERVER_CW_CONFIG,
+                this.CUSTOMERS_SERVICE_CW_CONFIG,
+                this.VISITS_SERVICE_CW_CONFIG,
+                this.VETS_SERVICE_CW_CONFIG,
+            ],
         });
 
-        // Add Port Mapping
-        mainContainer.addPortMappings({
-            containerPort: 8080,
-            protocol: Protocol.TCP,
-        });
-
-        mainContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add init container
-        const initContainer = taskDefinition.addContainer('init-api-gateway-container', {
-            image: ContainerImage.fromRegistry(
-                `public.ecr.aws/aws-observability/adot-autoinstrumentation-java:${adotJavaImageTag}`,
-            ),
-            essential: false, // The container will stop with exit 0 after it completes.
-            command: ['cp', '/javaagent.jar', '/otel-auto-instrumentation/javaagent.jar'],
-        });
-
-        initContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add CloudWatch agent container
-        taskDefinition.addContainer('ecs-cwagent-api-gateway-container', {
-            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
-            memoryLimitMiB: 128,
-            essential: true,
-            environment: {
-                CW_CONFIG_CONTENT: JSON.stringify({
-                    traces: {
-                        traces_collected: {
-                            application_signals: {},
-                        },
-                    },
-                    logs: {
-                        metrics_collected: {
-                            application_signals: {
-                                rules: [
-                                    this.DISCOVERY_SERVER_CW_CONFIG,
-                                    this.CONFIG_SERVER_CW_CONFIG,
-                                    this.CUSTOMERS_SERVICE_CW_CONFIG,
-                                    this.VISIT_SERVICE_CW_CONFIG,
-                                    this.VET_SERVICE_CW_CONFIG,
-                                ],
-                            },
-                        },
-                    },
-                }),
-            },
-
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: cwAgentApiGatewayLogGroup,
-            }),
-        });
+        const taskDefinition = this.createJavaTaskDefinition(this.API_GATEWAY, frontendConfig);
 
         const service = new FargateService(this, `${this.API_GATEWAY}-ecs-service`, {
             serviceName: this.API_GATEWAY,
@@ -377,109 +212,19 @@ export class EcsClusterStack extends Stack {
         service.attachToApplicationTargetGroup(targetGroup);
     }
 
-    runVetsService(adotJavaImageTag: string) {
-        // Create a log group
-        const vetsLogGroup = this.logStack.createLogGroup(this.VETS_SERVICE);
-        const cwAgentVetsServiceLogGroup = this.logStack.createLogGroup('ecs-cwagent-vets-service');
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${this.VETS_SERVICE}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: this.VETS_SERVICE,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add volume
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation',
-        });
-
-        // Add Container to Task Definition
-        const mainContainer = taskDefinition.addContainer(`${this.VETS_SERVICE}-container`, {
-            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/springcommunity/spring-petclinic-vets-service`),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            environment: {
-                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
-                OTEL_LOGS_EXPORTER: 'none',
-                OTEL_TRACES_SAMPLER: 'xray',
-                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
-                OTEL_PROPAGATORS: 'tracecontext,baggage,b3,xray',
-                OTEL_RESOURCE_ATTRIBUTES: `aws.log.group.names=${vetsLogGroup.logGroupName},service.name=${this.VETS_SERVICE}`,
-                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
-                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
-                OTEL_METRICS_EXPORTER: 'none',
-                JAVA_TOOL_OPTIONS: ' -javaagent:/otel-auto-instrumentation/javaagent.jar',
-                SPRING_PROFILES_ACTIVE: 'ecs',
+    runVetsService() {
+        const vetsConfig: string = JSON.stringify({
+            image: 'spring-petclinic-vets-service',
+            environmentArgs: {
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
                 DISCOVERY_SERVER_URL: `http://${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8761/eureka`,
                 VETS_SERVICE_IP: `${this.VETS_SERVICE}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: vetsLogGroup,
-            }),
+            port: 8083,
+            rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
         });
 
-        // Add Port Mapping
-        mainContainer.addPortMappings({
-            containerPort: 8083,
-            protocol: Protocol.TCP,
-        });
-
-        mainContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add init container
-        const initContainer = taskDefinition.addContainer('init-vets-service-container', {
-            image: ContainerImage.fromRegistry(
-                `public.ecr.aws/aws-observability/adot-autoinstrumentation-java:${adotJavaImageTag}`,
-            ),
-            essential: false, // The container will stop with exit 0 after it completes.
-            command: ['cp', '/javaagent.jar', '/otel-auto-instrumentation/javaagent.jar'],
-        });
-
-        initContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add CloudWatch agent container
-        taskDefinition.addContainer('ecs-cwagent-vets-service-container', {
-            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
-            memoryLimitMiB: 128,
-            essential: true,
-            environment: {
-                CW_CONFIG_CONTENT: JSON.stringify({
-                    traces: {
-                        traces_collected: {
-                            application_signals: {},
-                        },
-                    },
-                    logs: {
-                        metrics_collected: {
-                            application_signals: {
-                                rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
-                            },
-                        },
-                    },
-                }),
-            },
-
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: cwAgentVetsServiceLogGroup,
-            }),
-        });
+        const taskDefinition = this.createJavaTaskDefinition(this.VETS_SERVICE, vetsConfig);
 
         // Create ECS service
         this.createService({
@@ -488,112 +233,20 @@ export class EcsClusterStack extends Stack {
         });
     }
 
-    runCustomersService(adotJavaImageTag: string) {
-        // Create a log group
-        const customersLogGroup = this.logStack.createLogGroup(this.CUSTOMERS_SERVICE);
-        const cwAgentCustomersServiceLogGroup = this.logStack.createLogGroup('ecs-cwagent-customers-service');
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${this.CUSTOMERS_SERVICE}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: this.CUSTOMERS_SERVICE,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add volume
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation',
-        });
-
-        // Add Container to Task Definition
-        const mainContainer = taskDefinition.addContainer(`${this.CUSTOMERS_SERVICE}-container`, {
-            image: ContainerImage.fromRegistry(
-                `${this.ecrImagePrefix}/springcommunity/spring-petclinic-customers-service`,
-            ),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            environment: {
-                AWS_DEFAULT_REGION: this.region,
-                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
-                OTEL_LOGS_EXPORTER: 'none',
-                OTEL_TRACES_SAMPLER: 'xray',
-                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
-                OTEL_PROPAGATORS: 'tracecontext,baggage,b3,xray',
-                OTEL_RESOURCE_ATTRIBUTES: `aws.log.group.names=${customersLogGroup.logGroupName},service.name=${this.CUSTOMERS_SERVICE}`,
-                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
-                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
-                OTEL_METRICS_EXPORTER: 'none',
-                JAVA_TOOL_OPTIONS: ' -javaagent:/otel-auto-instrumentation/javaagent.jar',
-                SPRING_PROFILES_ACTIVE: 'ecs',
+    runCustomersService() {
+        const customersConfig: string = JSON.stringify({
+            image: 'spring-petclinic-customers-service',
+            environmentArgs: {
+                REGION_FROM_ECS: this.region,
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
                 DISCOVERY_SERVER_URL: `http://${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8761/eureka`,
                 CUSTOMER_SERVICE_IP: `${this.CUSTOMERS_SERVICE}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: customersLogGroup,
-            }),
+            port: 8081,
+            rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
         });
 
-        // Add Port Mapping
-        mainContainer.addPortMappings({
-            containerPort: 8081,
-            protocol: Protocol.TCP,
-        });
-
-        mainContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add init container
-        const initContainer = taskDefinition.addContainer('init-customers-service-container', {
-            image: ContainerImage.fromRegistry(
-                `public.ecr.aws/aws-observability/adot-autoinstrumentation-java:${adotJavaImageTag}`,
-            ),
-            essential: false, // The container will stop with exit 0 after it completes.
-            command: ['cp', '/javaagent.jar', '/otel-auto-instrumentation/javaagent.jar'],
-        });
-
-        initContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add CloudWatch agent container
-        taskDefinition.addContainer('ecs-cwagent-customers-service-container', {
-            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
-            memoryLimitMiB: 128,
-            essential: true,
-            environment: {
-                CW_CONFIG_CONTENT: JSON.stringify({
-                    traces: {
-                        traces_collected: {
-                            application_signals: {},
-                        },
-                    },
-                    logs: {
-                        metrics_collected: {
-                            application_signals: {
-                                rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
-                            },
-                        },
-                    },
-                }),
-            },
-
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: cwAgentCustomersServiceLogGroup,
-            }),
-        });
+        const taskDefinition = this.createJavaTaskDefinition(this.CUSTOMERS_SERVICE, customersConfig);
 
         // Create ECS service
         this.createService({
@@ -602,112 +255,20 @@ export class EcsClusterStack extends Stack {
         });
     }
 
-    runVisitsService(adotJavaImageTag: string) {
-        // Create a log group
-        const visitsLogGroup = this.logStack.createLogGroup(this.VISITS_SERVICE);
-        const cwAgentVisitsServiceLogGroup = this.logStack.createLogGroup('ecs-cwagent-visits-service');
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${this.VISITS_SERVICE}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: this.VISITS_SERVICE,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add volume
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation',
-        });
-
-        // Add Container to Task Definition
-        const mainContainer = taskDefinition.addContainer(`${this.VISITS_SERVICE}-container`, {
-            image: ContainerImage.fromRegistry(
-                `${this.ecrImagePrefix}/springcommunity/spring-petclinic-visits-service`,
-            ),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            environment: {
-                AWS_DEFAULT_REGION: this.region,
-                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
-                OTEL_LOGS_EXPORTER: 'none',
-                OTEL_TRACES_SAMPLER: 'xray',
-                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
-                OTEL_PROPAGATORS: 'tracecontext,baggage,b3,xray',
-                OTEL_RESOURCE_ATTRIBUTES: `aws.log.group.names=${visitsLogGroup.logGroupName},service.name=${this.VISITS_SERVICE}`,
-                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
-                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
-                OTEL_METRICS_EXPORTER: 'none',
-                JAVA_TOOL_OPTIONS: ' -javaagent:/otel-auto-instrumentation/javaagent.jar',
-                SPRING_PROFILES_ACTIVE: 'ecs',
+    runVisitsService() {
+        const visitsConfig: string = JSON.stringify({
+            image: 'spring-petclinic-visits-service',
+            environmentArgs: {
+                REGION_FROM_ECS: this.region,
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
                 DISCOVERY_SERVER_URL: `http://${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8761/eureka`,
                 VISITS_SERVICE_IP: `${this.VISITS_SERVICE}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: visitsLogGroup,
-            }),
+            port: 8082,
+            rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
         });
 
-        // Add Port Mapping
-        mainContainer.addPortMappings({
-            containerPort: 8082,
-            protocol: Protocol.TCP,
-        });
-
-        mainContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add init container
-        const initContainer = taskDefinition.addContainer('init-visits-service-container', {
-            image: ContainerImage.fromRegistry(
-                `public.ecr.aws/aws-observability/adot-autoinstrumentation-java:${adotJavaImageTag}`,
-            ),
-            essential: false, // The container will stop with exit 0 after it completes.
-            command: ['cp', '/javaagent.jar', '/otel-auto-instrumentation/javaagent.jar'],
-        });
-
-        initContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation',
-            containerPath: '/otel-auto-instrumentation',
-            readOnly: false,
-        });
-
-        // Add CloudWatch agent container
-        taskDefinition.addContainer('ecs-cwagent-visits-service-container', {
-            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
-            memoryLimitMiB: 128,
-            essential: true,
-            environment: {
-                CW_CONFIG_CONTENT: JSON.stringify({
-                    traces: {
-                        traces_collected: {
-                            application_signals: {},
-                        },
-                    },
-                    logs: {
-                        metrics_collected: {
-                            application_signals: {
-                                rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
-                            },
-                        },
-                    },
-                }),
-            },
-
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: cwAgentVisitsServiceLogGroup,
-            }),
-        });
+        const taskDefinition = this.createJavaTaskDefinition(this.VISITS_SERVICE, visitsConfig);
 
         // Create ECS service
         this.createService({
@@ -716,134 +277,33 @@ export class EcsClusterStack extends Stack {
         });
     }
 
-    runInsuranceService(adotPythonImageTag: string, dbSecret: SmSecret, rds_endpoint: string) {
+    runInsuranceService() {
         const INSURANCE_SERVICE = 'pet-clinic-insurance-service';
 
-        // Create a log group
-        const insuranceLogGroup = this.logStack.createLogGroup(INSURANCE_SERVICE);
-        const cwAgentInsuranceServiceLogGroup = this.logStack.createLogGroup('ecs-cwagent-insurance-service');
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${INSURANCE_SERVICE}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: INSURANCE_SERVICE,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add volume
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation-python',
-        });
-
-        // Add Container to Task Definition
-        const mainContainer = taskDefinition.addContainer(`${INSURANCE_SERVICE}-container`, {
-            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/python-petclinic-insurance-service`),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            secrets: {
-                DB_USER: EcsSecret.fromSecretsManager(dbSecret, 'username'),
-                DB_USER_PASSWORD: EcsSecret.fromSecretsManager(dbSecret, 'password'),
-            },
-            environment: {
-                DB_SECRET_ARN: dbSecret.secretArn,
-                DJANGO_SETTINGS_MODULE: 'pet_clinic_insurance_service.settings',
-                PYTHONPATH:
-                    '/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/app:/otel-auto-instrumentation-python',
-                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
-                OTEL_TRACES_SAMPLER_ARG: 'endpoint=http://localhost:2000',
-                OTEL_LOGS_EXPORTER: 'none',
-                OTEL_PYTHON_CONFIGURATOR: 'aws_configurator',
-                OTEL_TRACES_SAMPLER: 'xray',
-                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
-                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
-                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
-                OTEL_RESOURCE_ATTRIBUTES: `service.name=${INSURANCE_SERVICE}`,
-                OTEL_METRICS_EXPORTER: 'none',
-                OTEL_PYTHON_DISTRO: 'aws_distro',
-                EUREKA_SERVER_URL: `${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
+        const insuranceConfig = JSON.stringify({
+            port: 8000,
+            image: 'python-petclinic-insurance-service',
+            environmentArgs: {
                 INSURANCE_SERVICE_IP: `${INSURANCE_SERVICE}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
-                DB_NAME: 'postgres',
-                DATABASE_PROFILE: 'postgresql',
-                DB_SERVICE_HOST: rds_endpoint,
-                DB_SERVICE_PORT: '5432',
+                DJANGO_SETTINGS_MODULE: 'pet_clinic_insurance_service.settings',
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: insuranceLogGroup,
-            }),
             command: [
                 'sh',
                 '-c',
                 'python manage.py migrate && python manage.py loaddata initial_data.json && python manage.py runserver 0.0.0.0:8000 --noreload',
             ],
-            healthCheck: {
-                command: ['CMD-SHELL', 'curl -f http://localhost:8000/insurances/ || exit 1'],
-                interval: Duration.seconds(60),
-                timeout: Duration.seconds(10),
-                retries: 5,
-                startPeriod: Duration.seconds(3),
-            },
+            rules: [this.DISCOVERY_SERVER_CW_CONFIG],
         });
 
-        // Add Port Mapping
-        mainContainer.addPortMappings({
-            containerPort: 8000,
-            protocol: Protocol.TCP,
-        });
+        const healthCheck: HealthCheck = {
+            command: ['CMD-SHELL', 'curl -f http://localhost:8000/insurances/ || exit 1'],
+            interval: Duration.seconds(60),
+            timeout: Duration.seconds(10),
+            retries: 5,
+            startPeriod: Duration.seconds(3),
+        };
 
-        mainContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation-python',
-            containerPath: '/otel-auto-instrumentation-python',
-            readOnly: false,
-        });
-
-        // Add init container
-        const initContainer = taskDefinition.addContainer('init-insurance-service-container', {
-            image: ContainerImage.fromRegistry(
-                `public.ecr.aws/aws-observability/adot-autoinstrumentation-python:${adotPythonImageTag}`,
-            ),
-            essential: false, // The container will stop with exit 0 after it completes.
-            command: ['cp', '-a', '/autoinstrumentation/.', '/otel-auto-instrumentation-python'],
-        });
-
-        initContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation-python',
-            containerPath: '/otel-auto-instrumentation-python',
-            readOnly: false,
-        });
-
-        // Add CloudWatch agent container
-        taskDefinition.addContainer('ecs-cwagent-insurance-service-container', {
-            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
-            memoryLimitMiB: 128,
-            essential: true,
-            environment: {
-                CW_CONFIG_CONTENT: JSON.stringify({
-                    traces: {
-                        traces_collected: {
-                            application_signals: {},
-                        },
-                    },
-                    logs: {
-                        metrics_collected: {
-                            application_signals: {
-                                rules: [this.DISCOVERY_SERVER_CW_CONFIG],
-                            },
-                        },
-                    },
-                }),
-            },
-
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: cwAgentInsuranceServiceLogGroup,
-            }),
-        });
+        const taskDefinition = this.createPythonTaskDefinition(INSURANCE_SERVICE, insuranceConfig, healthCheck);
 
         // Create ECS service
         this.createService({
@@ -852,131 +312,21 @@ export class EcsClusterStack extends Stack {
         });
     }
 
-    runBillingService(adotPythonImageTag: string, dbSecret: SmSecret, rds_endpoint: string) {
+    runBillingService() {
         const BILLING_SERVICE = 'pet-clinic-billing-service';
 
-        // Create a log group
-        const billingLogGroup = this.logStack.createLogGroup(BILLING_SERVICE);
-        const cwAgentBillingServiceLogGroup = this.logStack.createLogGroup('ecs-cwagent-billing-service');
-
-        // Create ECS task definition
-        const taskDefinition = new TaskDefinition(this, `${BILLING_SERVICE}-task`, {
-            cpu: '256',
-            memoryMiB: '512',
-            compatibility: Compatibility.FARGATE,
-            family: BILLING_SERVICE,
-            networkMode: NetworkMode.AWS_VPC,
-            taskRole: this.ecsTaskRole,
-            executionRole: this.ecsTaskExecutionRole,
-        });
-
-        // Add volume
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation-python',
-        });
-
-        // Add Container to Task Definition
-        const mainContainer = taskDefinition.addContainer(`${BILLING_SERVICE}-container`, {
-            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/python-petclinic-billing-service`),
-            cpu: 256,
-            memoryLimitMiB: 512,
-            essential: true,
-            secrets: {
-                DB_USER: EcsSecret.fromSecretsManager(dbSecret, 'username'),
-                DB_USER_PASSWORD: EcsSecret.fromSecretsManager(dbSecret, 'password'),
-            },
-            environment: {
-                DB_SECRET_ARN: dbSecret.secretArn,
+        const billingConfig = JSON.stringify({
+            port: 8800,
+            image: 'python-petclinic-billing-service',
+            environmentArgs: {
                 DJANGO_SETTINGS_MODULE: 'pet_clinic_billing_service.settings',
-                PYTHONPATH:
-                    '/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/app:/otel-auto-instrumentation-python',
-                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
-                OTEL_TRACES_SAMPLER_ARG: 'endpoint=http://localhost:2000',
-                OTEL_LOGS_EXPORTER: 'none',
-                OTEL_PYTHON_CONFIGURATOR: 'aws_configurator',
-                OTEL_TRACES_SAMPLER: 'xray',
-                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
-                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
-                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
-                OTEL_RESOURCE_ATTRIBUTES: `service.name=${BILLING_SERVICE}`,
-                OTEL_METRICS_EXPORTER: 'none',
-                OTEL_PYTHON_DISTRO: 'aws_distro',
-                // OTEL_PROPAGATORS: 'tracecontext,baggage,b3,xray',
-                EUREKA_SERVER_URL: `${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
                 BILLING_SERVICE_IP: `${BILLING_SERVICE}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
-                DB_NAME: 'postgres',
-                DATABASE_PROFILE: 'postgresql',
-                DB_SERVICE_HOST: rds_endpoint,
-                DB_SERVICE_PORT: '5432',
             },
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: billingLogGroup,
-            }),
+            rules: [this.DISCOVERY_SERVER_CW_CONFIG],
             command: ['sh', '-c', 'python manage.py migrate && python manage.py runserver 0.0.0.0:8800 --noreload'],
-            // healthCheck: {
-            //     command: ['CMD-SHELL', 'curl -f http://localhost:8000/billing/ || exit 1'],
-            //     interval: Duration.seconds(60),
-            //     timeout: Duration.seconds(10),
-            //     retries: 5,
-            //     startPeriod: Duration.seconds(3),
-            // },
         });
 
-        // Add Port Mapping
-        mainContainer.addPortMappings({
-            containerPort: 8800,
-            protocol: Protocol.TCP,
-        });
-
-        mainContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation-python',
-            containerPath: '/otel-auto-instrumentation-python',
-            readOnly: false,
-        });
-
-        // Add init container
-        const initContainer = taskDefinition.addContainer('init-billing-service-container', {
-            image: ContainerImage.fromRegistry(
-                `public.ecr.aws/aws-observability/adot-autoinstrumentation-python:${adotPythonImageTag}`,
-            ),
-            essential: false, // The container will stop with exit 0 after it completes.
-            command: ['cp', '-a', '/autoinstrumentation/.', '/otel-auto-instrumentation-python'],
-        });
-
-        initContainer.addMountPoints({
-            sourceVolume: 'opentelemetry-auto-instrumentation-python',
-            containerPath: '/otel-auto-instrumentation-python',
-            readOnly: false,
-        });
-
-        // Add CloudWatch agent container
-        taskDefinition.addContainer('ecs-cwagent-billing-service-container', {
-            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
-            memoryLimitMiB: 128,
-            essential: true,
-            environment: {
-                CW_CONFIG_CONTENT: JSON.stringify({
-                    traces: {
-                        traces_collected: {
-                            application_signals: {},
-                        },
-                    },
-                    logs: {
-                        metrics_collected: {
-                            application_signals: {
-                                rules: [this.DISCOVERY_SERVER_CW_CONFIG],
-                            },
-                        },
-                    },
-                }),
-            },
-
-            logging: LogDrivers.awsLogs({
-                streamPrefix: 'ecs',
-                logGroup: cwAgentBillingServiceLogGroup,
-            }),
-        });
+        const taskDefinition = this.createPythonTaskDefinition(BILLING_SERVICE, billingConfig);
 
         // Create ECS service
         this.createService({
@@ -1067,7 +417,7 @@ export class EcsClusterStack extends Stack {
             action: 'replace',
         };
 
-        this.VET_SERVICE_CW_CONFIG = {
+        this.VETS_SERVICE_CW_CONFIG = {
             selectors: [
                 {
                     dimension: 'RemoteService',
@@ -1083,7 +433,7 @@ export class EcsClusterStack extends Stack {
             action: 'replace',
         };
 
-        this.VISIT_SERVICE_CW_CONFIG = {
+        this.VISITS_SERVICE_CW_CONFIG = {
             selectors: [
                 {
                     dimension: 'RemoteService',
@@ -1114,5 +464,292 @@ export class EcsClusterStack extends Stack {
             ],
             action: 'replace',
         };
+    }
+
+    createJavaTaskDefinition(serviceName: string, config: string) {
+        const { image, environmentArgs, port, rules } = JSON.parse(config);
+
+        const logGroup = this.logStack.createLogGroup(serviceName);
+        const cwAgentLogGroup = this.logStack.createLogGroup(`${serviceName}-cwagent`);
+
+        // Create ECS task definition
+        const taskDefinition = new TaskDefinition(this, `${serviceName}-task`, {
+            cpu: '256',
+            memoryMiB: '512',
+            compatibility: Compatibility.FARGATE,
+            family: serviceName,
+            networkMode: NetworkMode.AWS_VPC,
+            taskRole: this.ecsTaskRole,
+            executionRole: this.ecsTaskExecutionRole,
+        });
+
+        taskDefinition.addVolume({
+            name: 'opentelemetry-auto-instrumentation',
+        });
+
+        // Add Container to Task Definition
+        const mainContainer = taskDefinition.addContainer(`${serviceName}-container`, {
+            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/springcommunity/${image}`),
+            cpu: 256,
+            memoryLimitMiB: 512,
+            essential: true,
+            environment: {
+                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
+                OTEL_LOGS_EXPORTER: 'none',
+                OTEL_TRACES_SAMPLER: 'xray',
+                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
+                OTEL_PROPAGATORS: 'tracecontext,baggage,b3,xray',
+                OTEL_RESOURCE_ATTRIBUTES: `aws.log.group.names=${logGroup.logGroupName},service.name=${serviceName}`,
+                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
+                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
+                OTEL_METRICS_EXPORTER: 'none',
+                JAVA_TOOL_OPTIONS: ' -javaagent:/otel-auto-instrumentation/javaagent.jar',
+                SPRING_PROFILES_ACTIVE: 'ecs',
+                ...environmentArgs,
+            },
+            logging: LogDrivers.awsLogs({
+                streamPrefix: 'ecs',
+                logGroup: logGroup,
+            }),
+        });
+
+        // Add Port Mapping
+        mainContainer.addPortMappings({
+            containerPort: port,
+            protocol: Protocol.TCP,
+        });
+
+        mainContainer.addMountPoints({
+            sourceVolume: 'opentelemetry-auto-instrumentation',
+            containerPath: '/otel-auto-instrumentation',
+            readOnly: false,
+        });
+
+        // Add init container
+        const initContainer = taskDefinition.addContainer(`${serviceName}-init-container`, {
+            image: ContainerImage.fromRegistry(
+                `public.ecr.aws/aws-observability/adot-autoinstrumentation-java:${this.adotJavaImageTag}`,
+            ),
+            essential: false, // The container will stop with exit 0 after it completes.
+            command: ['cp', '/javaagent.jar', '/otel-auto-instrumentation/javaagent.jar'],
+        });
+
+        initContainer.addMountPoints({
+            sourceVolume: 'opentelemetry-auto-instrumentation',
+            containerPath: '/otel-auto-instrumentation',
+            readOnly: false,
+        });
+
+        // Add CloudWatch agent container
+        taskDefinition.addContainer(`${serviceName}-cwagent-container`, {
+            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
+            memoryLimitMiB: 128,
+            essential: true,
+            environment: {
+                CW_CONFIG_CONTENT: JSON.stringify({
+                    traces: {
+                        traces_collected: {
+                            application_signals: {},
+                        },
+                    },
+                    logs: {
+                        metrics_collected: {
+                            application_signals: {
+                                rules: rules,
+                            },
+                        },
+                    },
+                }),
+            },
+
+            logging: LogDrivers.awsLogs({
+                streamPrefix: 'ecs',
+                logGroup: cwAgentLogGroup,
+            }),
+        });
+
+        return taskDefinition;
+    }
+
+    createPythonTaskDefinition(serviceName: string, config: string, healthCheck?: HealthCheck) {
+        const { image, environmentArgs, port, rules, command } = JSON.parse(config);
+
+        const logGroup = this.logStack.createLogGroup(serviceName);
+        const cwAgentLogGroup = this.logStack.createLogGroup(`${serviceName}-cwagent`);
+
+        // Create ECS task definition
+        const taskDefinition = new TaskDefinition(this, `${serviceName}-task`, {
+            cpu: '256',
+            memoryMiB: '512',
+            compatibility: Compatibility.FARGATE,
+            family: serviceName,
+            networkMode: NetworkMode.AWS_VPC,
+            taskRole: this.ecsTaskRole,
+            executionRole: this.ecsTaskExecutionRole,
+        });
+
+        taskDefinition.addVolume({
+            name: 'opentelemetry-auto-instrumentation-python',
+        });
+
+        // Add Container to Task Definition
+        const mainContainer = taskDefinition.addContainer(`${serviceName}-container`, {
+            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/${image}`),
+            cpu: 256,
+            memoryLimitMiB: 512,
+            essential: true,
+            secrets: {
+                DB_USER: EcsSecret.fromSecretsManager(this.dbSecret, 'username'),
+                DB_USER_PASSWORD: EcsSecret.fromSecretsManager(this.dbSecret, 'password'),
+            },
+            environment: {
+                PYTHONPATH:
+                    '/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/app:/otel-auto-instrumentation-python',
+                OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
+                OTEL_TRACES_SAMPLER_ARG: 'endpoint=http://localhost:2000',
+                OTEL_LOGS_EXPORTER: 'none',
+                OTEL_PYTHON_CONFIGURATOR: 'aws_configurator',
+                OTEL_TRACES_SAMPLER: 'xray',
+                OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://localhost:4316/v1/traces',
+                OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT: 'http://localhost:4316/v1/metrics',
+                OTEL_AWS_APPLICATION_SIGNALS_ENABLED: 'true',
+                OTEL_RESOURCE_ATTRIBUTES: `service.name=${serviceName}`,
+                OTEL_METRICS_EXPORTER: 'none',
+                OTEL_PYTHON_DISTRO: 'aws_distro',
+                EUREKA_SERVER_URL: `${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
+                DB_NAME: 'postgres',
+                DATABASE_PROFILE: 'postgresql',
+                DB_SERVICE_HOST: this.dbInstanceEndpointAddress,
+                DB_SERVICE_PORT: '5432',
+                ...environmentArgs,
+            },
+            logging: LogDrivers.awsLogs({
+                streamPrefix: 'ecs',
+                logGroup: logGroup,
+            }),
+            command: command,
+            healthCheck,
+        });
+
+        // Add Port Mapping
+        mainContainer.addPortMappings({
+            containerPort: port,
+            protocol: Protocol.TCP,
+        });
+
+        mainContainer.addMountPoints({
+            sourceVolume: 'opentelemetry-auto-instrumentation-python',
+            containerPath: '/otel-auto-instrumentation-python',
+            readOnly: false,
+        });
+
+        // Add init container
+        const initContainer = taskDefinition.addContainer(`${serviceName}-init-container`, {
+            image: ContainerImage.fromRegistry(
+                `public.ecr.aws/aws-observability/adot-autoinstrumentation-python:${this.adotPythonImageTag}`,
+            ),
+            essential: false, // The container will stop with exit 0 after it completes.
+            command: ['cp', '-a', '/autoinstrumentation/.', '/otel-auto-instrumentation-python'],
+        });
+
+        initContainer.addMountPoints({
+            sourceVolume: 'opentelemetry-auto-instrumentation-python',
+            containerPath: '/otel-auto-instrumentation-python',
+            readOnly: false,
+        });
+
+        // Add CloudWatch agent container
+        taskDefinition.addContainer(`${serviceName}-cwagent-container`, {
+            image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
+            memoryLimitMiB: 128,
+            essential: true,
+            environment: {
+                CW_CONFIG_CONTENT: JSON.stringify({
+                    traces: {
+                        traces_collected: {
+                            application_signals: {},
+                        },
+                    },
+                    logs: {
+                        metrics_collected: {
+                            application_signals: {
+                                rules: rules,
+                            },
+                        },
+                    },
+                }),
+            },
+
+            logging: LogDrivers.awsLogs({
+                streamPrefix: 'ecs',
+                logGroup: cwAgentLogGroup,
+            }),
+        });
+
+        return taskDefinition;
+    }
+
+    createService(props: CreateServiceProps) {
+        // 1. create service discovery service
+        const DNSService = this.serviceDiscoveryStack.createService(props.serviceName);
+
+        // 2, create ECS service
+        const ecsService = new FargateService(this, `${props.serviceName}-ecs-service`, {
+            serviceName: props.serviceName,
+            taskDefinition: props.taskDefinition,
+            cluster: this.cluster,
+            securityGroups: this.securityGroups,
+            vpcSubnets: {
+                subnets: this.subnets,
+            },
+            assignPublicIp: true,
+        });
+
+        ecsService.associateCloudMapService({
+            service: DNSService,
+        });
+
+        new CfnOutput(this, `ecsService-${props.serviceName}`, {
+            value: ecsService.serviceName,
+        });
+        console.log(`Ecs Service - ${props.serviceName} is created`);
+    }
+
+    createServerTaskDefinition(serverName: string, config: string) {
+        const { image, port, environmentArgs } = JSON.parse(config);
+
+        const logGroup = this.logStack.createLogGroup(serverName);
+        const taskDefinition = new TaskDefinition(this, `${serverName}-task`, {
+            cpu: '256',
+            memoryMiB: '512',
+            compatibility: Compatibility.FARGATE,
+            family: serverName,
+            networkMode: NetworkMode.AWS_VPC,
+            taskRole: this.ecsTaskRole,
+            executionRole: this.ecsTaskExecutionRole,
+        });
+
+        // Add Container to Task Definition
+        const container = taskDefinition.addContainer(`${serverName}-container`, {
+            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/springcommunity/${image}`),
+            cpu: 256,
+            memoryLimitMiB: 512,
+            essential: true,
+            environment: {
+                SPRING_PROFILES_ACTIVE: 'ecs',
+                ...environmentArgs,
+            },
+            logging: LogDrivers.awsLogs({
+                streamPrefix: 'ecs',
+                logGroup: logGroup,
+            }),
+        });
+
+        container.addPortMappings({
+            containerPort: port,
+            protocol: Protocol.TCP,
+        });
+
+        return taskDefinition;
     }
 }

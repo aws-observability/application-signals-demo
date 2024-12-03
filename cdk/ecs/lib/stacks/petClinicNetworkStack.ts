@@ -2,7 +2,7 @@ import { Construct } from 'constructs';
 import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
 import { Vpc, SecurityGroup, SubnetType, Port, Peer } from 'aws-cdk-lib/aws-ec2';
 
-export class NetworkStack extends Stack {
+export class PetClinicNetworkStack extends Stack {
     public readonly vpc: Vpc;
     public readonly rdsSecurityGroup: SecurityGroup;
     public readonly albSecurityGroup: SecurityGroup;
@@ -19,12 +19,12 @@ export class NetworkStack extends Stack {
             maxAzs: 2,
             subnetConfiguration: [
                 {
-                    name: 'public-subnet',
+                    name: 'pet-clinic-public-subnet',
                     subnetType: SubnetType.PUBLIC,
                     cidrMask: 24,
                 },
                 {
-                    name: 'private-subnet',
+                    name: 'pet-clinic-private-subnet',
                     subnetType: SubnetType.PRIVATE_ISOLATED, // Completely isolated private subnet
                     cidrMask: 24,
                 },

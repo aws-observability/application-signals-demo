@@ -4,7 +4,7 @@ import { App } from 'aws-cdk-lib';
 import { getLatestAdotJavaTag, getLatestAdotPythonTag } from './utils';
 import { EcsClusterStack } from './stacks/ecsStack';
 import { IamRolesStack } from './stacks/iamRolesStack';
-import { NetworkStack } from './stacks/networkStack';
+import { PetClinicNetworkStack } from './stacks/petClinicNetworkStack';
 import { ServiceDiscoveryStack } from './stacks/servicediscoveryStack';
 import { LogStack } from './stacks/logStack';
 import { LoadBalancerStack } from './stacks/loadbalancerStack';
@@ -12,18 +12,9 @@ import { RdsDatabaseStack } from './stacks/databaseStack';
 
 class ApplicationSignalsECSDemo {
     private readonly app: App;
-    private adotJavaImageTag: string;
-    private adotPythonImageTag: string;
-    private ecsClusterStack: EcsClusterStack;
-    private serviceDiscoveryStack: ServiceDiscoveryStack;
-    private loadbalancerStack: LoadBalancerStack;
-    private logStack: LogStack;
-    private rdsDatabaseStack: RdsDatabaseStack;
 
     constructor() {
         this.app = new App();
-        this.adotJavaImageTag = '';
-        this.adotPythonImageTag = '';
         this.runApp();
     }
 
@@ -36,86 +27,47 @@ class ApplicationSignalsECSDemo {
         assert(adotJavaImageTag !== '', 'ADOT Java Image Tag is empty');
         assert(adotPythonImageTag !== '', 'ADOT Python Image Tag is empty');
 
-        this.adotJavaImageTag = adotJavaImageTag;
-        this.adotPythonImageTag = adotPythonImageTag;
+        const petClinicNetworkStack = new PetClinicNetworkStack(this.app, 'NetworkStack');
 
-        // Execute synchronous operations
-        this.createStacks();
-        this.createServers();
-        this.createApiGateway();
-        this.runServices();
-        this.generateTraffic();
-        this.app.synth();
-    }
+        const logStack = new LogStack(this.app, 'LogStack');
 
-    private createStacks(): void {
-        const networkStack = new NetworkStack(this.app, 'NetworkStack');
-
-        this.logStack = new LogStack(this.app, 'LogStack');
-
-        this.loadbalancerStack = new LoadBalancerStack(this.app, 'LoadBalancerStack', {
-            vpc: networkStack.vpc,
-            securityGroup: networkStack.albSecurityGroup,
+        const loadbalancerStack = new LoadBalancerStack(this.app, 'LoadBalancerStack', {
+            vpc: petClinicNetworkStack.vpc,
+            securityGroup: petClinicNetworkStack.albSecurityGroup,
         });
 
-        this.rdsDatabaseStack = new RdsDatabaseStack(this.app, 'RdsDatabaseStack', {
-            vpc: networkStack.vpc,
-            rdsSecurityGroup: networkStack.rdsSecurityGroup,
+        const rdsDatabaseStack = new RdsDatabaseStack(this.app, 'RdsDatabaseStack', {
+            vpc: petClinicNetworkStack.vpc,
+            rdsSecurityGroup: petClinicNetworkStack.rdsSecurityGroup,
         });
 
         const iamRolesStack = new IamRolesStack(this.app, 'IamRolesStack');
 
         // Grant ecsTaskRole access to database
-        this.rdsDatabaseStack.dbSecret.grantRead(iamRolesStack.ecsTaskRole);
-        this.rdsDatabaseStack.dbSecret.grantWrite(iamRolesStack.ecsTaskRole);
+        rdsDatabaseStack.dbSecret.grantRead(iamRolesStack.ecsTaskRole);
+        rdsDatabaseStack.dbSecret.grantWrite(iamRolesStack.ecsTaskRole);
 
-        this.serviceDiscoveryStack = new ServiceDiscoveryStack(this.app, 'ServiceDiscoveryStack', {
-            vpc: networkStack.vpc,
+        const serviceDiscoveryStack = new ServiceDiscoveryStack(this.app, 'ServiceDiscoveryStack', {
+            vpc: petClinicNetworkStack.vpc,
         });
 
-        this.ecsClusterStack = new EcsClusterStack(this.app, 'EcsClusterStack', {
-            vpc: networkStack.vpc,
-            securityGroups: [networkStack.ecsSecurityGroup],
+        new EcsClusterStack(this.app, 'EcsClusterStack', {
+            vpc: petClinicNetworkStack.vpc,
+            securityGroups: [petClinicNetworkStack.ecsSecurityGroup],
             ecsTaskRole: iamRolesStack.ecsTaskRole,
             ecsTaskExecutionRole: iamRolesStack.ecsTaskExecutionRole,
-            subnets: networkStack.vpc.publicSubnets,
-            serviceDiscoveryStack: this.serviceDiscoveryStack,
-            logStack: this.logStack,
+            subnets: petClinicNetworkStack.vpc.publicSubnets,
+            serviceDiscoveryStack: serviceDiscoveryStack,
+            logStack: logStack,
+            adotPythonImageTag: adotPythonImageTag,
+            adotJavaImageTag: adotJavaImageTag,
+            dbSecret: rdsDatabaseStack.dbSecret,
+            dbInstanceEndpointAddress: rdsDatabaseStack.rdsInstance.dbInstanceEndpointAddress,
+            loadBalancerTargetGroup: loadbalancerStack.targetGroup,
+            loadBalancerDnsName: loadbalancerStack.loadBalancer.loadBalancerDnsName,
         });
-    }
 
-    private createServers() {
-        this.ecsClusterStack.createConfigServer();
-        this.ecsClusterStack.createDiscoveryServer();
-        this.ecsClusterStack.createAdminServer();
-    }
-
-    private createApiGateway() {
-        this.ecsClusterStack.createApiGateway(
-            this.loadbalancerStack.loadBalancer.loadBalancerDnsName,
-            this.adotJavaImageTag,
-            this.loadbalancerStack.targetGroup,
-        );
-    }
-
-    private runServices() {
-        this.ecsClusterStack.runVetsService(this.adotJavaImageTag);
-        this.ecsClusterStack.runCustomersService(this.adotJavaImageTag);
-        this.ecsClusterStack.runVisitsService(this.adotJavaImageTag);
-        this.ecsClusterStack.runInsuranceService(
-            this.adotPythonImageTag,
-            this.rdsDatabaseStack.dbSecret,
-            this.rdsDatabaseStack.rdsInstance.dbInstanceEndpointAddress,
-        );
-        this.ecsClusterStack.runBillingService(
-            this.adotPythonImageTag,
-            this.rdsDatabaseStack.dbSecret,
-            this.rdsDatabaseStack.rdsInstance.dbInstanceEndpointAddress,
-        );
-    }
-
-    private generateTraffic() {
-        this.ecsClusterStack.generateTraffic(this.loadbalancerStack.loadBalancer.loadBalancerDnsName);
+        this.app.synth();
     }
 }
 
