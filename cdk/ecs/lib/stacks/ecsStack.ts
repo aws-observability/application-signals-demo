@@ -40,6 +40,20 @@ interface CreateServiceProps {
     readonly taskDefinition: TaskDefinition;
 }
 
+interface ServerTaskDefinitionConfig {
+    image: string;
+    port: number;
+    environmentArgs: {
+        [key: string]: string;
+    };
+}
+
+interface ServiceTaskDefinitionConfig extends ServerTaskDefinitionConfig {
+    rules: MetricTransformationConfig[];
+    command?: string[];
+    healthCheck?: HealthCheck;
+}
+
 type MetricTransformationConfig = {
     readonly selectors: Array<{
         readonly dimension: string;
@@ -121,11 +135,11 @@ export class EcsClusterStack extends Stack {
     }
 
     createConfigServer() {
-        const configServerConfig = JSON.stringify({
+        const configServerConfig: ServerTaskDefinitionConfig = {
             image: 'spring-petclinic-config-server',
             port: 8888,
             environmentArgs: {},
-        });
+        };
         const taskDefinition = this.createServerTaskDefinition(this.CONFIG_SERVER, configServerConfig);
 
         // Create ECS service
@@ -136,13 +150,13 @@ export class EcsClusterStack extends Stack {
     }
 
     createDiscoveryServer() {
-        const discoveryServerConfig = JSON.stringify({
+        const discoveryServerConfig: ServerTaskDefinitionConfig = {
             image: 'spring-petclinic-discovery-server',
             port: 8761,
             environmentArgs: {
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
             },
-        });
+        };
 
         const taskDefinition = this.createServerTaskDefinition(this.DISCOVERY_SERVER, discoveryServerConfig);
 
@@ -154,7 +168,7 @@ export class EcsClusterStack extends Stack {
     }
 
     createAdminServer() {
-        const adminServerConfig = JSON.stringify({
+        const adminServerConfig: ServerTaskDefinitionConfig = {
             image: 'spring-petclinic-admin-server',
             port: 9090,
             environmentArgs: {
@@ -162,7 +176,7 @@ export class EcsClusterStack extends Stack {
                 DISCOVERY_SERVER_URL: `http://${this.DISCOVERY_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8761/eureka`,
                 ADMIN_IP: `${this.ADMIN_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
             },
-        });
+        };
 
         const taskDefinition = this.createServerTaskDefinition(this.ADMIN_SERVER, adminServerConfig);
 
@@ -174,7 +188,7 @@ export class EcsClusterStack extends Stack {
     }
 
     createPetClinicFrontend(loadBalancerDNS: string, targetGroup: ApplicationTargetGroup) {
-        const frontendConfig: string = JSON.stringify({
+        const frontendConfig: ServiceTaskDefinitionConfig = {
             image: 'spring-petclinic-api-gateway',
             environmentArgs: {
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
@@ -189,7 +203,7 @@ export class EcsClusterStack extends Stack {
                 this.VISITS_SERVICE_CW_CONFIG,
                 this.VETS_SERVICE_CW_CONFIG,
             ],
-        });
+        };
 
         const taskDefinition = this.createJavaTaskDefinition(this.API_GATEWAY, frontendConfig);
 
@@ -210,7 +224,7 @@ export class EcsClusterStack extends Stack {
     }
 
     runVetsService() {
-        const vetsConfig: string = JSON.stringify({
+        const vetsConfig: ServiceTaskDefinitionConfig = {
             image: 'spring-petclinic-vets-service',
             environmentArgs: {
                 CONFIG_SERVER_URL: `http://${this.CONFIG_SERVER}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}:8888`,
@@ -219,7 +233,7 @@ export class EcsClusterStack extends Stack {
             },
             port: 8083,
             rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
-        });
+        };
 
         const taskDefinition = this.createJavaTaskDefinition(this.VETS_SERVICE, vetsConfig);
 
@@ -231,7 +245,7 @@ export class EcsClusterStack extends Stack {
     }
 
     runCustomersService() {
-        const customersConfig: string = JSON.stringify({
+        const customersConfig: ServiceTaskDefinitionConfig = {
             image: 'spring-petclinic-customers-service',
             environmentArgs: {
                 REGION_FROM_ECS: this.region,
@@ -241,7 +255,7 @@ export class EcsClusterStack extends Stack {
             },
             port: 8081,
             rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
-        });
+        };
 
         const taskDefinition = this.createJavaTaskDefinition(this.CUSTOMERS_SERVICE, customersConfig);
 
@@ -253,7 +267,7 @@ export class EcsClusterStack extends Stack {
     }
 
     runVisitsService() {
-        const visitsConfig: string = JSON.stringify({
+        const visitsConfig: ServiceTaskDefinitionConfig = {
             image: 'spring-petclinic-visits-service',
             environmentArgs: {
                 REGION_FROM_ECS: this.region,
@@ -263,7 +277,7 @@ export class EcsClusterStack extends Stack {
             },
             port: 8082,
             rules: [this.DISCOVERY_SERVER_CW_CONFIG, this.CONFIG_SERVER_CW_CONFIG],
-        });
+        };
 
         const taskDefinition = this.createJavaTaskDefinition(this.VISITS_SERVICE, visitsConfig);
 
@@ -277,7 +291,15 @@ export class EcsClusterStack extends Stack {
     runInsuranceService() {
         const INSURANCE_SERVICE = 'pet-clinic-insurance-service';
 
-        const insuranceConfig = JSON.stringify({
+        const healthCheck: HealthCheck = {
+            command: ['CMD-SHELL', 'curl -f http://localhost:8000/insurances/ || exit 1'],
+            interval: Duration.seconds(60),
+            timeout: Duration.seconds(10),
+            retries: 5,
+            startPeriod: Duration.seconds(3),
+        };
+
+        const insuranceConfig: ServiceTaskDefinitionConfig = {
             port: 8000,
             image: 'python-petclinic-insurance-service',
             environmentArgs: {
@@ -290,17 +312,10 @@ export class EcsClusterStack extends Stack {
                 'python manage.py migrate && python manage.py loaddata initial_data.json && python manage.py runserver 0.0.0.0:8000 --noreload',
             ],
             rules: [this.DISCOVERY_SERVER_CW_CONFIG],
-        });
-
-        const healthCheck: HealthCheck = {
-            command: ['CMD-SHELL', 'curl -f http://localhost:8000/insurances/ || exit 1'],
-            interval: Duration.seconds(60),
-            timeout: Duration.seconds(10),
-            retries: 5,
-            startPeriod: Duration.seconds(3),
+            healthCheck: healthCheck,
         };
 
-        const taskDefinition = this.createPythonTaskDefinition(INSURANCE_SERVICE, insuranceConfig, healthCheck);
+        const taskDefinition = this.createPythonTaskDefinition(INSURANCE_SERVICE, insuranceConfig);
 
         // Create ECS service
         this.createService({
@@ -312,7 +327,7 @@ export class EcsClusterStack extends Stack {
     runBillingService() {
         const BILLING_SERVICE = 'pet-clinic-billing-service';
 
-        const billingConfig = JSON.stringify({
+        const billingConfig: ServiceTaskDefinitionConfig = {
             port: 8800,
             image: 'python-petclinic-billing-service',
             environmentArgs: {
@@ -321,7 +336,7 @@ export class EcsClusterStack extends Stack {
             },
             rules: [this.DISCOVERY_SERVER_CW_CONFIG],
             command: ['sh', '-c', 'python manage.py migrate && python manage.py runserver 0.0.0.0:8800 --noreload'],
-        });
+        };
 
         const taskDefinition = this.createPythonTaskDefinition(BILLING_SERVICE, billingConfig);
 
@@ -463,8 +478,8 @@ export class EcsClusterStack extends Stack {
         };
     }
 
-    createJavaTaskDefinition(serviceName: string, config: string) {
-        const { image, environmentArgs, port, rules } = JSON.parse(config);
+    createJavaTaskDefinition(serviceName: string, config: ServiceTaskDefinitionConfig) {
+        const { image, environmentArgs, port, rules } = config;
 
         const logGroup = this.logStack.createLogGroup(serviceName);
         const cwAgentLogGroup = this.logStack.createLogGroup(`${serviceName}-cwagent`);
@@ -569,8 +584,8 @@ export class EcsClusterStack extends Stack {
         return taskDefinition;
     }
 
-    createPythonTaskDefinition(serviceName: string, config: string, healthCheck?: HealthCheck) {
-        const { image, environmentArgs, port, rules, command } = JSON.parse(config);
+    createPythonTaskDefinition(serviceName: string, config: ServiceTaskDefinitionConfig) {
+        const { image, environmentArgs, port, rules, command, healthCheck } = config;
 
         const logGroup = this.logStack.createLogGroup(serviceName);
         const cwAgentLogGroup = this.logStack.createLogGroup(`${serviceName}-cwagent`);
@@ -626,7 +641,7 @@ export class EcsClusterStack extends Stack {
                 streamPrefix: 'ecs',
                 logGroup: logGroup,
             }),
-            command: command,
+            command,
             healthCheck,
         });
 
@@ -714,8 +729,8 @@ export class EcsClusterStack extends Stack {
         console.log(`Ecs Service - ${props.serviceName} is created`);
     }
 
-    createServerTaskDefinition(serverName: string, config: string) {
-        const { image, port, environmentArgs } = JSON.parse(config);
+    createServerTaskDefinition(serverName: string, config: ServerTaskDefinitionConfig) {
+        const { image, port, environmentArgs } = config;
 
         const logGroup = this.logStack.createLogGroup(serverName);
         const taskDefinition = new TaskDefinition(this, `${serverName}-task`, {

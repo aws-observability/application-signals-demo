@@ -68,9 +68,11 @@ export class PetClinicNetworkStack extends Stack {
         new GatewayVpcEndpoint(this, 's3Endpoint', {
             vpc: this.vpc,
             service: GatewayVpcEndpointAwsService.S3,
-            subnets: [{
-                subnetType: SubnetType.PUBLIC,
-            }],
+            subnets: [
+                {
+                    subnetType: SubnetType.PUBLIC,
+                },
+            ],
         });
 
         // Create Security Groups
