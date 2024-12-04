@@ -1,6 +1,16 @@
 import { Construct } from 'constructs';
 import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
-import { Vpc, SecurityGroup, SubnetType, Port, Peer } from 'aws-cdk-lib/aws-ec2';
+import {
+    Vpc,
+    SecurityGroup,
+    SubnetType,
+    Port,
+    Peer,
+    InterfaceVpcEndpoint,
+    InterfaceVpcEndpointAwsService,
+    GatewayVpcEndpoint,
+    GatewayVpcEndpointAwsService,
+} from 'aws-cdk-lib/aws-ec2';
 
 export class PetClinicNetworkStack extends Stack {
     public readonly vpc: Vpc;
@@ -28,7 +38,39 @@ export class PetClinicNetworkStack extends Stack {
                     subnetType: SubnetType.PRIVATE_ISOLATED, // Completely isolated private subnet
                     cidrMask: 24,
                 },
+                {
+                    name: 'pet-clinic-private-subnet-with-egress',
+                    subnetType: SubnetType.PRIVATE_WITH_EGRESS,
+                    cidrMask: 24,
+                },
             ],
+        });
+
+        // Add ECR API VPC Endpoint
+        new InterfaceVpcEndpoint(this, 'EcrApiEndpoint', {
+            vpc: this.vpc,
+            service: InterfaceVpcEndpointAwsService.ECR,
+            subnets: {
+                subnetType: SubnetType.PUBLIC,
+            },
+        });
+
+        // Add ECR Docker VPC Endpoint
+        new InterfaceVpcEndpoint(this, 'EcrDkrEndpoint', {
+            vpc: this.vpc,
+            service: InterfaceVpcEndpointAwsService.ECR_DOCKER,
+            subnets: {
+                subnetType: SubnetType.PUBLIC,
+            },
+        });
+
+        // Add S3 Gateway Endpoint as ECR uses S3 to store layers
+        new GatewayVpcEndpoint(this, 's3Endpoint', {
+            vpc: this.vpc,
+            service: GatewayVpcEndpointAwsService.S3,
+            subnets: [{
+                subnetType: SubnetType.PUBLIC,
+            }],
         });
 
         // Create Security Groups

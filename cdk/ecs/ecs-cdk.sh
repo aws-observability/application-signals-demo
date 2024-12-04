@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Script to synthesize, deploy, or destroy AWS CDK stacks with stack dependencies
 # Usage: ./ecs-cdk.sh <action>

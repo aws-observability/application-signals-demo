@@ -27,7 +27,7 @@ class ApplicationSignalsECSDemo {
         assert(adotJavaImageTag !== '', 'ADOT Java Image Tag is empty');
         assert(adotPythonImageTag !== '', 'ADOT Python Image Tag is empty');
 
-        const petClinicNetworkStack = new PetClinicNetworkStack(this.app, 'NetworkStack');
+        const petClinicNetworkStack = new PetClinicNetworkStack(this.app, 'PetClinicNetworkStack');
 
         const logStack = new LogStack(this.app, 'LogStack');
 
@@ -56,7 +56,6 @@ class ApplicationSignalsECSDemo {
             securityGroups: [petClinicNetworkStack.ecsSecurityGroup],
             ecsTaskRole: iamRolesStack.ecsTaskRole,
             ecsTaskExecutionRole: iamRolesStack.ecsTaskExecutionRole,
-            subnets: petClinicNetworkStack.vpc.publicSubnets,
             serviceDiscoveryStack: serviceDiscoveryStack,
             logStack: logStack,
             adotPythonImageTag: adotPythonImageTag,

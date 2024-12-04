@@ -1,21 +1,21 @@
 import { ApplicationTargetGroup } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { CfnOutput, Stack, StackProps, Duration } from 'aws-cdk-lib';
+import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Role } from 'aws-cdk-lib/aws-iam';
 import { Secret as SmSecret } from 'aws-cdk-lib/aws-secretsmanager';
 import {
-    TaskDefinition,
     Cluster,
-    FargateService,
     Compatibility,
-    NetworkMode,
     ContainerImage,
+    FargateService,
+    HealthCheck,
     LogDrivers,
+    NetworkMode,
     Protocol,
     Secret as EcsSecret,
-    HealthCheck,
+    TaskDefinition,
 } from 'aws-cdk-lib/aws-ecs';
-import { Vpc, ISubnet, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { SecurityGroup, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 
 import { ServiceDiscoveryStack } from './servicediscoveryStack';
 import { LogStack } from './logStack';
@@ -25,7 +25,6 @@ interface EcsClusterStackProps extends StackProps {
     readonly securityGroups: SecurityGroup[];
     readonly ecsTaskRole: Role;
     readonly ecsTaskExecutionRole: Role;
-    readonly subnets: ISubnet[];
     readonly serviceDiscoveryStack: ServiceDiscoveryStack;
     readonly logStack: LogStack;
     readonly adotJavaImageTag: string;
@@ -58,7 +57,6 @@ export class EcsClusterStack extends Stack {
     private readonly securityGroups: SecurityGroup[];
     private readonly ecsTaskRole: Role;
     private readonly ecsTaskExecutionRole: Role;
-    private readonly subnets: ISubnet[];
     private readonly ecrImagePrefix: string;
     private readonly serviceDiscoveryStack: ServiceDiscoveryStack;
     private readonly logStack: LogStack;
@@ -96,7 +94,6 @@ export class EcsClusterStack extends Stack {
         this.securityGroups = props.securityGroups;
         this.ecsTaskRole = props.ecsTaskRole;
         this.ecsTaskExecutionRole = props.ecsTaskExecutionRole;
-        this.subnets = props.subnets;
         this.serviceDiscoveryStack = props.serviceDiscoveryStack;
         this.logStack = props.logStack;
 
@@ -202,9 +199,9 @@ export class EcsClusterStack extends Stack {
             cluster: this.cluster,
             securityGroups: this.securityGroups,
             vpcSubnets: {
-                subnets: this.subnets,
+                subnetType: SubnetType.PRIVATE_WITH_EGRESS,
             },
-            assignPublicIp: true,
+            assignPublicIp: false,
             desiredCount: 1,
         });
 
@@ -377,9 +374,9 @@ export class EcsClusterStack extends Stack {
             cluster: this.cluster,
             securityGroups: this.securityGroups,
             vpcSubnets: {
-                subnets: this.subnets,
+                subnetType: SubnetType.PRIVATE_WITH_EGRESS,
             },
-            assignPublicIp: true,
+            assignPublicIp: false,
             desiredCount: 1,
         });
     }
@@ -481,10 +478,11 @@ export class EcsClusterStack extends Stack {
             networkMode: NetworkMode.AWS_VPC,
             taskRole: this.ecsTaskRole,
             executionRole: this.ecsTaskExecutionRole,
-        });
-
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation',
+            volumes: [
+                {
+                    name: 'opentelemetry-auto-instrumentation',
+                },
+            ],
         });
 
         // Add Container to Task Definition
@@ -586,10 +584,11 @@ export class EcsClusterStack extends Stack {
             networkMode: NetworkMode.AWS_VPC,
             taskRole: this.ecsTaskRole,
             executionRole: this.ecsTaskExecutionRole,
-        });
-
-        taskDefinition.addVolume({
-            name: 'opentelemetry-auto-instrumentation-python',
+            volumes: [
+                {
+                    name: 'opentelemetry-auto-instrumentation-python',
+                },
+            ],
         });
 
         // Add Container to Task Definition
@@ -700,9 +699,9 @@ export class EcsClusterStack extends Stack {
             cluster: this.cluster,
             securityGroups: this.securityGroups,
             vpcSubnets: {
-                subnets: this.subnets,
+                subnetType: SubnetType.PRIVATE_WITH_EGRESS,
             },
-            assignPublicIp: true,
+            assignPublicIp: false,
         });
 
         ecsService.associateCloudMapService({
