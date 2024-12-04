@@ -44,9 +44,7 @@ function delete_resources() {
   aws sqs delete-queue --queue-url $(aws sqs get-queue-url --queue-name apm_test --query 'QueueUrl' --output text)
   aws kinesis delete-stream --stream-name apm_test
   aws dynamodb delete-table --table-name apm_test
-  # TODO: Reimplement resources deletion as current Sample App in ECS has issues creating these resources in the region.
-#  aws dynamodb delete-table --table-name BillingInfo
-#  aws dynamodb delete-table --table-name PetClinicPayment
+  aws dynamodb delete-table --table-name BillingInfo
 
   echo "Resource deletion complete."
 }

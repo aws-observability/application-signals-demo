@@ -331,6 +331,7 @@ export class EcsClusterStack extends Stack {
             port: 8800,
             image: 'python-petclinic-billing-service',
             environmentArgs: {
+                REGION: this.region,
                 DJANGO_SETTINGS_MODULE: 'pet_clinic_billing_service.settings',
                 BILLING_SERVICE_IP: `${BILLING_SERVICE}-DNS.${this.serviceDiscoveryStack.namespace.namespaceName}`,
             },
