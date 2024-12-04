@@ -21,7 +21,13 @@ public class SqsService {
 
     public SqsService() {
         // AWS web identity is set for EKS clusters, if these are not set then use default credentials
-        if (System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE") == null && System.getProperty("aws.webIdentityTokenFile") == null) {
+        if (System.getenv("REGION_FROM_ECS") != null) {
+            String regionName = System.getenv("REGION_FROM_ECS");
+            sqs = SqsClient.builder()
+                .region(Region.of(regionName))
+                .build();
+        }
+        else if (System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE") == null && System.getProperty("aws.webIdentityTokenFile") == null) {
             sqs = SqsClient.builder()
                 .region(Region.of(Util.REGION_FROM_EC2))
                 .build();

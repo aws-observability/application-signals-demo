@@ -23,8 +23,8 @@ public class BedrockRuntimeV1Service {
 
     public BedrockRuntimeV1Service() {
         // AWS web identity is set for EKS clusters, if these are not set then use default credentials
-        if (System.getenv("AWS_DEFAULT_REGION") != null) {
-            String regionName = System.getenv("AWS_DEFAULT_REGION");
+        if (System.getenv("REGION_FROM_ECS") != null) {
+            String regionName = System.getenv("REGION_FROM_ECS");
             bedrockRuntimeV1Client = AmazonBedrockRuntimeClientBuilder.standard()
                             .withRegion(regionName)
                             .build();
