@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from .models import Billing
+from django.db.models import Subquery
+from .models import Billing,CheckList
 from .serializers import BillingSerializer
 import logging
 import boto3
@@ -13,7 +14,10 @@ logger = logging.getLogger(__name__)
 
 class BillingViewSet(viewsets.ViewSet):
     def list(self, request):
-        queryset = Billing.objects.all()
+        invalid_names = CheckList.objects.values('invalid_name').distinct()[:100000]
+        queryset = Billing.objects.exclude(
+            type_name__in=Subquery(invalid_names)
+        )
         serializer = BillingSerializer(queryset, many=True)
         return Response(serializer.data)
 
