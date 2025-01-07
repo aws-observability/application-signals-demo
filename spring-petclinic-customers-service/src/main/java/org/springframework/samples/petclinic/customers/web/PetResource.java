@@ -96,7 +96,17 @@ class PetResource {
         log.info("bedrockV1Service FINISH Getting guardrail");
         log.info("DEBUG: CALLING BEDROCK petId = " + petId);
         log.info("DEBUG: bedrockRuntimeV1Service Invoking Titan model");
-        bedrockRuntimeV1Service.invokeTitanModel();
+        String petType = "pets";
+        try {
+            Pet pet = findPetById(petId);
+            if (pet.getType() != null) {
+                petType = pet.getType().getName();
+            }
+        } catch (Exception e) {
+            log.error("Failed to find pet: '{}' ", petId);
+        }
+
+        bedrockRuntimeV1Service.invokeTitanModel(petType);
         log.info("bedrockRuntimeV1Service FINISH Invoking Titan model");
         log.info("bedrockAgentV2Service Getting knowledge base");
         bedrockAgentV2Service.bedrockAgentGetKnowledgeBaseV2();
@@ -105,7 +115,7 @@ class PetResource {
         bedrockV2Service.getGuardrail();
         log.info("bedrockV2Service FINISH Getting guardrail");
         log.info("bedrockRuntimeV2Service Invoking Anthropic claude");
-        bedrockRuntimeV2Service.invokeAnthropicClaude();
+        bedrockRuntimeV2Service.invokeAnthropicClaude(petType);
         log.info("bedrockRuntimeV2Service FINISH Invoking Anthropic claude");
     }
 

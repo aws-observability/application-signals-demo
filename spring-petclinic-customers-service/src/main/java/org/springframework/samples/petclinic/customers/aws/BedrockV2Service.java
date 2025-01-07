@@ -1,5 +1,6 @@
 package org.springframework.samples.petclinic.customers.aws;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
@@ -8,6 +9,7 @@ import software.amazon.awssdk.services.bedrock.BedrockClient;
 import software.amazon.awssdk.services.bedrock.model.*;
 
 @Component
+@Slf4j
 public class BedrockV2Service {
     final BedrockClient bedrockV2Client;
 
@@ -32,7 +34,7 @@ public class BedrockV2Service {
             ListGuardrailsResponse listResponse = bedrockV2Client.listGuardrails(listRequest);
             if(listResponse.hasGuardrails()) {
                 String guardRailId = listResponse.guardrails().get(0).id();
-                System.out.printf("ListGuardrailsRequest: " + guardRailId);
+                log.info("ListGuardrailsRequest: " + guardRailId);
 
                 GetGuardrailRequest request = GetGuardrailRequest.builder()
                         .guardrailIdentifier(guardRailId).build();
@@ -42,7 +44,7 @@ public class BedrockV2Service {
                 return "";
             }
         } catch (Exception e) {
-            System.out.printf("Failed to GetGuardrailRequest. Error: %s%n", e.getMessage());
+            log.error("Failed to GetGuardrailRequest. Error: %s", e.getMessage());
             throw e;
         }
     }

@@ -5,12 +5,14 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.bedrock.AmazonBedrock;
 import com.amazonaws.services.bedrock.AmazonBedrockClientBuilder;
 import com.amazonaws.services.bedrock.model.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
 import org.springframework.samples.petclinic.customers.Util;
 import java.util.List;
 
 @Component
+@Slf4j
 public class BedrockV1Service {
     final AmazonBedrock bedrockV1Client;
 
@@ -42,7 +44,7 @@ public class BedrockV1Service {
             List<GuardrailSummary> guardrails = listResponse.getGuardrails();
             if(guardrails != null && guardrails.size() > 0) {
                 String guardRailId = guardrails.get(0).getId();
-                System.out.printf("ListGuardrailsResult: " + guardRailId);
+                log.info("ListGuardrailsResult: " + guardRailId);
 
                 GetGuardrailRequest request = new GetGuardrailRequest()
                         .withGuardrailIdentifier(guardRailId);
@@ -50,7 +52,7 @@ public class BedrockV1Service {
                 responseString = response.toString();
             }
         } catch (Exception e) {
-            System.out.printf("Failed to GetGuardrailRequest. Error: %s%n", e.getMessage());
+            log.error("Failed to GetGuardrailRequest. Error: %s", e.getMessage());
             throw e;
         }
         return "Guardrail ID: " + responseString;
