@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-service-python
+  namespace: namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: billing-service-python
+  template:
+    metadata:
+      labels:
+        io.kompose.service: billing-service-python
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: 'true'
+    spec:
+      serviceAccountName: visits-service-account
+      containers:
+        - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/python-petclinic-billing-service:latest 
+          # securityContext:
+          #   runAsNonRoot: true
+          #   allowPrivilegeEscalation: true
+          name: billing-service-python
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "pet_clinic_billing_service.settings"
+            - name: PYTHONPATH
+              value: "/app"
+            - name: EUREKA_SERVER_URL
+              value: discovery-server
+            - name: DB_NAME
+              value: 'postgres'
+            - name: DB_USER
+              value: 'djangouser'
+            - name: DB_USER_PASSWORD
+              value: 'asdfqwer'
+            - name: DATABASE_PROFILE
+              value: postgresql
+            - name: REGION
+              value: ${REGION}
+            - name: DB_SERVICE_HOST
+              value: db.pet-clinic.svc.cluster.local
+            - name: DB_SERVICE_PORT
+              value: '5432'
+          # command: ["sh", "-c"]
+          # args: ['manage.py', 'runserver', '0.0.0.0:8000']
+          command: ['sh', '-c']
+          args:
+            - |
+              python manage.py migrate
+              python manage.py runserver 0.0.0.0:8800 --noreload
+          ports:
+            - containerPort: 8800
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /billings/
+              port: 8800
+            initialDelaySeconds: 3
+            periodSeconds: 60
+      restartPolicy: Always
