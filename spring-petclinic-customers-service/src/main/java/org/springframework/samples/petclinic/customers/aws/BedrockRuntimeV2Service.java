@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.springframework.samples.petclinic.customers.aws;
 
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.samples.petclinic.customers.Util;
@@ -13,6 +14,7 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.model.*;
 
 @Component
+@Slf4j
 public class BedrockRuntimeV2Service {
     final BedrockRuntimeClient bedrockRuntimeV2Client;
 
@@ -32,11 +34,10 @@ public class BedrockRuntimeV2Service {
 
     }
 
-    public String invokeAnthropicClaude() {
+    public String invokeAnthropicClaude(String petType) {
         try {
-            System.out.printf("Invoke Anthropic claude: ");
-            String claudeModelId = "anthropic.claude-3-sonnet-20240229-v1:0";
-            String prompt = "What's the common disease for a pet?";
+            String claudeModelId = "anthropic.claude-v2:1";
+            String prompt = String.format("What are the best preventive measures for common %s diseases?", petType);
             JSONObject userMessage = new JSONObject()
                     .put("role", "user")
                     .put("content", "Pet diagnose content");
@@ -51,7 +52,6 @@ public class BedrockRuntimeV2Service {
                     .put("temperature", 0.5)
                     .put("top_p", 0.9)
                     .toString();
-            System.out.printf("Anthropic claude Model with modelId: " + claudeModelId + " prompt: " + prompt + "max_gen_len: 1000 temperature: 0.5 top_p: 0.9");
 
             InvokeModelRequest request = InvokeModelRequest.builder()
                     .body(SdkBytes.fromUtf8String(payload))
@@ -59,12 +59,11 @@ public class BedrockRuntimeV2Service {
                     .contentType("application/json")
                     .accept("application/json")
                     .build();
-            System.out.println("Anthropic claude request:" + request.body().asUtf8String());
 
             InvokeModelResponse response = bedrockRuntimeV2Client.invokeModel(request);
 
             JSONObject responseBody = new JSONObject(response.body().asUtf8String());
-            System.out.println("invoke Anthropic claude response:" + response.body().asUtf8String());
+
             int promptTokenCount = 0;
             int generationTokenCount = 0;
             if (responseBody.has("usage")) {
@@ -78,19 +77,31 @@ public class BedrockRuntimeV2Service {
                 if (content.length() > 0) {
                     JSONObject firstContent = content.getJSONObject(0);
                     if (firstContent.has("text")) {
-                        String text = firstContent.getString("text");
-                        System.out.println("Anthropic claude response text:" + text);
+                        generatedText = firstContent.getString("text");
                     }
                 }
 
             }
             String stopReason = responseBody.getString("stop_reason");
+            log.info(
+                    "Invoke Claude Model response: " +
+                            "{ " +
+                            "\"modelId\": \"" + claudeModelId + "\", " +
+                            "\"prompt_token_count\": " + promptTokenCount + ", " +
+                            "\"generation_token_count\": " + generationTokenCount + ", " +
+                            "\"prompt\": \"" + prompt + "\", " +
+                            "\"generated_text\": \"" + generatedText.replace("\n", " ") + "\", " +
+                            "\"max_gen_len\": 1000, " +
+                            "\"temperature\": 0.5, " +
+                            "\"top_p\": 0.9, " +
+                            "\"stop_reason\": \"" + stopReason + "\" " +
+                            " }");
 
-            System.out.printf("Invoke claude Model response: prompt_token_count: " + promptTokenCount + " generation_token_count: " + generationTokenCount + " stop_reason: " + stopReason);
             return generatedText;
         } catch (Exception e) {
-            System.out.printf("Failed to invoke Anthropic claude: Error: %s%n",e.getMessage());
+            log.error("Failed to invoke Anthropic claude: Error: %s%n ",e.getMessage());
             throw e;
         }
     }
+
 }

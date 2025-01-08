@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.springframework.samples.petclinic.customers.aws;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
@@ -10,6 +11,7 @@ import software.amazon.awssdk.services.bedrockagent.BedrockAgentClient;
 import software.amazon.awssdk.services.bedrockagent.model.*;
 
 @Component
+@Slf4j
 public class BedrockAgentV2Service {
     final BedrockAgentClient bedrockAgentV2Client;
 
