@@ -38,13 +38,18 @@ Application Signals for AWS Lambda provides detailed insights into function exec
 The demo will install three Lambda functions: appointment-service-create, appointment-service-get, and appointment-service-list. These functions will be automatically invoked periodically to generate signals for the demo. Users can follow the documentation below to observe the expected results in the CloudWatch Console.
 
 ## Expected Results
-- **Application Signals Services**: 
+- **Application Signals Services**
   - The Lambda functions are detected and displayed under __Services__.
   ![](./imgs/lambda_0.png)
-- **In Lambda service**:
-    - Clicking a data point in the metrics dashboard, you can correlate it with a trace in the __Correlated Traces__.
-      ![](./imgs/lambda_2.png)
-    - Clicking a data point in the metrics dashboard, you can further drill down by selecting the Lambda function's Alias or 
-      Version in the __Top Contributors__
+- **In Lambda service**, Click `appointment-service-get`
+    - Click a data point in the metrics dashboard, you can further drill down by selecting the Lambda function's Alias or 
+      Version in the __Top Contributors__ tab. This allows users to easily observe differences in Availability and Latency 
+      across different Lambda aliases or versions.
       ![](./imgs/lambda_1.png)
+    - Click a data point in the Faults and Errors metrics dashboard, __Correlated Traces__ tab shows a list of traces.
+      ![](./imgs/lambda_2.png)
+    - Examine the first trace Id. This is taking us to the trace details page, which has both trace map as well as the spans 
+      timeline information. Click on the red icon “appointment-service-get”, which is our lambda, and under the Exceptions tab,
+      you will find the stack trace message.
+      ![](./imgs/lambda_3.png)
 

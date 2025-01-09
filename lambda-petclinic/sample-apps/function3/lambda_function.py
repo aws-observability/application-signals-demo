@@ -22,6 +22,9 @@ def lambda_handler(event, context):
     if owners is None or pet_id is None:
         raise Exception('Missing owner or pet_id')
 
+    if pet_id == "777777777777":
+        raise Exception('Exception happens')
+
     if record_id is None:
         return {
             'statusCode': 400,
