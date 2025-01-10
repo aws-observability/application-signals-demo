@@ -14,3 +14,9 @@ class Billing(models.Model):
 
     def __str__(self):
         return self.owner_id
+
+class CheckList(models.Model):
+    invalid_name = models.CharField(max_length=200)
+
+    class Meta:
+        db_table = 'check_list'

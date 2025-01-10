@@ -42,6 +42,10 @@ check_if_step_failed_and_exit "There was an error enabling app signals with name
 ../enable-ebs-csi-driver.sh $CLUSTER_NAME $REGION $NAMESPACE
 check_if_step_failed_and_exit "There was an error enabling aws-ebs-csi-driver with namespace $NAMESPACE, exiting"
 
+# prepare RDS cluster
+../create-rds.sh $CLUSTER_NAME $REGION
+check_if_step_failed_and_exit "There was an error creating RDS cluster, exiting"
+
 # deploy sample application
 ../deploy-sample-app.sh $CLUSTER_NAME $REGION $NAMESPACE
 check_if_step_failed_and_exit "There was an error deploying the sample app, exiting"
