@@ -33,6 +33,7 @@ if [[ $OPERATION == "apply" ]]; then
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonKinesisFullAccess \
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess \
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonBedrockFullAccess \
+        --attach-policy-arn arn:aws:iam::aws:policy/SecretsManagerReadWrite \
         --approve \
         --override-existing-serviceaccounts
 
@@ -50,7 +51,6 @@ ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/db/
 kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/mongodb/
 
-# host=db.$NAMESPACE.svc.cluster.local
 host=$(aws rds describe-db-clusters --query 'DBClusters[].[Endpoint]' --db-cluster-identifier $db_cluster_identifier --region $REGION --output text)
 
 sleep 60

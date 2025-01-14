@@ -14,6 +14,9 @@ db_cluster_identifier="petclinic-python"
 db_instance_identifier="petclinic-python-instance-1"
 db_subnet_group_name="my-db-subnet-group"
 
+# The name or ARN of the secret you want to delete
+SECRET_NAME="petclinic-python-dbsecret"
+
 # Delete the RDS instance
 echo "Deleting RDS instance..."
 aws rds delete-db-instance \
@@ -38,3 +41,11 @@ aws rds wait db-cluster-deleted --region $REGION --db-cluster-identifier $db_clu
 # Delete the DB subnet group
 echo "Deleting RDS subnet group..."
 aws rds delete-db-subnet-group --region $REGION --db-subnet-group-name $db_subnet_group_name
+
+
+echo "Deleting secret: $SECRET_NAME in region $REGION ..."
+aws secretsmanager delete-secret \
+  --secret-id "$SECRET_NAME" \
+  --region "$REGION" \
+  --force-delete-without-recovery
+
