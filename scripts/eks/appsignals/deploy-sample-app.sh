@@ -10,6 +10,8 @@ REGION=$2
 NAMESPACE=${3:-default}
 OPERATION=${4:-"apply"}
 
+db_cluster_identifier="petclinic-python"
+
 # Check if the current context points to the new cluster in the correct region
 kub_config=$(kubectl config current-context)
 if [[ $kub_config != *"$CLUSTER_NAME"* ]] || [[ $kub_config != *"$REGION"* ]]; then
@@ -31,6 +33,7 @@ if [[ $OPERATION == "apply" ]]; then
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonKinesisFullAccess \
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess \
         --attach-policy-arn arn:aws:iam::aws:policy/AmazonBedrockFullAccess \
+        --attach-policy-arn arn:aws:iam::aws:policy/SecretsManagerReadWrite \
         --approve \
         --override-existing-serviceaccounts
 
@@ -48,7 +51,7 @@ ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/db/
 kubectl ${OPERATION} --namespace=$NAMESPACE -f ./sample-app/mongodb/
 
-host=db.$NAMESPACE.svc.cluster.local
+host=$(aws rds describe-db-clusters --query 'DBClusters[].[Endpoint]' --db-cluster-identifier $db_cluster_identifier --region $REGION --output text)
 
 sleep 60
 

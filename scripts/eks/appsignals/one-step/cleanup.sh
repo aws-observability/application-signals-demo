@@ -49,6 +49,9 @@ check_if_step_failed_and_exit "There was an error deleting the canaries. Please 
 ../deploy-sample-app.sh $CLUSTER_NAME $REGION $NAMESPACE delete
 check_if_step_failed_and_exit "There was an error deleting the sample apps. Please make sure they are deleted properly before proceeding with the following steps"
 
+../cleanup-rds.sh $CLUSTER_NAME $REGION
+check_if_step_failed_and_exit "There was an error deleting the RDS cluster. Please make sure they are deleted properly before proceeding with the following steps"
+
 ../deploy-traffic-generator.sh $CLUSTER_NAME $REGION $NAMESPACE delete
 check_if_step_failed_and_exit "There was an error deleting the traffic generator. Please make sure they are deleted properly before proceeding with the following steps"
 

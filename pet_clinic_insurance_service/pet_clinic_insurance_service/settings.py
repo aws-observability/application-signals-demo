@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
+import boto3
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -73,6 +75,33 @@ TEMPLATES = [
 WSGI_APPLICATION = "pet_clinic_insurance_service.wsgi.application"
 
 
+# Get secret name and region from environment or use defaults
+SECRET_NAME = os.environ.get('SECRET_NAME', 'petclinic-python-dbsecret')
+REGION = os.environ.get('REGION', 'us-east-1')
+
+def get_secret_value(secret_name: str, region_name: str) -> str:
+    """
+    Retrieve a secret string from AWS Secrets Manager.
+    """
+    client = boto3.client('secretsmanager', region_name=region_name)
+    response = client.get_secret_value(SecretId=secret_name)
+    return response['SecretString'] 
+
+
+env_db_password = os.environ.get('DB_USER_PASSWORD')
+
+if env_db_password:
+    DB_PASSWORD = env_db_password
+else:
+    # Retrieve from Secrets Manager
+    try:
+        DB_PASSWORD = get_secret_value(SECRET_NAME, REGION)
+        print(f"Retrieved secret '{SECRET_NAME}' from AWS Secrets Manager {DB_PASSWORD}")
+    except Exception as e:
+        # Print the error
+        print(f"Error retrieving secret '{SECRET_NAME}' from AWS Secrets Manager: {e}", file=sys.stderr)
+
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 DATABASES = {
@@ -85,7 +114,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get('DB_NAME'),
         "USER": os.environ.get('DB_USER'),
-        "PASSWORD": os.environ.get('DB_USER_PASSWORD'),
+        "PASSWORD": DB_PASSWORD,
         "HOST": os.environ.get("DB_SERVICE_HOST"),
         "PORT": os.environ.get("DB_SERVICE_PORT"),
     }

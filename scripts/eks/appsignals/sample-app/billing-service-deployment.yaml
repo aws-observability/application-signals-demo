@@ -32,8 +32,6 @@ spec:
               value: 'postgres'
             - name: DB_USER
               value: 'djangouser'
-            - name: DB_USER_PASSWORD
-              value: 'asdfqwer'
             - name: DATABASE_PROFILE
               value: postgresql
             - name: REGION
