@@ -8,12 +8,12 @@ import { Canary, Runtime, Code, Schedule, Test } from 'aws-cdk-lib/aws-synthetic
 
 interface SyntheticCanaryProps extends StackProps {
     vpc: Vpc,
-    nginxEndpoint: string,
+    albEndpoint: string,
     syntheticCanaryRoleProp: RoleProps,
   }
 
 export class SyntheticCanaryStack extends Stack {
-  private readonly nginxEndpoint: string;
+  private readonly albEndpoint: string;
   private readonly syntheticCanaryRole: Role;
   private readonly vpc: Vpc;
 
@@ -33,8 +33,8 @@ export class SyntheticCanaryStack extends Stack {
   constructor(scope: Construct, id: string, props: SyntheticCanaryProps) {
     super(scope, id, props);
 
-    const { nginxEndpoint, syntheticCanaryRoleProp } = props;
-    this.nginxEndpoint = nginxEndpoint;
+    const { albEndpoint, syntheticCanaryRoleProp } = props;
+    this.albEndpoint = albEndpoint;
 
     this.syntheticCanaryRole = new Role(this, 'EksClusterRole', syntheticCanaryRoleProp);
 
@@ -58,7 +58,7 @@ export class SyntheticCanaryStack extends Stack {
         },
         schedule: Schedule.rate(Duration.minutes(1)),
         environmentVariables: {
-          URL: `http://${this.nginxEndpoint}`,
+          URL: `http://${this.albEndpoint}`,
         },
         startAfterCreation: true,
         vpc: this.vpc,

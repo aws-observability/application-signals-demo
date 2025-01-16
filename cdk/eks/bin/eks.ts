@@ -28,7 +28,7 @@ eksStack.addDependency(iamStack);
 
 const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticCanaryStack', {
   vpc: networkStack.vpc,
-  nginxEndpoint: eksStack.ingressExternalIp.value,
+  albEndpoint: eksStack.ingressExternalIp.value,
   syntheticCanaryRoleProp: iamStack.syntheticCanaryRoleProp,
 })
 
