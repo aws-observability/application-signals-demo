@@ -24,8 +24,6 @@ export class IAMStack extends Stack {
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEKSClusterPolicy'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEKSServicePolicy'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly'),
-        // Allow the CloudWatch agent to send logs and metrics
-        ManagedPolicy.fromAwsManagedPolicyName('CloudWatchAgentServerPolicy')
       ],
       // Need this policy to assume role and debug the cluster
       inlinePolicies: {
@@ -54,12 +52,9 @@ export class IAMStack extends Stack {
       roleName: 'PetClinicEksNodeGroupRole',
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
       managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'),
-        ManagedPolicy.fromAwsManagedPolicyName('AmazonSQSFullAccess'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEKS_CNI_Policy'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEKSWorkerNodePolicy'),
-        ManagedPolicy.fromAwsManagedPolicyName('AmazonBedrockFullAccess'),
       ],
     };
 
