@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nutrition-service-nodejs
+  namespace: namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: nutrition-service-nodejs
+  template:
+    metadata:
+      labels:
+        io.kompose.service: nutrition-service-nodejs
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: 'true'
+    spec:
+      serviceAccountName: visits-service-account
+      containers:
+        - image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/nodejs-petclinic-nutrition-service:latest
+          name: nutrition-service-nodejs
+          env:
+            - name: EUREKA_SERVER_URL
+              value: http://discovery-server:8761/eureka
+            - name: MONGO_URI
+              value: mongodb://admin:admin@mongodb:27017/
+          ports:
+            - containerPort: 3000
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /nutrition
+              port: 3000
+            initialDelaySeconds: 3
+            periodSeconds: 60
+      restartPolicy: Always

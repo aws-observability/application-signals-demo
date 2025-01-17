@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    io.kompose.service: billing-service-python
+  name: billing-service-python
+  namespace: namespace
+spec:
+  ports:
+    - name: '80'
+      port: 80
+      targetPort: 8800
+  selector:
+    io.kompose.service: billing-service-python
+status:
+  loadBalancer: {}
