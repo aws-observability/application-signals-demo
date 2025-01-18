@@ -18,7 +18,7 @@ interface RdsDatabaseStackProps extends StackProps {
 
 export class RdsDatabaseStack extends Stack {
     private readonly vpc: Vpc;
-    private readonly DB_INSTANCE_IDENTIFIER: string = 'petclinic-python';
+    private readonly DB_INSTANCE_IDENTIFIER: string = 'ecs-petclinic-python';
     public readonly rdsInstance: DatabaseInstance;
     public readonly dbSecret: Secret;
 
@@ -40,7 +40,7 @@ export class RdsDatabaseStack extends Stack {
 
         // Create a Secret for the database credentials
         this.dbSecret = new Secret(this, 'DBSecret', {
-            secretName: 'PetClinicDBCredentials',
+            secretName: 'ECSPetClinicDBCredentials',
             generateSecretString: {
                 secretStringTemplate: JSON.stringify({ username: 'root' }),
                 generateStringKey: 'password',
