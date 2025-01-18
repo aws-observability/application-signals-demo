@@ -40,7 +40,7 @@ export class RdsDatabaseStack extends Stack {
 
         // Create a Secret for the database credentials
         this.dbSecret = new Secret(this, 'DBSecret', {
-            secretName: 'PetClinicDBCredentials',
+            secretName: 'ECSPetClinicDBCredentials',
             generateSecretString: {
                 secretStringTemplate: JSON.stringify({ username: 'root' }),
                 generateStringKey: 'password',
