@@ -45,6 +45,7 @@ if [[ "$ACTION" == "deploy" ]]; then
   else
     echo "Deployment failed. Attempting to clean up resources by destroying all stacks..."
     cdk destroy --all --force --verbose
+    exit 1
   fi
 elif [[ "$ACTION" == "destroy" ]]; then
   echo "Starting CDK destroy for all stacks in the app"
