@@ -25,7 +25,7 @@ export function readYamlFile(filePath: string): Record<string, any>[] {
 }
 
 // Function that replaces the namespace and account id placeholder with actual values
-export function transformYaml(obj: any, accountId: string, region: string, namespace: string, ingressExternalIp: string): any {
+export function transformYaml(obj: any, accountId: string, region: string, namespace: string, ingressExternalIp: string, rdsClusterEndpoint: string): any {
     if (typeof obj === 'object' && obj !== null) {
         for (const key in obj) {
             if (typeof obj[key] === 'string') {
@@ -37,9 +37,11 @@ export function transformYaml(obj: any, accountId: string, region: string, names
                     obj[key] = `http://${ingressExternalIp}`;
                 } else if (obj[key].includes('${REGION}')) {
                     obj[key] = obj[key].replace('${REGION}', region);
+                } else if (obj[key].includes('<HOST>')) {
+                    obj[key] = obj[key].replace('<HOST>', rdsClusterEndpoint);
                 }
             } else if (typeof obj[key] === 'object') {
-                transformYaml(obj[key], accountId, region, namespace, ingressExternalIp);
+                transformYaml(obj[key], accountId, region, namespace, ingressExternalIp, rdsClusterEndpoint);
             }
         }
     }
