@@ -69,6 +69,7 @@ export class IAMStack extends Stack {
         ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonBedrockFullAccess'),
         ManagedPolicy.fromAwsManagedPolicyName('AWSXrayFullAccess'),
+        ManagedPolicy.fromAwsManagedPolicyName('SecretsManagerReadWrite'),
       ],
     };
 

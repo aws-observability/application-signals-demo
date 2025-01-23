@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { Construct } from 'constructs';
-import { StackProps, Stack, CfnJson, CfnWaitConditionHandle, CfnWaitCondition } from 'aws-cdk-lib';
-import { Vpc, InstanceType } from 'aws-cdk-lib/aws-ec2';
+import { StackProps, Stack, CfnJson, Fn, CfnWaitConditionHandle, CfnWaitCondition } from 'aws-cdk-lib';
+import { Vpc, InstanceType, ISecurityGroup,SecurityGroup, Port } from 'aws-cdk-lib/aws-ec2';
 import { Role, RoleProps, PolicyStatement, FederatedPrincipal, Effect } from 'aws-cdk-lib/aws-iam';
 import { CfnAddon, Cluster, KubernetesManifest, KubernetesVersion, ServiceAccount, KubernetesObjectValue, Nodegroup } from 'aws-cdk-lib/aws-eks';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
@@ -15,7 +15,9 @@ interface EksStackProps extends StackProps {
   eksNodeGroupRoleProp: RoleProps,
   ebsCsiAddonRoleProp: RoleProps,
   sampleAppRoleProp: RoleProps,
-  cloudwatchAddonRoleProp: RoleProps
+  cloudwatchAddonRoleProp: RoleProps,
+  rdsClusterEndpoint: string,
+  rdsSecurityGroupId: string,
 }
 
 export class EksStack extends Stack {
@@ -52,12 +54,20 @@ export class EksStack extends Stack {
 
   // Ingress External Ip
   public readonly ingressExternalIp: KubernetesObjectValue;
+  private readonly rdsSecurityGroup: ISecurityGroup;
+  private readonly rdsClusterEndpoint: string;
 
   constructor(scope: Construct, id: string, props: EksStackProps) {
     super(scope, id, props);
 
-    const { vpc, eksClusterRoleProp, eksNodeGroupRoleProp, ebsCsiAddonRoleProp, sampleAppRoleProp, cloudwatchAddonRoleProp } = props;
+    const { vpc, eksClusterRoleProp, eksNodeGroupRoleProp, ebsCsiAddonRoleProp, sampleAppRoleProp, cloudwatchAddonRoleProp, rdsClusterEndpoint, rdsSecurityGroupId } = props;
     this.vpc = vpc;
+    this.rdsClusterEndpoint = rdsClusterEndpoint;
+    this.rdsSecurityGroup = SecurityGroup.fromSecurityGroupId(
+      this,
+      'ImportedRdsSecurityGroup',
+      rdsSecurityGroupId
+    );
 
     // The IAM roles must be created in the EKS stack because some of the roles need to be given federated principals, and this cannot be done if the role is imported
     this.eksClusterRole = new Role(this, 'EksClusterRole', eksClusterRoleProp);
@@ -65,7 +75,6 @@ export class EksStack extends Stack {
     this.ebsCsiDriverAddonRole = new Role(this, 'EbsCsiDriverAddonRole', ebsCsiAddonRoleProp);
     this.sampleAppRole = new Role(this, 'SampleAppRole', sampleAppRoleProp);
     this.cloudwatchAddonRole = new Role(this, 'CloduwatchAddonRole', cloudwatchAddonRoleProp);
-
 
     // Create EKS Cluster
     this.cluster = this.createEksCluster();
@@ -121,7 +130,12 @@ export class EksStack extends Stack {
       maxSize: 5,
       releaseVersion: nodeGroupAmiReleaseVersion,
     });
-    
+
+    this.rdsSecurityGroup.addIngressRule(
+        cluster.connections.securityGroups[0],
+        Port.tcp(5432),
+        'Allow EKS to connect to RDS'
+    )
     return cluster;
   }
 
@@ -172,7 +186,7 @@ export class EksStack extends Stack {
     manifestFiles.forEach((file) => {
       const filePath = path.join(manifestPath, file);
       const yamlFile = readYamlFile(filePath);
-      const transformedYamlFile = transformYaml(yamlFile, this.account, this.region, this.SAMPLE_APP_NAMESPACE, this.ingressExternalIp?.value);
+      const transformedYamlFile = transformYaml(yamlFile, this.account, this.region, this.SAMPLE_APP_NAMESPACE, this.ingressExternalIp?.value, this.rdsClusterEndpoint);
       const manifest = this.cluster.addManifest(transformNameToId(file), ...transformedYamlFile);
 
       dependencies.forEach((dependnecy) => {
