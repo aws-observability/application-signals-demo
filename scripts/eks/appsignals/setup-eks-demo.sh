@@ -30,7 +30,7 @@ export AWS_DEFAULT_REGION=$REGION
 function run_cdk() {
   echo "Running CDK..."
   # jump to the cdk folder, run the cdk commands, and then jump back to current folder
-  pushd ../../../cdk/ecs >/dev/null
+  pushd ../../../cdk/eks >/dev/null
   ./eks-cdk.sh $1
   popd >/dev/null
 }
