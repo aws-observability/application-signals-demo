@@ -37,6 +37,7 @@ export class RdsStack extends Stack {
       description: `Randomly generated password for ${this.dbClusterIdentifier} database`,
       generateSecretString: {
         passwordLength: 10,
+        excludeCharacters: '/@" ',
       },
       removalPolicy: RemovalPolicy.DESTROY,
     });
@@ -44,14 +45,14 @@ export class RdsStack extends Stack {
     // Create an Aurora PostgreSQL cluster
     const dbCluster = new DatabaseCluster(this, 'EksRdsCluster', {
       engine: DatabaseClusterEngine.auroraPostgres({
-        version: AuroraPostgresEngineVersion.VER_16_4,
+        version: AuroraPostgresEngineVersion.VER_15_4,
       }),
       credentials: Credentials.fromUsername(this.masterUsername, {
         password: dbSecret.secretValue,
       }),
       instances: 1,
       instanceProps: {
-        instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.MEDIUM),
+        instanceType: InstanceType.of(InstanceClass.BURSTABLE3, InstanceSize.MEDIUM),
         vpc,
       },
       subnetGroup: dbSubnetGroup,
