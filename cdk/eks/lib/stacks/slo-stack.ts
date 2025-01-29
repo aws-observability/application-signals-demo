@@ -1,6 +1,8 @@
 import { Construct } from 'constructs';
-import { aws_applicationsignals as applicationsignals, Stack, StackProps, CfnWaitConditionHandle, CfnWaitCondition  } from 'aws-cdk-lib';
+import { aws_applicationsignals as applicationsignals, Stack, StackProps } from 'aws-cdk-lib';
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+
 
 interface SloProps extends StackProps {
     eksClusterName: string,
@@ -30,9 +32,15 @@ export class SloStack extends Stack {
             },
             physicalResourceId: PhysicalResourceId.of('StartDiscoveryOperation'),
         },
-        policy: AwsCustomResourcePolicy.fromSdkCalls({
-            resources: AwsCustomResourcePolicy.ANY_RESOURCE,
-        }),
+        policy: AwsCustomResourcePolicy.fromStatements([
+            new PolicyStatement({
+                actions: [
+                    'application-signals:StartDiscovery',
+                    'iam:CreateServiceLinkedRole',
+                ],
+                resources: ['*'],
+            }),
+        ]),
     });
 
     const getOwner99AvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'getOwner99AvailabilitySLO', this.getSloProp(
