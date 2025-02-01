@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: namespace  # Change to your namespace
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/otel-collector:latest  # Replace with your actual image
+          imagePullPolicy: Always
+          command:
+            - "/otelcol"
+          args:
+            - "--config=/config.yaml"  # Start otelcol with the config file
+          ports:
+            - containerPort: 4317
+              name: otel-grpc
+            - containerPort: 4318
+              name: otel-http
