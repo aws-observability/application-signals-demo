@@ -15,6 +15,7 @@ spec:
       labels:
         app: otel-collector
     spec:
+      serviceAccountName: otel-collector-service-account
       containers:
         - name: otel-collector
           image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/otel-collector:latest  # Replace with your actual image

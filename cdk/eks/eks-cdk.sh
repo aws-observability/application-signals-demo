@@ -7,11 +7,13 @@
 # Example to only synth: ./cdk-deploy.sh synth
 
 ACTION=$1
+USE_OTLP=${2:-false}  # Default value is false
 
 # Check for action parameter
 if [[ -z "$ACTION" ]]; then
   echo "Usage: $0 <action>"
   echo "action can be 'synth', 'deploy', or 'destroy'"
+  echo "use-otlp is optional and can be 'true' or 'false' (default: false)"
   exit 1
 fi
 
@@ -36,6 +38,22 @@ fi
 
 # Deploy or destroy all stacks in the app
 if [[ "$ACTION" == "deploy" ]]; then
+
+  # update vets service config to use the otlp collector when use-otlp is true
+  MANIFEST_FILE="./lib/manifests/sample-app/vets-service-deployment.yaml"
+  MANIFEST_OTLP_FILE="vets-service-deployment-otlp.yaml"
+  if [[ "$USE_OTLP" == "true" ]]; then
+    if [[ -f "$MANIFEST_OTLP_FILE" ]]; then
+      echo "Replacing $MANIFEST_FILE with $MANIFEST_OTLP_FILE..."
+      cp "$MANIFEST_OTLP_FILE" "$MANIFEST_FILE"
+    else
+      echo "Error: $MANIFEST_OTLP_FILE not found!"
+      exit 1
+    fi
+  else
+    echo "Using default manifest file: $MANIFEST_FILE"
+  fi
+
   echo "Starting CDK deployment for all stacks in the app"
   # Deploy the EKS cluster with the sample app first
   if cdk deploy --all --require-approval never; then

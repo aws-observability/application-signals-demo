@@ -25,6 +25,7 @@ export class EksStack extends Stack {
   public readonly SAMPLE_APP_NAMESPACE = 'pet-clinic';
   private readonly NGINX_INGRESS_NAMESPACE = 'ingress-nginx';
   private readonly VISITS_SERVICE_ACCOUNT_NAME = 'visits-service-account';
+  private readonly OTEL_COLLECTOR_SERVICE_ACCOUNT_NAME = 'otel-collector-service-account';
 
   // Path to the yaml manifests to deploy to EKS
   private readonly sampleAppManifestPath = path.join(__dirname, '..', 'manifests/sample-app');
@@ -48,6 +49,7 @@ export class EksStack extends Stack {
   private readonly ebsCsiDriverAddon: CfnAddon;
   private readonly cloudwatchAddon: CfnAddon;
   private readonly visitsServiceServiceAccount : ServiceAccount;
+  private readonly otelCollectorServiceServiceAccount : ServiceAccount;
   private readonly sampleAppNamespace: KubernetesManifest;
   private readonly nginxIngressNamespace: KubernetesManifest;
   private readonly nginxIngressManifests: KubernetesManifest[];
@@ -88,12 +90,13 @@ export class EksStack extends Stack {
     this.nginxIngressNamespace = this.createNamespace(this.NGINX_INGRESS_NAMESPACE);
     // Create a service account for the sample app in the pet-clinic namespace
     this.visitsServiceServiceAccount = this.createVisitsServiceServiceAccount();
+    this.otelCollectorServiceServiceAccount = this.createOtelCollectorServiceAccount();
     // Deploy the manifests for db. Db manifest relies on the ebs csi driver add-on
-    this.deployManifests(this.dbManifestPath, [this.ebsCsiDriverAddon, this.visitsServiceServiceAccount ]);
+    this.deployManifests(this.dbManifestPath, [this.ebsCsiDriverAddon, this.visitsServiceServiceAccount, this.otelCollectorServiceServiceAccount ]);
     // Deploy the manifests for mongodb. Mongodb manifest relies on the ebs csi driver add-on
-    this.deployManifests(this.mongodbManifestPath, [this.ebsCsiDriverAddon, this.visitsServiceServiceAccount ]);
+    this.deployManifests(this.mongodbManifestPath, [this.ebsCsiDriverAddon, this.visitsServiceServiceAccount, this.otelCollectorServiceServiceAccount ]);
     // Deploy the sample app.
-    this.deployManifests(this.sampleAppManifestPath, [this.visitsServiceServiceAccount ]);
+    this.deployManifests(this.sampleAppManifestPath, [this.visitsServiceServiceAccount, this.otelCollectorServiceServiceAccount ]);
     // Deploy the ngnix ingress. 
     this.nginxIngressManifests = this.deployManifests(this.nginxIngressManifestPath, [this.nginxIngressNamespace]);
     // Get the ingress external ip
@@ -173,6 +176,23 @@ export class EksStack extends Stack {
           'eks.amazonaws.com/role-arn': this.sampleAppRole.roleArn,
         }
       }
+    );
+    // The namespace needs to already exist before creating the service account
+    serviceAccount.node.addDependency(this.sampleAppNamespace);
+    return serviceAccount;
+  }
+
+  createOtelCollectorServiceAccount() {
+    this.addFederatedPrincipal(this.sampleAppRole, 'SampleAppRole', true);
+
+    const serviceAccount = this.cluster.addServiceAccount('OtelCollectorServiceAccount',
+        {
+          name: this.OTEL_COLLECTOR_SERVICE_ACCOUNT_NAME,
+          namespace: this.SAMPLE_APP_NAMESPACE,
+          annotations: {
+            'eks.amazonaws.com/role-arn': this.sampleAppRole.roleArn,
+          }
+        }
     );
     // The namespace needs to already exist before creating the service account
     serviceAccount.node.addDependency(this.sampleAppNamespace);

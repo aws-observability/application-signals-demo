@@ -33,6 +33,11 @@ spec:
             - --
             - java
             - org.springframework.boot.loader.JarLauncher
+          env:
+            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              value: "http://otel-collector.namespace.svc.cluster.local:4317"
+            - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+              value: "grpc"
           image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-vets-service:latest
           securityContext:
             runAsNonRoot: true

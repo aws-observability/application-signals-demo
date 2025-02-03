@@ -55,7 +55,6 @@ export class IAMStack extends Stack {
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEKS_CNI_Policy'),
         ManagedPolicy.fromAwsManagedPolicyName('AmazonEKSWorkerNodePolicy'),
-        ManagedPolicy.fromAwsManagedPolicyName('AWSXrayFullAccess'),
       ],
     };
 

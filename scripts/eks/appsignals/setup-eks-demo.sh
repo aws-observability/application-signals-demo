@@ -4,17 +4,22 @@ set -ex
 # Default values
 DEFAULT_REGION="us-east-1"
 OPERATION="create"
+USE_OTLP="false"  # Default value for OTLP
 
 # Read command line arguments
 for i in "$@"; do
   case $i in
   --operation=*)
     OPERATION="${i#*=}"
-    shift # past argument=value
+    shift
     ;;
   --region=*)
     REGION="${i#*=}"
-    shift # past argument=value
+    shift
+    ;;
+  --use-otlp=*)
+    USE_OTLP="${i#*=}"
+    shift
     ;;
   *)
     # unknown option
@@ -31,7 +36,7 @@ function run_cdk() {
   echo "Running CDK..."
   # jump to the cdk folder, run the cdk commands, and then jump back to current folder
   pushd ../../../cdk/eks >/dev/null
-  ./eks-cdk.sh $1
+  ./eks-cdk.sh $1 $USE_OTLP
   popd >/dev/null
 }
 
