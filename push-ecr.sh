@@ -57,3 +57,31 @@ aws ecr create-repository --repository-name dotnet-petclinic-payment --region ${
 docker build -t dotnet-petclinic-payment ./dotnet-petclinic-payment/PetClinic.PaymentService --no-cache
 docker tag dotnet-petclinic-payment:latest ${REPOSITORY_PREFIX}/dotnet-petclinic-payment:latest
 docker push ${REPOSITORY_PREFIX}/dotnet-petclinic-payment:latest
+
+# Create ECR repository
+aws ecr create-repository --repository-name otel-collector --region ${REGION} --no-cli-pager || true
+
+# Run ocb.sh to build the collector
+echo "Running ocb.sh to build the OpenTelemetry Collector..."
+pushd ./otel-collector
+chmod +x ./ocb.sh
+./ocb.sh
+if [[ ! -f ./otelcol-dev/otelcol-dev ]]; then
+  echo "Error: otelcol-dev binary not found in ./otel-collector/otelcol-dev. Ensure ocb.sh is generating the file correctly."
+  exit 1
+fi
+if [[ ! -f ./customconfig.yaml ]]; then
+  echo "Error: customconfig.yaml not found in ./otel-collector."
+  exit 1
+fi
+# Clean up unnecessary files
+rm -f ./otelcol-dev/go.mod ./otelcol-dev/go.sum
+rm -f ./otelcol-dev/*.go
+popd
+
+echo ${REGION}
+
+# Build and push the Docker image
+docker build --build-arg REGION=${REGION} -t otel-collector -f ./otel-collector/Dockerfile ./otel-collector --no-cache --progress=plain
+docker tag otel-collector:latest ${REPOSITORY_PREFIX}/otel-collector:latest
+docker push ${REPOSITORY_PREFIX}/otel-collector:latest
