@@ -88,9 +88,10 @@ export class EksStack extends Stack {
     this.sampleAppNamespace = this.createNamespace(this.SAMPLE_APP_NAMESPACE);
     // Create ingress-nginx namespace
     this.nginxIngressNamespace = this.createNamespace(this.NGINX_INGRESS_NAMESPACE);
-    // Create a service account for the sample app in the pet-clinic namespace
-    this.visitsServiceServiceAccount = this.createVisitsServiceServiceAccount();
-    this.otelCollectorServiceServiceAccount = this.createOtelCollectorServiceAccount();
+    // Create service accounts for the sample app in the pet-clinic namespace
+    const { visitsServiceServiceAccount, otelCollectorServiceServiceAccount } = this.createSampleAppRoleServiceAccount();
+    this.visitsServiceServiceAccount = visitsServiceServiceAccount;
+    this.otelCollectorServiceServiceAccount = otelCollectorServiceServiceAccount;
     // Deploy the manifests for db. Db manifest relies on the ebs csi driver add-on
     this.deployManifests(this.dbManifestPath, [this.ebsCsiDriverAddon, this.visitsServiceServiceAccount, this.otelCollectorServiceServiceAccount ]);
     // Deploy the manifests for mongodb. Mongodb manifest relies on the ebs csi driver add-on
@@ -165,10 +166,10 @@ export class EksStack extends Stack {
     return manifest;
   }
 
-  createVisitsServiceServiceAccount() {
+  createSampleAppRoleServiceAccount() {
     this.addFederatedPrincipal(this.sampleAppRole, 'SampleAppRole', true);
 
-    const serviceAccount = this.cluster.addServiceAccount('VisitsServiceServiceAccount',
+    const visitsServiceServiceAccount = this.cluster.addServiceAccount('VisitsServiceServiceAccount',
       {
         name: this.VISITS_SERVICE_ACCOUNT_NAME,
         namespace: this.SAMPLE_APP_NAMESPACE,
@@ -177,26 +178,21 @@ export class EksStack extends Stack {
         }
       }
     );
-    // The namespace needs to already exist before creating the service account
-    serviceAccount.node.addDependency(this.sampleAppNamespace);
-    return serviceAccount;
-  }
 
-  createOtelCollectorServiceAccount() {
-    this.addFederatedPrincipal(this.sampleAppRole, 'SampleAppRole', true);
-
-    const serviceAccount = this.cluster.addServiceAccount('OtelCollectorServiceAccount',
-        {
-          name: this.OTEL_COLLECTOR_SERVICE_ACCOUNT_NAME,
-          namespace: this.SAMPLE_APP_NAMESPACE,
-          annotations: {
-            'eks.amazonaws.com/role-arn': this.sampleAppRole.roleArn,
-          }
+    const otelCollectorServiceServiceAccount = this.cluster.addServiceAccount('OtelCollectorServiceAccount',
+      {
+        name: this.OTEL_COLLECTOR_SERVICE_ACCOUNT_NAME,
+        namespace: this.SAMPLE_APP_NAMESPACE,
+        annotations: {
+          'eks.amazonaws.com/role-arn': this.sampleAppRole.roleArn,
         }
-    );
+      }
+  );
     // The namespace needs to already exist before creating the service account
-    serviceAccount.node.addDependency(this.sampleAppNamespace);
-    return serviceAccount;
+    visitsServiceServiceAccount.node.addDependency(this.sampleAppNamespace);
+    otelCollectorServiceServiceAccount.node.addDependency(this.sampleAppNamespace);
+
+    return { visitsServiceServiceAccount, otelCollectorServiceServiceAccount };
   }
 
   deployManifests(manifestPath: string, dependencies: any[]) {
