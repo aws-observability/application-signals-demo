@@ -68,12 +68,12 @@ export class SloStack extends Stack {
         99.0,
         "GreaterThan"
     ));
-    const postOwner99LatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'postOwner99LatencyProp', this.getSloProp(
+    const postOwner99LatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'postOwner99LatencySLO', this.getSloProp(
         "Latency for Registering an Owner",
         "Latency P99 less than 2000 ms for Post Owner operation",
         "POST",
         "LATENCY",
-        200.0,
+        2000.0,
         "LessThan",
         "p99"
     ));
