@@ -68,34 +68,67 @@ export class SloStack extends Stack {
         99.0,
         "GreaterThan"
     ));
-    const postOwner99LatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'postOwner99LatencyProp', this.getSloProp(
+    const postOwner99LatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'postOwner99LatencySLO', this.getSloProp(
         "Latency for Registering an Owner",
         "Latency P99 less than 2000 ms for Post Owner operation",
         "POST",
         "LATENCY",
-        200.0,
+        2000.0,
         "LessThan",
         "p99"
+    ));
+    const billingActivitiesLatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'billingActivitiesLatencySLO', this.getSloProp(
+        "Latency for Billing Activities",
+        "Latency P99 less than 500 ms for GET Billing Activities operation",
+        "GET",
+        "LATENCY",
+        500.0,
+        "LessThan",
+        "p99",
+        "/api/billing/billings",
+        "billing-service-python"
+    ));
+    const appointmentServiceAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'appointmentServiceAvailabilitySLO', this.getSloProp(
+        "Availability for Appointment Service",
+        "Availability larger than 99 for Appointment Service operations",
+        "",
+        "AVAILABILITY",
+        99.0,
+        "GreaterThan",
+        undefined,
+        "",
+        "appointment-service",
+        "Lambda"
     ));
 
     getOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
     getOwner99LatencySlo.node.addDependency(enableTopologyDiscovery);
     postOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
     postOwner99LatencySlo.node.addDependency(enableTopologyDiscovery);
+    billingActivitiesLatencySlo.node.addDependency(enableTopologyDiscovery);
+    appointmentServiceAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
   }
   
-  getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, statistic?: string) {
+  getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string) {
+    // Default values
+    const path = operationPath || '/api/customer/owners';
+    const service = serviceName || this.serviceName;
+    const type = serviceType || 'Service';
+    const environment = type === 'Lambda' ? 
+      undefined : 
+      { "Environment": `eks:${this.eksClusterName}/${this.sampleAppNamespace}` };
+    
     const sloProp: applicationsignals.CfnServiceLevelObjectiveProps = {
         name: name, 
         description: description,
         sli: {
             sliMetric: {
                 keyAttributes: {
-                    "Environment": `eks:${this.eksClusterName}/${this.sampleAppNamespace}`,
-                    "Name": this.serviceName,
-                    "Type": "Service"
+                    ...(environment || {}),
+                    "Name": service,
+                    "Type": type
                 },
-                operationName:`${requestType} /api/customer/owners`,
+                operationName: type === 'Lambda' ? undefined : `${requestType}${path}`,
                 metricType: metricType,
                 statistic: statistic,
                 periodSeconds: 60

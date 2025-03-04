@@ -128,7 +128,7 @@ export class EksStack extends Stack {
     cluster.addNodegroupCapacity('SampleAppNodeGroup', {
       nodeRole: this.eksNodeGroupRole,
       instanceTypes: [
-        new InstanceType('t3.medium'),
+        new InstanceType('m5.large'),
       ],
       minSize: 3, 
       maxSize: 5,
