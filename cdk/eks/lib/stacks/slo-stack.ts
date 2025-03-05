@@ -82,7 +82,7 @@ export class SloStack extends Stack {
         "Latency P99 less than 2000 ms for GET Billing Activities operation",
         "GET",
         "LATENCY",
-        2000.0,
+        300.0,
         "LessThan",
         "p99",
         "^billings/$",
