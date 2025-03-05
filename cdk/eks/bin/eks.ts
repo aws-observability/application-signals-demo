@@ -7,6 +7,7 @@ import { EksStack } from '../lib/stacks/eks-stack';
 import { SloStack } from '../lib/stacks/slo-stack';
 import { RdsStack } from '../lib/stacks/rds-stack';
 import { SyntheticCanaryStack } from '../lib/stacks/canary-stack';
+import { MyApplicationStack } from "../lib/stacks/my-application-stack";
 
 const app = new App();
 
@@ -22,6 +23,8 @@ const rdsStack = new RdsStack(app, 'AppSignalsEksRdsStack', {
 
 rdsStack.addDependency(networkStack);
 
+const myApplicationStack = new MyApplicationStack(app, 'MyApplicationStack')
+
 const eksStack = new EksStack(app, 'AppSignalsEksClusterStack', {
   vpc: networkStack.vpc,
   eksClusterRoleProp: iamStack.eksClusterRoleProp,
@@ -31,11 +34,13 @@ const eksStack = new EksStack(app, 'AppSignalsEksClusterStack', {
   cloudwatchAddonRoleProp: iamStack.cloudwatchAddonRoleProp,
   rdsClusterEndpoint: rdsStack.clusterEndpoint,
   rdsSecurityGroupId: networkStack.rdsSecurityGroupId,
+  awsApplicationTag: myApplicationStack.application.attrApplicationTagValue
 });
 
 eksStack.addDependency(networkStack);
 eksStack.addDependency(iamStack);
 eksStack.addDependency(rdsStack);
+eksStack.addDependency(myApplicationStack);
 
 const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticCanaryStack', {
   vpc: networkStack.vpc,
@@ -46,13 +51,14 @@ const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticC
 syntheticCanaryStack.addDependency(rdsStack);
 
 // After AppSignal is enabled, it takes up to 10 minutes for the SLO metrics to become available. If this is deployed before the SLO metrics
-// are available, it will fail. 
+// are available, it will fail.
 if (enableSlo) {
   const sloStack = new SloStack(app, 'AppSignalsSloStack', {
     eksClusterName: eksStack.CLUSTER_NAME,
     sampleAppNamespace: eksStack.SAMPLE_APP_NAMESPACE,
+    awsApplicationTag: myApplicationStack.application.attrApplicationTagValue
   })
-  
+
   sloStack.addDependency(syntheticCanaryStack);
 }
 

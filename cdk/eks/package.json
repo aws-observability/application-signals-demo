@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "aws-cdk-lib": "2.179.0",
+    "@aws-cdk/aws-servicecatalogappregistry": "^1.204.0",
     "constructs": "^10.0.0",
     "js-yaml": "^4.1.0",
     "source-map-support": "^0.5.21"
