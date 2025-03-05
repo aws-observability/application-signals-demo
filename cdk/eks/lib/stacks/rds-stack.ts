@@ -5,6 +5,7 @@ import { SubnetGroup, DatabaseCluster, DatabaseClusterEngine, AuroraPostgresEngi
 import { InstanceType, InstanceClass, InstanceSize} from 'aws-cdk-lib/aws-ec2';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Vpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { DatabaseInsightsMode } from 'aws-cdk-lib/aws-rds/lib/cluster';
 
 interface RdsStackProps extends StackProps {
   vpc: Vpc;
@@ -62,7 +63,7 @@ export class RdsStack extends Stack {
       
       performanceInsightRetention: PerformanceInsightRetention.MONTHS_15,
       enablePerformanceInsights: true,
-      databaseInsightsMode: rds.DatabaseInsightsMode.ADVANCED,
+      databaseInsightsMode: DatabaseInsightsMode.ADVANCED,
       removalPolicy: RemovalPolicy.DESTROY,
       clusterIdentifier: this.dbClusterIdentifier,
       securityGroups: [this.securityGroup],
