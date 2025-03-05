@@ -60,7 +60,9 @@ export class RdsStack extends Stack {
         retention: Duration.days(1),
       },
       
-      performanceInsightRetention: PerformanceInsightRetention.LONG_TERM,
+      performanceInsightRetention: PerformanceInsightRetention.MONTHS_15,
+      enablePerformanceInsights: true,
+      databaseInsightsMode: rds.DatabaseInsightsMode.ADVANCED,
       removalPolicy: RemovalPolicy.DESTROY,
       clusterIdentifier: this.dbClusterIdentifier,
       securityGroups: [this.securityGroup],
