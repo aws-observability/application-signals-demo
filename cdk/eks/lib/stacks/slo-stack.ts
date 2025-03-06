@@ -79,26 +79,14 @@ export class SloStack extends Stack {
     ));
     const billingActivitiesLatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'billingActivitiesLatencySLO', this.getSloProp(
         "Latency for Billing Activities",
-        "Latency P99 less than 500 ms for GET Billing Activities operation",
+        "Latency P99 less than 300 ms for GET Billing Activities operation",
         "GET",
         "LATENCY",
-        500.0,
+        300.0,
         "LessThan",
         "p99",
-        "/api/billing/billings",
+        "^billings/$",
         "billing-service-python"
-    ));
-    const appointmentServiceAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'appointmentServiceAvailabilitySLO', this.getSloProp(
-        "Availability for Appointment Service",
-        "Availability larger than 99 for Appointment Service operations",
-        "",
-        "AVAILABILITY",
-        99.0,
-        "GreaterThan",
-        undefined,
-        "",
-        "appointment-service",
-        "Lambda"
     ));
 
     getOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
@@ -106,7 +94,6 @@ export class SloStack extends Stack {
     postOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
     postOwner99LatencySlo.node.addDependency(enableTopologyDiscovery);
     billingActivitiesLatencySlo.node.addDependency(enableTopologyDiscovery);
-    appointmentServiceAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
   }
   
   getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string) {
@@ -128,7 +115,7 @@ export class SloStack extends Stack {
                     "Name": service,
                     "Type": type
                 },
-                operationName: type === 'Lambda' ? undefined : `${requestType}${path}`,
+                operationName: type === 'Lambda' ? undefined : `${requestType} ${path}`,
                 metricType: metricType,
                 statistic: statistic,
                 periodSeconds: 60
