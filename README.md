@@ -16,7 +16,7 @@ This code for sample application is intended for demonstration purposes only. It
 * kubectl is installed - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 * eksctl is installed - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
 * jq is installed - https://jqlang.github.io/jq/download/
-* AWS CDK >= v2.166.0 is installed - https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install
+* AWS CDK >= v2.179.0 is installed - https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install
 * Node.js >= v18.0.0 is installed.
 * [Optional] If you plan to install the infrastructure resources using Terraform, terraform cli is required. https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 * [Optional] If you want to try out AWS Bedrock/GenAI support with Application Signals, enable Amazon Titian, Anthropic Claude, Meta Llama foundation models by following the instructions in https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html
