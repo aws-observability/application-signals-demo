@@ -5,7 +5,7 @@ import { SubnetGroup, DatabaseCluster, DatabaseClusterEngine, AuroraPostgresEngi
 import { InstanceType, InstanceClass, InstanceSize} from 'aws-cdk-lib/aws-ec2';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Vpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
-import { DatabaseInsightsMode } from 'aws-cdk-lib/aws-rds/lib/cluster';
+import { DatabaseInsightsMode } from 'aws-cdk-lib/aws-rds';
 
 interface RdsStackProps extends StackProps {
   vpc: Vpc;
