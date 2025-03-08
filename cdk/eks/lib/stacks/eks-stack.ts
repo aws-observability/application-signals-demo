@@ -18,6 +18,7 @@ interface EksStackProps extends StackProps {
   cloudwatchAddonRoleProp: RoleProps,
   rdsClusterEndpoint: string,
   rdsSecurityGroupId: string,
+  awsApplicationTag: string
 }
 
 export class EksStack extends Stack {
@@ -62,7 +63,7 @@ export class EksStack extends Stack {
   constructor(scope: Construct, id: string, props: EksStackProps) {
     super(scope, id, props);
 
-    const { vpc, eksClusterRoleProp, eksNodeGroupRoleProp, ebsCsiAddonRoleProp, sampleAppRoleProp, cloudwatchAddonRoleProp, rdsClusterEndpoint, rdsSecurityGroupId } = props;
+    const { vpc, eksClusterRoleProp, eksNodeGroupRoleProp, ebsCsiAddonRoleProp, sampleAppRoleProp, cloudwatchAddonRoleProp, rdsClusterEndpoint, rdsSecurityGroupId, awsApplicationTag } = props;
     this.vpc = vpc;
     this.rdsClusterEndpoint = rdsClusterEndpoint;
     this.rdsSecurityGroup = SecurityGroup.fromSecurityGroupId(
@@ -79,7 +80,7 @@ export class EksStack extends Stack {
     this.cloudwatchAddonRole = new Role(this, 'CloduwatchAddonRole', cloudwatchAddonRoleProp);
 
     // Create EKS Cluster
-    this.cluster = this.createEksCluster();
+    this.cluster = this.createEksCluster(awsApplicationTag);
     // Add the Cloduwatch Addon
     this.cloudwatchAddon = this.addCloudwatchAddon();
     // Add the Ebs Csi Driver Addon
@@ -106,7 +107,7 @@ export class EksStack extends Stack {
     this.deployManifests(this.trafficGeneratorManifestPath,  [this.sampleAppNamespace, ...this.nginxIngressManifests, this.ingressExternalIp]);
   }
 
-  createEksCluster() {
+  createEksCluster(awsApplicationTag: string) {
     const cluster = new Cluster(this, 'EKSCluster', {
       clusterName: this.CLUSTER_NAME, 
       version: this.clusterKubernetesVersion,
@@ -115,6 +116,7 @@ export class EksStack extends Stack {
       defaultCapacity: 0,
       // Make sure this version matches the this.clusterKubernetesVersion
       kubectlLayer: new KubectlV31Layer(this, 'kubectl'),
+      tags: {"awsApplication": awsApplicationTag}
     });
 
     // Retrieve the latest node group ami. This will ensure that the ami doesn't expire for long live instances

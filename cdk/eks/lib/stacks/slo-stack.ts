@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { aws_applicationsignals as applicationsignals, Stack, StackProps } from 'aws-cdk-lib';
+import { aws_applicationsignals as applicationsignals, Stack, StackProps, Tag } from 'aws-cdk-lib';
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
@@ -7,6 +7,7 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 interface SloProps extends StackProps {
     eksClusterName: string,
     sampleAppNamespace: string,
+    awsApplicationTag: string,
   }
 
 export class SloStack extends Stack {
@@ -18,7 +19,7 @@ export class SloStack extends Stack {
   constructor(scope: Construct, id: string, props: SloProps) {
     super(scope, id, props);
 
-    const { eksClusterName, sampleAppNamespace } = props;
+    const { eksClusterName, sampleAppNamespace, awsApplicationTag } = props;
 
     this.eksClusterName = eksClusterName;
     this.sampleAppNamespace = sampleAppNamespace
@@ -49,7 +50,8 @@ export class SloStack extends Stack {
         "GET",
         "AVAILABILITY",
         99.0,
-        "GreaterThan"
+        "GreaterThan",
+        awsApplicationTag,
     ));
     const getOwner99LatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'getOwner99LatencySLO', this.getSloProp(
         "Latency for Searching an Owner",
@@ -58,6 +60,7 @@ export class SloStack extends Stack {
         "LATENCY",
         200.0,
         "LessThan",
+        awsApplicationTag,
         "p99"
     ));
     const postOwner99AvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'postOwner99AvailabilitySLO', this.getSloProp(
@@ -66,7 +69,8 @@ export class SloStack extends Stack {
         "POST",
         "AVAILABILITY",
         99.0,
-        "GreaterThan"
+        "GreaterThan",
+        awsApplicationTag,
     ));
     const postOwner99LatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'postOwner99LatencySLO', this.getSloProp(
         "Latency for Registering an Owner",
@@ -75,6 +79,7 @@ export class SloStack extends Stack {
         "LATENCY",
         2000.0,
         "LessThan",
+        awsApplicationTag,
         "p99"
     ));
     const billingActivitiesLatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'billingActivitiesLatencySLO', this.getSloProp(
@@ -84,6 +89,7 @@ export class SloStack extends Stack {
         "LATENCY",
         300.0,
         "LessThan",
+        awsApplicationTag,
         "p99",
         "^billings/$",
         "billing-service-python"
@@ -96,7 +102,7 @@ export class SloStack extends Stack {
     billingActivitiesLatencySlo.node.addDependency(enableTopologyDiscovery);
   }
   
-  getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string) {
+  getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, awsApplicationTag: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string) {
     // Default values
     const path = operationPath || '/api/customer/owners';
     const service = serviceName || this.serviceName;
@@ -132,7 +138,10 @@ export class SloStack extends Stack {
             },
             attainmentGoal: 99.9,
             warningThreshold: 60.0,
-          }
+          },
+          tags: [
+            new Tag("awsApplication", awsApplicationTag)
+          ]
     }
     return sloProp
   }
