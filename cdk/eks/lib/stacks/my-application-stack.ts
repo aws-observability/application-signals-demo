@@ -8,9 +8,15 @@ export class MyApplicationStack extends Stack {
         super(scope, id, {});
 
         // Create a new Application using the L1 construct
-        this.application = new CfnApplication(this, `EksJavaDemoApp`, {
+        this.application = new CfnApplication(this, `PetClinic_Application`, {
             description: 'Created by CDK',
-            name: `EksJavaDemoApp`,
+            name: `PetClinic_Application`,
+        });
+
+        // Empty myApplication to display multiple applications
+        new CfnApplication(this, `CustomerFeedbackApp`, {
+            description: 'Created by CDK',
+            name: `CustomerFeedbackApp`,
         });
     }
 }
