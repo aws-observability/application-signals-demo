@@ -1,0 +1,123 @@
+name: Terraform Deploy
+
+on:
+  push:
+    branches:
+      - main  # Adjust this to your main branch name if different
+  workflow_dispatch:  # Allow manual triggering
+
+env: # hard-code resource names
+  AWS_REGION: us-east-1
+  TFSTATE_KEY: application-signals/demo-applications
+  TFSTATE_BUCKET: tfstate-0b6c1770-b7ce-423a-9b2d-781805b91dcc # prerequisite: manually create a bucket using  "aws s3 mb s3://tfstate-$(uuidgen | tr A-Z a-z)" and paste bucket name here.
+  TFSTATE_REGION: us-east-1
+  TF_VAR_cluster_name: app-signals-demo
+  TF_VAR_cloudwatch_observability_addon_version: v2.1.0-eksbuild.1
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create kubeconfig directory
+        run: mkdir -p ${{ github.workspace }}/.kube
+
+      - name: Set KUBECONFIG environment variable
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+
+      - name: Set up kubeconfig
+        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Install eksctl
+        run: |
+          mkdir ${{ github.workspace }}/eksctl
+          curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+          tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz
+          echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
+
+      - name: Create role for AWS access from the sample app
+        id: create_service_account
+        run: |
+          eksctl create iamserviceaccount \
+          --name service-account-${{ env.TESTING_ID }} \
+          --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
+          --cluster ${{ inputs.test-cluster-name }} \
+          --role-name eks-s3-access-${{ env.TESTING_ID }} \
+          --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+          --region ${{ env.AWS_DEFAULT_REGION }} \
+          --approve
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+
+      - name: Build Docker images
+        run: ./mvnw clean install -P buildDocker
+
+      - name: Push Docker images to ECR
+        run: |
+          export ACCOUNT=$(aws sts get-caller-identity | jq .Account -r)
+          export REGION=${{ env.AWS_REGION }}
+          ./push-ecr.sh
+
+      - name: Terraform Init
+        working-directory: terraform/eks
+        run: |
+          terraform init -backend-config="bucket=${TFSTATE_BUCKET}" \
+                        -backend-config="key=${TFSTATE_KEY}" \
+                        -backend-config="region=${TFSTATE_REGION}"
+
+      - name: Terraform Plan
+        working-directory: terraform/eks
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: terraform/eks
+        run: terraform apply --auto-approve
+
+      - name: Deploy Kubernetes resources
+        run: |
+          aws eks update-kubeconfig --name $TF_VAR_cluster_name --kubeconfig ~/.kube/config --region $AWS_REGION --alias $TF_VAR_cluster_name
+          ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
+
+      - name: Create Canaries and SLOs
+        run: |
+          endpoint="http://$(kubectl get ingress -o json --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
+          cd scripts/eks/appsignals/
+          ./create-canaries.sh $AWS_REGION create $endpoint
+          ./create-slo.sh $TF_VAR_cluster_name $AWS_REGION
+
+      - name: Output Application URL
+        run: |
+          endpoint="http://$(kubectl get ingress -o json --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
+          echo "Application is available at: $endpoint"
+          echo "APPLICATION_URL=$endpoint" >> $GITHUB_ENV
