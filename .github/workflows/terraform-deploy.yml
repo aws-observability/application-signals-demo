@@ -54,9 +54,9 @@ jobs:
       - name: Terraform Init
         working-directory: terraform/eks
         run: |
-          terraform init -backend-config="bucket=${TFSTATE_BUCKET}" \
-                        -backend-config="key=${TFSTATE_KEY}" \
-                        -backend-config="region=${TFSTATE_REGION}"
+          terraform init -backend-config="bucket=${{ env.TFSTATE_BUCKET }}" \
+                        -backend-config="key=${{ env.TFSTATE_KEY }}" \
+                        -backend-config="region=${{ env.TFSTATE_REGION }}"
 
       - name: Terraform Plan
         working-directory: terraform/eks
@@ -68,7 +68,7 @@ jobs:
 
       - name: Deploy Kubernetes resources
         run: |
-          aws eks update-kubeconfig --name $TF_VAR_cluster_name --kubeconfig ~/.kube/config --region $AWS_REGION --alias $TF_VAR_cluster_name
+          aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --kubeconfig ~/.kube/config --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
           ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
 
       - name: Create kubeconfig directory
@@ -78,7 +78,7 @@ jobs:
         run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
 
       - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_DEFAULT_REGION }}
+        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }}
 
       - name: Build Docker images
         run: ./mvnw clean install -P buildDocker
@@ -93,8 +93,8 @@ jobs:
         run: |
           endpoint="http://$(kubectl get ingress -o json --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
           cd scripts/eks/appsignals/
-          ./create-canaries.sh $AWS_REGION create $endpoint
-          ./create-slo.sh $TF_VAR_cluster_name $AWS_REGION
+          ./create-canaries.sh ${{ env.AWS_REGION }} create $endpoint
+          ./create-slo.sh $TF_VAR_cluster_name ${{ env.AWS_REGION }}
 
       - name: Output Application URL
         run: |
