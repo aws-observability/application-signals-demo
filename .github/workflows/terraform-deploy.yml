@@ -53,7 +53,7 @@ jobs:
         run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
 
       - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.AWS_DEFAULT_REGION }}
+        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Install eksctl
         run: |
