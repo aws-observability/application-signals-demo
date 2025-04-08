@@ -65,11 +65,13 @@ jobs:
         working-directory: terraform/eks
         run: terraform apply --auto-approve
 
-
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+      
       - name: Build Docker images
-        run: |
-          pwd
-          ./mvnw clean install -P buildDocker
+        run: DOCKER_BUILDKIT=1 ./mvnw clean install -P buildDocker
         
       - name: Push Docker images to ECR
         run: |
