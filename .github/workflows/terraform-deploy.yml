@@ -46,16 +46,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Create kubeconfig directory
-        run: mkdir -p ${{ github.workspace }}/.kube
-
-      - name: Set KUBECONFIG environment variable
-        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
-
-      - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
-
-
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -71,6 +61,15 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform/eks
         run: terraform apply --auto-approve
+
+      - name: Create kubeconfig directory
+        run: mkdir -p ${{ github.workspace }}/.kube
+
+      - name: Set KUBECONFIG environment variable
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+
+      - name: Set up kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
 
       - name: Deploy Kubernetes resources
         run: |
