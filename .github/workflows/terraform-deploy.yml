@@ -29,10 +29,10 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'adopt'
           cache: maven
 
       - name: Set up Node.js
@@ -48,16 +48,6 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Create kubeconfig directory
-        run: mkdir -p ${{ github.workspace }}/.kube
-
-      - name: Set KUBECONFIG environment variable
-        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
-
-      - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
-
 
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v2
@@ -75,14 +65,24 @@ jobs:
         working-directory: terraform/eks
         run: terraform apply --auto-approve
 
+
       - name: Build Docker images
         run: ./mvnw clean install -P buildDocker
-
+        
       - name: Push Docker images to ECR
         run: |
           export ACCOUNT=$(aws sts get-caller-identity | jq .Account -r)
           export REGION=${{ env.AWS_REGION }}
           ./push-ecr.sh
+      
+      - name: Create kubeconfig directory
+        run: mkdir -p ${{ github.workspace }}/.kube
+
+      - name: Set KUBECONFIG environment variable
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+
+      - name: Set up kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
 
       - name: Deploy Kubernetes resources
         run: |
