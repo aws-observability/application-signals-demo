@@ -10,7 +10,9 @@ RUN --mount=type=cache,target=/go/pkg/mod ./ocb --config builder-config.yaml
 FROM amazonlinux
 ARG USER_UID=10001
 USER ${USER_UID}
+RUN true
 COPY --from=prep /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+RUN true
 COPY --from=build /tmp/build/otelcol-appsignals/otelcol-appsignals /
 WORKDIR /
 EXPOSE 4317 4318 13133 2000 4316 4315 55680 55679

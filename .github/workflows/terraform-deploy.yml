@@ -19,7 +19,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: only-one-workflow-run-at-a-time
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -66,7 +67,7 @@ jobs:
         run: terraform apply --auto-approve
       
       - name: Build Docker images
-        run: ./mvnw clean install -P buildDocker -X
+        run: ./mvnw clean install -P buildDocker
         
       - name: Push Docker images to ECR
         run: |
