@@ -12,7 +12,7 @@ env: # hard-code resource names
   TFSTATE_BUCKET: tfstate-0b6c1770-b7ce-423a-9b2d-781805b91dcc # prerequisite: manually create a bucket using  "aws s3 mb s3://tfstate-$(uuidgen | tr A-Z a-z)" and paste bucket name here.
   TFSTATE_REGION: us-east-1
   TF_VAR_cluster_name: app-signals-demo
-  TF_VAR_cloudwatch_observability_addon_version: v2.1.0-eksbuild.1
+  TF_VAR_cloudwatch_observability_addon_version: v3.6.0-eksbuild.2
 
 permissions:
   id-token: write
