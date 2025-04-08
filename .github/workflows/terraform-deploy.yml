@@ -66,8 +66,8 @@ jobs:
         working-directory: terraform/eks
         run: terraform apply --auto-approve
 
-      - name: Create Topology Folder
-        run: mkdir -P ./topology
+      - name: Create Topology Data Folder
+        run: mkdir -p ./topology
 
       - name: Generate Software Dependency Topology
         uses: anchore/sbom-action@v0
