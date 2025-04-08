@@ -46,6 +46,16 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Create kubeconfig directory
+        run: mkdir -p ${{ github.workspace }}/.kube
+
+      - name: Set KUBECONFIG environment variable
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+
+      - name: Set up kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
+
+
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -58,23 +68,14 @@ jobs:
                         -backend-config="key=${{ env.TFSTATE_KEY }}" \
                         -backend-config="region=${{ env.TFSTATE_REGION }}"
 
+
+      - name: Terraform Plan
+        working-directory: terraform/eks
+        run: terraform plan
+
       - name: Terraform Apply
         working-directory: terraform/eks
         run: terraform apply --auto-approve
-
-      - name: Create kubeconfig directory
-        run: mkdir -p ${{ github.workspace }}/.kube
-
-      - name: Set KUBECONFIG environment variable
-        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
-
-      - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
-
-      - name: Deploy Kubernetes resources
-        run: |
-          aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --kubeconfig ~/.kube/config --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
-          ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
 
       - name: Build Docker images
         run: ./mvnw clean install -P buildDocker
@@ -84,6 +85,12 @@ jobs:
           export ACCOUNT=$(aws sts get-caller-identity | jq .Account -r)
           export REGION=${{ env.AWS_REGION }}
           ./push-ecr.sh
+
+      - name: Deploy Kubernetes resources
+        run: |
+          aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --kubeconfig ~/.kube/config --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
+          ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
+
 
       - name: Create Canaries and SLOs
         run: |
