@@ -43,7 +43,7 @@ jobs:
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
-
+  
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -65,6 +65,20 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform/eks
         run: terraform apply --auto-approve
+
+      - name: Generate Software Dependency Topology
+        uses: anchore/sbom-action@v0
+        with:
+          artifact-name: application-signals-demo.cyclonedx.json
+          path: .
+          output-file: './topology/application-signals-demo.cyclonedx.json'
+
+      - name: Generate IaC Topology
+        working-directory: terraform/eks
+        run: terraform graph > ../../topology/terraform.graph.json
+      
+      - name: Publish Topology
+        run: ls -l ./topology/
       
       - name: Build Docker images
         run: ./mvnw clean install -P buildDocker
@@ -89,13 +103,12 @@ jobs:
           aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --kubeconfig ~/.kube/config --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
           ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
 
-
-      - name: Create Canaries and SLOs
-        run: |
-          endpoint="http://$(kubectl get ingress -o json --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
-          cd scripts/eks/appsignals/
-          ./create-canaries.sh ${{ env.AWS_REGION }} create $endpoint
-          ./create-slo.sh $TF_VAR_cluster_name ${{ env.AWS_REGION }}
+      # - name: Create Canaries and SLOs
+      #   run: |
+      #     endpoint="http://$(kubectl get ingress -o json --output jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')"
+      #     cd scripts/eks/appsignals/
+      #     ./create-canaries.sh ${{ env.AWS_REGION }} create $endpoint
+      #     ./create-slo.sh $TF_VAR_cluster_name ${{ env.AWS_REGION }}
 
       - name: Output Application URL
         run: |
