@@ -87,28 +87,28 @@ jobs:
       - name: Publish Topology
         run: ls -l ./topology/
       
-      - name: Build Docker images
-        run: ./mvnw clean install -P buildDocker
+      # - name: Build Docker images
+      #   run: ./mvnw clean install -P buildDocker
         
-      - name: Push Docker images to ECR
-        run: |
-          export ACCOUNT=$(aws sts get-caller-identity | jq .Account -r)
-          export REGION=${{ env.AWS_REGION }}
-          ./push-ecr.sh
+      # - name: Push Docker images to ECR
+      #   run: |
+      #     export ACCOUNT=$(aws sts get-caller-identity | jq .Account -r)
+      #     export REGION=${{ env.AWS_REGION }}
+      #     ./push-ecr.sh
       
-      - name: Create kubeconfig directory
-        run: mkdir -p ${{ github.workspace }}/.kube
+      # - name: Create kubeconfig directory
+      #   run: mkdir -p ${{ github.workspace }}/.kube
 
-      - name: Set KUBECONFIG environment variable
-        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+      # - name: Set KUBECONFIG environment variable
+      #   run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
 
-      - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
+      # - name: Set up kubeconfig
+      #   run: aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
 
-      - name: Deploy Kubernetes resources
-        run: |
-          aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --kubeconfig ~/.kube/config --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
-          ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
+      # - name: Deploy Kubernetes resources
+      #   run: |
+      #     aws eks update-kubeconfig --name ${{ env.TF_VAR_cluster_name }} --kubeconfig ~/.kube/config --region ${{ env.AWS_REGION }} --alias ${{ env.TF_VAR_cluster_name }}
+      #     ./scripts/eks/appsignals/tf-deploy-k8s-res.sh
 
       # - name: Create Canaries and SLOs
       #   run: |
