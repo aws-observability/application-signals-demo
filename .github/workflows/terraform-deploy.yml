@@ -67,7 +67,9 @@ jobs:
 
 
       - name: Build Docker images
-        run: ./mvnw clean install -P buildDocker
+        run: |
+          pwd
+          ./mvnw clean install -P buildDocker
         
       - name: Push Docker images to ECR
         run: |
