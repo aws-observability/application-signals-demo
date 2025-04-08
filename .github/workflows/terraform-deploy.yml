@@ -18,6 +18,9 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: only-one-workflow-run-at-a-time
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -67,11 +70,6 @@ jobs:
           terraform init -backend-config="bucket=${{ env.TFSTATE_BUCKET }}" \
                         -backend-config="key=${{ env.TFSTATE_KEY }}" \
                         -backend-config="region=${{ env.TFSTATE_REGION }}"
-
-
-      - name: Terraform Plan
-        working-directory: terraform/eks
-        run: terraform plan
 
       - name: Terraform Apply
         working-directory: terraform/eks
