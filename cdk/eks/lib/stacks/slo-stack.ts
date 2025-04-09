@@ -2,6 +2,8 @@ import { Construct } from 'constructs';
 import { aws_applicationsignals as applicationsignals, Stack, StackProps, Tag } from 'aws-cdk-lib';
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import {CfnServiceLevelObjective} from "aws-cdk-lib/aws-applicationsignals";
+import ExclusionWindowProperty = CfnServiceLevelObjective.ExclusionWindowProperty;
 
 
 interface SloProps extends StackProps {
@@ -95,14 +97,39 @@ export class SloStack extends Stack {
         "billing-service-python"
     ));
 
+    const exclusionWindows = [{
+         window: {
+             duration: 16,
+             durationUnit: 'HOUR',
+         },
+         recurrenceRule: {
+             expression: 'cron(0 17 ? * *)',
+         }
+    }]
+    const getPaymentAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'getPaymentAvailabilitySLO', this.getSloProp(
+        "Availability for Retrieving Payments",
+        "Availability larger than 99 for Get Payment operation",
+        "GET",
+        "AVAILABILITY",
+        99.0,
+        "GreaterThan",
+        awsApplicationTag,
+        undefined,
+        "/owners/{ownerId:int}/pets/{petId:int}/payments/",
+        "payment-service-dotnet",
+        undefined,
+        exclusionWindows
+    ));
+
     getOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
     getOwner99LatencySlo.node.addDependency(enableTopologyDiscovery);
     postOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
     postOwner99LatencySlo.node.addDependency(enableTopologyDiscovery);
     billingActivitiesLatencySlo.node.addDependency(enableTopologyDiscovery);
+    getPaymentAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
   }
   
-  getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, awsApplicationTag: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string) {
+  getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, awsApplicationTag: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string, exclusionWindows?: ExclusionWindowProperty[]) {
     // Default values
     const path = operationPath || '/api/customer/owners';
     const service = serviceName || this.serviceName;
@@ -141,7 +168,8 @@ export class SloStack extends Stack {
           },
           tags: [
             new Tag("awsApplication", awsApplicationTag)
-          ]
+          ],
+          exclusionWindows: exclusionWindows
     }
     return sloProp
   }
