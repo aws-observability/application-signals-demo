@@ -25,7 +25,7 @@ export function readYamlFile(filePath: string): Record<string, any>[] {
 }
 
 // Function that replaces the namespace and account id placeholder with actual values
-export function transformYaml(obj: any, accountId: string, region: string, namespace: string, ingressExternalIp: string, rdsClusterEndpoint: string): any {
+export function transformYaml(obj: any, accountId: string, region: string, namespace: string, ingressExternalIp: string, rdsClusterEndpoint: string, identityPoolId?: string, appMonitorId?: string): any {
     if (typeof obj === 'object' && obj !== null) {
         for (const key in obj) {
             if (typeof obj[key] === 'string') {
@@ -39,9 +39,13 @@ export function transformYaml(obj: any, accountId: string, region: string, names
                     obj[key] = obj[key].replace('${REGION}', region);
                 } else if (obj[key].includes('<HOST>')) {
                     obj[key] = obj[key].replace('<HOST>', rdsClusterEndpoint);
+                } else if (obj[key] === '${APP_MONITOR_IDENTITY_POOL_ID}' && identityPoolId) {
+                    obj[key] = identityPoolId;
+                } else if (obj[key] === '${APP_MONITOR_ID}' && appMonitorId) {
+                    obj[key] = appMonitorId;
                 }
             } else if (typeof obj[key] === 'object') {
-                transformYaml(obj[key], accountId, region, namespace, ingressExternalIp, rdsClusterEndpoint);
+                transformYaml(obj[key], accountId, region, namespace, ingressExternalIp, rdsClusterEndpoint, identityPoolId, appMonitorId);
             }
         }
     }

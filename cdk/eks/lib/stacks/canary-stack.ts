@@ -28,6 +28,9 @@ export class SyntheticCanaryStack extends Stack {
     'pet-clinic-traffic',
     'pc-visit-insurances',
     'pc-visit-billings',
+    'pc-add-visit-rum',
+    'pc-add-visit-error-rum',
+    'pet-clinic-rum'
   ];
       
   constructor(scope: Construct, id: string, props: SyntheticCanaryProps) {

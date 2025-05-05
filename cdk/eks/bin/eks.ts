@@ -8,6 +8,7 @@ import { SloStack } from '../lib/stacks/slo-stack';
 import { RdsStack } from '../lib/stacks/rds-stack';
 import { SyntheticCanaryStack } from '../lib/stacks/canary-stack';
 import { MyApplicationStack } from "../lib/stacks/my-application-stack";
+import { CloudWatchRumStack } from "../lib/stacks/rum-stack";
 
 const app = new App();
 
@@ -25,6 +26,10 @@ rdsStack.addDependency(networkStack);
 
 const myApplicationStack = new MyApplicationStack(app, 'MyApplicationStack')
 
+const rumStack = new CloudWatchRumStack(app, 'AppSignalsRumStack', {
+  sampleAppNamespace: 'pet-clinic', // Using the same namespace as in EksStack
+})
+
 const eksStack = new EksStack(app, 'AppSignalsEksClusterStack', {
   vpc: networkStack.vpc,
   eksClusterRoleProp: iamStack.eksClusterRoleProp,
@@ -34,13 +39,16 @@ const eksStack = new EksStack(app, 'AppSignalsEksClusterStack', {
   cloudwatchAddonRoleProp: iamStack.cloudwatchAddonRoleProp,
   rdsClusterEndpoint: rdsStack.clusterEndpoint,
   rdsSecurityGroupId: networkStack.rdsSecurityGroupId,
-  awsApplicationTag: myApplicationStack.application.attrApplicationTagValue
+  awsApplicationTag: myApplicationStack.application.attrApplicationTagValue,
+  rumIdentityPoolId: rumStack.identityPoolId,
+  rumAppMonitorId: rumStack.appMonitorId
 });
 
 eksStack.addDependency(networkStack);
 eksStack.addDependency(iamStack);
 eksStack.addDependency(rdsStack);
 eksStack.addDependency(myApplicationStack);
+eksStack.addDependency(rumStack);
 
 const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticCanaryStack', {
   vpc: networkStack.vpc,
@@ -49,6 +57,7 @@ const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticC
 })
 
 syntheticCanaryStack.addDependency(rdsStack);
+syntheticCanaryStack.addDependency(rumStack);
 
 // After AppSignal is enabled, it takes up to 10 minutes for the SLO metrics to become available. If this is deployed before the SLO metrics
 // are available, it will fail.
@@ -61,4 +70,3 @@ if (enableSlo) {
 
   sloStack.addDependency(syntheticCanaryStack);
 }
-
