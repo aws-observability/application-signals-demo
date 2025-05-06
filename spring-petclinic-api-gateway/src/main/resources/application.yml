@@ -21,6 +21,7 @@ logging:
 
 # Add AWS RUM configuration
 aws:
+  region: ${AWS_REGION:us-east-1}
   rum:
     monitor:
       id: ${APP_MONITOR_ID:default-monitor-id}
