@@ -57,8 +57,7 @@ petClinicApp.config([
       path = path.replace(pet, "$1{petId}");
 
       if (path === '/welcome') {
-        // Simulate a delay making the image visible caused by fetching a
-        // feature from an A/B testing service.
+        // Simulate a delay in displaying the image
         setTimeout(() =>
             document.getElementById("pets").style.display = "inherit",
             Math.floor(Math.random() * 4000)

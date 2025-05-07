@@ -30,7 +30,7 @@ public class RumConfigFilter implements WebFilter {
     private String identityPoolId;
     
     @Value("${aws.region}")
-    private String awsRegion;
+    private String region;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -61,7 +61,7 @@ public class RumConfigFilter implements WebFilter {
                             String content = builder.toString();
                             content = content.replace("{{AWS_RUM_MONITOR_ID}}", monitorId);
                             content = content.replace("{{AWS_RUM_IDENTITY_POOL_ID}}", identityPoolId);
-                            content = content.replace("{{REGION}}", awsRegion);
+                            content = content.replace("{{REGION}}", region);
                             
                             // Create a new data buffer with modified content
                             byte[] modifiedBytes = content.getBytes(StandardCharsets.UTF_8);

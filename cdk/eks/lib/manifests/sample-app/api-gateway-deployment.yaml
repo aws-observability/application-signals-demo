@@ -46,7 +46,7 @@ spec:
               value: http://discovery-server:8761/eureka
             - name: SPRING_PROFILES_ACTIVE
               value: prod
-            - name: AWS_REGION
+            - name: RUM_ENDPOINT_REGION
               value: "${REGION}"
             - name: APP_MONITOR_IDENTITY_POOL_ID
               value: "${APP_MONITOR_IDENTITY_POOL_ID}"
