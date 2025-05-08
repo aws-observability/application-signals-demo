@@ -8,6 +8,38 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0, minimal-ui" />
         <!-- The above 4 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
+        <!-- AWS RUM Web Client -->
+        <script>
+            (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:n,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.getElementsByTagName('script')[0]);})(
+                'cwr',
+                '{{AWS_RUM_MONITOR_ID}}',
+                '1.0.0',
+                '{{REGION}}',
+                'https://client.rum.us-east-1.amazonaws.com/1.19.x/cwr.js',
+                {
+                    sessionSampleRate: 1,
+                    identityPoolId: "{{AWS_RUM_IDENTITY_POOL_ID}}",
+                    telemetries: [
+                        "performance",
+                        "errors",
+                        [
+                            "http",
+                            {
+                                recordAllRequests: true,
+                                addXRayTraceIdHeader: true
+                            }
+                        ]
+                    ],
+                    allowCookies: true,
+                    disableAutoPageView: true,
+                    cookieAttributes: {
+                        secure: false
+                    },
+                    enableXRay: true
+                }
+            );
+        </script>
+
         <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.png" />
 
         <title>PetClinic :: a Spring Framework demonstration</title>

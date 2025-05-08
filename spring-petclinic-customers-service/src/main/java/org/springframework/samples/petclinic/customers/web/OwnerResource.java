@@ -110,7 +110,7 @@ class OwnerResource {
     @Scheduled(cron = "0 0 8 * * ?") // every PST midnight
     public void ageOldData() {
         log.info("ageOldData() get called and purge all data!");
-        ownerRepository.deleteAll();
+
         /* Purge pets. */
         Pet pet = new Pet();
         pet.setName("lastName");

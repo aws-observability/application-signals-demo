@@ -19,6 +19,14 @@ logging:
   pattern:
     level: trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p
 
+# Add AWS RUM configuration
+aws:
+  region: ${RUM_ENDPOINT_REGION:us-east-1}
+  rum:
+    monitor:
+      id: ${APP_MONITOR_ID:default-monitor-id}
+      identity-pool-id: ${APP_MONITOR_IDENTITY_POOL_ID:default-identity-pool-id}
+
 ---
 spring:
   config:
