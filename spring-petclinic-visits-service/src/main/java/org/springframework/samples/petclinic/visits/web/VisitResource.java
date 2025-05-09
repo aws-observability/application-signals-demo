@@ -20,15 +20,18 @@ package org.springframework.samples.petclinic.visits.web;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 
 import io.micrometer.core.annotation.Timed;
+import io.opentelemetry.api.trace.Span;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.visits.Util.WellKnownAttributes;
 import org.springframework.samples.petclinic.visits.aws.DdbService;
 import org.springframework.samples.petclinic.visits.model.Visit;
 import org.springframework.samples.petclinic.visits.model.VisitRepository;
@@ -61,11 +64,16 @@ class VisitResource {
     private final DdbService ddbService;
 
 
-    @PostMapping("owners/*/pets/{petId}/visits")
+    @PostMapping("owners/{ownerId}/pets/{petId}/visits")
     @ResponseStatus(HttpStatus.CREATED)
     public Visit create(
         @Valid @RequestBody Visit visit,
+        @PathVariable("ownerId") int ownerId,
         @PathVariable("petId") @Min(1) int petId) {
+        Span.current().setAttribute(WellKnownAttributes.ORDER_ID, UUID.randomUUID().toString());
+        Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+
         Date currentDate = new Date();
         Date visitDate = visit.getDate();
         long durationInDays = (visitDate.getTime() - currentDate.getTime())/1000/3600/24;
@@ -88,8 +96,12 @@ class VisitResource {
         return visitRepository.save(visit);
     }
 
-    @GetMapping("owners/*/pets/{petId}/visits")
-    public Visits visits(@PathVariable("petId") @Min(1) int petId) throws Exception {
+    @GetMapping("owners/{ownerId}/pets/{petId}/visits")
+    public Visits visits(@PathVariable("ownerId") int ownerId, @PathVariable("petId") @Min(1) int petId) throws Exception {
+        Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+
 //        return visitRepository.findByPetId(petId);
         log.info("Reaching Get api: /owners/*/pets/{petId}/visits for petId: {}", petId);
         return new Visits(visitRepository.findByPetId(petId));

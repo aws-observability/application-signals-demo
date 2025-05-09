@@ -6,6 +6,9 @@ using Amazon.DynamoDBv2.DataModel;
 using Microsoft.AspNetCore.Mvc;
 using PetClinic.PaymentService;
 using Steeltoe.Discovery.Client;
+using Amazon.SQS;
+using Amazon.SQS.Model;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +26,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 builder.Services.AddAWSService<IAmazonDynamoDB>();
+builder.Services.AddAWSService<IAmazonSQS>();
 builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
 builder.Services.AddSingleton<IPetClinicContext, PetClinicContext>();
 
@@ -47,6 +51,13 @@ app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments",
         int petId,
         [FromServices] IPetClinicContext context) =>
     {
+        Activity currentActivity = Activity.Current;
+        if (currentActivity != null)
+        {
+            currentActivity.SetTag("owner.id", ownerId);
+            currentActivity.SetTag("pet.id", petId);
+        }
+
         var petResponse = await context.HttpClient.GetAsync($"http://customers-service/owners/{ownerId}/pets/{petId}");
 
         if (!petResponse.IsSuccessStatusCode)
@@ -75,6 +86,14 @@ app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments/{paymentId}",
         string paymentId,
         [FromServices] IPetClinicContext context) =>
     {
+        Activity currentActivity = Activity.Current;
+        if (currentActivity != null)
+        {
+            currentActivity.SetTag("owner.id", ownerId);
+            currentActivity.SetTag("pet.id", petId);
+            currentActivity.SetTag("order.id", paymentId);
+        }
+
         var petResponse = await context.HttpClient.GetAsync($"http://customers-service/owners/{ownerId}/pets/{petId}");
 
         if (!petResponse.IsSuccessStatusCode)
@@ -95,6 +114,63 @@ app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
         Payment payment,
        [FromServices] IPetClinicContext context) =>
     {
+        payment.Id ??= Random.Shared.Next(100000, 1000000).ToString();
+
+        Activity currentActivity = Activity.Current;
+        if (currentActivity != null)
+        {
+            currentActivity.SetTag("owner.id", ownerId);
+            currentActivity.SetTag("pet.id", petId);
+            currentActivity.SetTag("order.id", payment.Id);
+        }
+
+        var queueName = "audit-jobs";
+        var queueUrl = "";
+        try
+        {
+            var request = new GetQueueUrlRequest { QueueName = queueName };
+            var response = await context.SqsClient.GetQueueUrlAsync(request);
+            queueUrl = response.QueueUrl;
+        }
+        catch (QueueDoesNotExistException)
+        {
+            Console.WriteLine($"Queue {queueName} does not exist.");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting queue URL: {ex.Message}");
+            return null;
+        }
+
+        var messageBody = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            PaymentId = payment.Id,
+            OwnerId = ownerId,
+            PetId = petId,
+            Amount = payment.Amount
+        });
+
+        var sendMessageRequest = new SendMessageRequest
+        {
+            QueueUrl = queueUrl,
+            MessageBody = messageBody
+        };
+
+        try
+        {
+            var sendMessageResponse = await context.SqsClient.SendMessageAsync(sendMessageRequest);
+            if (currentActivity != null)
+            {
+                currentActivity.SetTag("sqs.message.id", sendMessageResponse.MessageId);
+            }
+            Console.WriteLine($"Message sent to SQS. MessageId: {sendMessageResponse.MessageId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending message to SQS: {ex.Message}");
+        }
+
         var petResponse = await context.HttpClient.GetAsync($"http://customers-service/owners/{ownerId}/pets/{petId}");
 
         if (!petResponse.IsSuccessStatusCode)
@@ -103,7 +179,6 @@ app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
         }
 
         payment.PetId = petId;
-        payment.Id ??= Guid.NewGuid().ToString();
 
         await context.DynamoDbContext.SaveAsync(payment);
 

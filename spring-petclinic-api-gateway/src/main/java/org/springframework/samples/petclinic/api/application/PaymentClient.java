@@ -24,8 +24,12 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.samples.petclinic.api.dto.PaymentAdd;
 import org.springframework.samples.petclinic.api.dto.PaymentDetail;
+import org.springframework.samples.petclinic.api.utils.WellKnownAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -34,14 +38,18 @@ import reactor.core.publisher.Mono;
 public class PaymentClient {
     private final WebClient.Builder webClientBuilder;
 
-    public Flux<PaymentDetail> getPayments(final int ownerId, final int petId) {
+    @WithSpan
+    public Flux<PaymentDetail> getPayments(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId, @SpanAttribute(WellKnownAttributes.PET_ID) final int petId) {
+        Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().get()
                 .uri("http://payment-service/owners/{ownerId}/pets/{petId}/payments", ownerId, petId)
                 .retrieve()
                 .bodyToFlux(PaymentDetail.class);
     }
 
-    public Mono<PaymentDetail> getPaymentById(final int ownerId, final int petId, final String paymentId) {
+    @WithSpan
+    public Mono<PaymentDetail> getPaymentById(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId, @SpanAttribute(WellKnownAttributes.PET_ID) final int petId, @SpanAttribute(WellKnownAttributes.ORDER_ID) final String paymentId) {
+        Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().get()
                 .uri("http://payment-service/owners/{ownerId}/pets/{petId}/payments/{paymentId}", ownerId, petId,
                         paymentId)
@@ -49,7 +57,9 @@ public class PaymentClient {
                 .bodyToMono(PaymentDetail.class);
     }
 
-    public Mono<PaymentDetail> addPayment(final int ownerId, final int petId, final PaymentAdd paymentAdd) {
+    @WithSpan
+    public Mono<PaymentDetail> addPayment(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId, @SpanAttribute(WellKnownAttributes.PET_ID) final int petId, @SpanAttribute(WellKnownAttributes.ORDER_ID) final PaymentAdd paymentAdd) {
+        Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().post()
                 .uri("http://payment-service/owners/{ownerId}/pets/{petId}/payments", ownerId, petId)
                 .body(Mono.just(paymentAdd), PaymentAdd.class)

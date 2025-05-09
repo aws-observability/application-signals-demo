@@ -19,11 +19,13 @@
 package org.springframework.samples.petclinic.customers.web;
 
 import io.micrometer.core.annotation.Timed;
+import io.opentelemetry.api.trace.Span;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.customers.Util.WellKnownAttributes;
 import org.springframework.samples.petclinic.customers.aws.*;
 import org.springframework.samples.petclinic.customers.model.*;
 import org.springframework.web.bind.annotation.*;
@@ -71,6 +73,10 @@ class PetResource {
         @RequestBody PetRequest petRequest,
         @PathVariable("ownerId") @Min(1) int ownerId) {
 
+        Span.current().setAttribute(WellKnownAttributes.PET_ID, petRequest.getId());
+        Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petRequest.getId());
+
         final Optional<Owner> optionalOwner = ownerRepository.findById(ownerId);
         Owner owner = optionalOwner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));
         
@@ -85,9 +91,13 @@ class PetResource {
         return save(pet, petRequest);
     }
 
-    @GetMapping("/diagnose/owners/*/pets/{petId}")
+    @GetMapping("/diagnose/owners/{ownerId}/pets/{petId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void processDiagnose(@PathVariable("petId") int petId) {
+    public void processDiagnose(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId) {
+        Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+
         log.info("bedrockAgentV1Service Getting knowledge base");
         bedrockAgentV1Service.getKnowledgeBase();
         log.info("bedrockAgentV1Service FINISH Getting knowledge base");
@@ -119,10 +129,14 @@ class PetResource {
         log.info("bedrockRuntimeV2Service FINISH Invoking Anthropic claude");
     }
 
-    @PutMapping("/owners/*/pets/{petId}")
+    @PutMapping("/owners/{ownerId}/pets/{petId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void processUpdateForm(@RequestBody PetRequest petRequest) {
+    public void processUpdateForm(@PathVariable("ownerId") int ownerId, @RequestBody PetRequest petRequest) {
         int petId = petRequest.getId();
+        Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+
         Pet pet = findPetById(petId);
         kinesisService.getStreamRecords();
         save(pet, petRequest);
@@ -139,8 +153,12 @@ class PetResource {
         return petRepository.save(pet);
     }
 
-    @GetMapping("owners/*/pets/{petId}")
-    public PetDetails findPet(@PathVariable("petId") int petId) {
+    @GetMapping("owners/{ownerId}/pets/{petId}")
+    public PetDetails findPet(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId) {
+        Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+
         PetDetails detail = new PetDetails(findPetById(petId));
 
         // enrich with insurance
@@ -165,8 +183,7 @@ class PetResource {
         try{
             ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
             petNutrition = response.getBody();
-        }
-        catch (Exception ex){
+        } catch (Exception ex){
             ex.printStackTrace();
         }
         if(petNutrition == null){
