@@ -4,6 +4,7 @@ INSERT INTO types VALUES (3, 'lizard');
 INSERT INTO types VALUES (4, 'snake');
 INSERT INTO types VALUES (5, 'bird');
 INSERT INTO types VALUES (6, 'hamster');
+INSERT INTO types VALUES (7, 'horse');
 
 INSERT INTO owners VALUES (1, 'George', 'Franklin', '110 W. Liberty St.', 'Madison', '6085551023');
 INSERT INTO owners VALUES (2, 'Betty', 'Davis', '638 Cardinal Ave.', 'Sun Prairie', '6085551749');
@@ -22,7 +23,7 @@ INSERT INTO pets VALUES (3, 'Rosy', '2011-04-17', 2, 3);
 INSERT INTO pets VALUES (4, 'Jewel', '2010-03-07', 2, 3);
 INSERT INTO pets VALUES (5, 'Iggy', '2010-11-30', 3, 4);
 INSERT INTO pets VALUES (6, 'George', '2010-01-20', 4, 5);
-INSERT INTO pets VALUES (7, 'Samantha', '2012-09-04', 1, 6);
+INSERT INTO pets VALUES (7, 'Samantha', '2012-09-04', 7, 6);
 INSERT INTO pets VALUES (8, 'Max', '2012-09-04', 1, 6);
 INSERT INTO pets VALUES (9, 'Lucky', '2011-08-06', 5, 7);
 INSERT INTO pets VALUES (10, 'Mulligan', '2007-02-24', 2, 8);

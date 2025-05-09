@@ -4,6 +4,8 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using Steeltoe.Common.Discovery;
 using Steeltoe.Discovery;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 
 namespace PetClinic.PaymentService;
 
@@ -11,6 +13,8 @@ public interface IPetClinicContext
 {
     HttpClient HttpClient { get; }
     IDynamoDBContext DynamoDbContext { get; }
+    IAmazonSQS SqsClient { get; }
+    ILogger<PetClinicContext> Logger { get; }
     public Task InitializeDB();
 
     public Task CleanDB();
@@ -20,10 +24,12 @@ public class PetClinicContext(
     IDynamoDBContext dynamoDbContext,
     IAmazonDynamoDB amazonDynamoDB,
     IDiscoveryClient client,
+    IAmazonSQS sqsClient,
     ILogger<PetClinicContext> logger) : IPetClinicContext
 {
     public HttpClient HttpClient { get; } = new HttpClient(new DiscoveryHttpClientHandler(client), false);
     public IDynamoDBContext DynamoDbContext { get; set; } = dynamoDbContext;
+    public IAmazonSQS SqsClient { get; set; } = sqsClient;
     public ILogger<PetClinicContext> Logger { get; } = logger;
     public IAmazonDynamoDB AmazonDynamoDBClient { get; } = amazonDynamoDB;
 
@@ -37,7 +43,7 @@ public class PetClinicContext(
             await AmazonDynamoDBClient.DescribeTableAsync(new DescribeTableRequest { TableName = "PetClinicPayment" });
             Logger.LogInformation("DynamoDB Table exists");
         }
-        catch (ResourceNotFoundException ex)
+        catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException ex)
         {
             string pattern = @"Requested resource not found: Table:\s*(\w+)";
 
@@ -53,11 +59,6 @@ public class PetClinicContext(
                 var response = await this.AmazonDynamoDBClient.CreateTableAsync(new CreateTableRequest
                 {
                     TableName = tableName,
-                    ProvisionedThroughput = new()
-                    {
-                        ReadCapacityUnits = 5,
-                        WriteCapacityUnits = 5
-                    },
                     KeySchema =
                     [
                         new() {
@@ -71,7 +72,8 @@ public class PetClinicContext(
                             AttributeName = "id",
                             AttributeType = ScalarAttributeType.S
                         }
-                    ]
+                    ],
+                    BillingMode = BillingMode.PAY_PER_REQUEST
                 });
 
                 //check if the table is active
@@ -121,7 +123,7 @@ public class PetClinicContext(
                         await AmazonDynamoDBClient.DescribeTableAsync(new DescribeTableRequest { TableName = "PetClinicPayment" });
                     }
                 }
-                catch (ResourceNotFoundException)
+                catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException)
                 {
                     await InitializeDB();
                 }
