@@ -197,10 +197,8 @@ The framework supports running tests in AWS Lambda and monitoring test results t
 2. **Configure Lambda Function**
    - Set the Lambda function name in `deploy_lambda.sh`
    - Ensure the Lambda has appropriate IAM permissions for:
-     - CloudWatch Logs
-     - CloudWatch Metrics
-     - X-Ray
-     - SNS (for alarms)
+     - Read Cloudwatch Metrics / Traces / Logs
+     - Publish Cloudwatch Metrics
 
 ### Monitoring Setup
 

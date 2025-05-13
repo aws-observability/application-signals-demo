@@ -4,7 +4,10 @@ import os
 import boto3
 from datetime import datetime, timezone
 
+# Change this to your SNS Topic ARN
 ActionSNS = 'FILL IN YOUR SNS TOPIC ARN HERE'
+# Change this to your region
+AWS_REGION = 'us-east-1'
 
 def load_test_cases(json_file_path):
     """Load test case JSON file"""
@@ -139,7 +142,7 @@ def main():
     
     # Verify AWS credentials
     try:
-        session = boto3.Session()
+        session = boto3.Session(region_name=AWS_REGION)
         cloudwatch = session.client('cloudwatch')
         sts = session.client('sts')
         sts.get_caller_identity()

@@ -108,22 +108,6 @@ def execute_and_validate_command(response, validation_checks):
                     print(f"Expected: ✅ Found for {check.get('expected_value')}")
                 else:
                     print(f"Expected: ❌ Not Found for {check.get('expected_value')}")
-               
-
-        # elif check.get("check_type") == "field_exists":
-        #     field_name = check.get("field_name")
-        #     found = False
-            
-        #     for result in response.get("results", []):
-        #         for field in result:
-        #             if field.get("field") == field_name:
-        #                 found = True
-        #                 break
-        #         if found:
-        #             break
-            
-        #     print(f"Expected: field {field_name} exists")
-        #     print(f"Actual: {'✅ Found' if found else '❌ Not Found'}")
             
 def run_test_case(test_case):
     print(f"--- Execute Test Case: {test_case.get('test_case_id', 'N/A')} ---")

@@ -4,7 +4,10 @@ import os
 import boto3
 from datetime import datetime, timezone
 
+# Change this to your SNS Topic ARN
 ActionSNS = 'FILL IN YOUR SNS TOPIC ARN HERE'
+# Change this to your region
+AWS_REGION = 'us-east-1'
 
 def load_test_cases(json_file_path):
     """Load test case JSON file"""
@@ -21,7 +24,7 @@ def sanitize_name(name):
 
 def create_log_alarm(test_case):
     """Create CloudWatch alarm for log test case"""
-    session = boto3.Session()
+    session = boto3.Session(region_name=AWS_REGION)
     cloudwatch = session.client('cloudwatch')
     
     # Build alarm name
@@ -66,7 +69,7 @@ def create_log_alarm(test_case):
 
 def create_metric_alarm(test_case):
     """Create CloudWatch alarm for metric test case"""
-    session = boto3.Session()
+    session = boto3.Session(region_name=AWS_REGION)
     cloudwatch = session.client('cloudwatch')
     
     # Build alarm name
@@ -111,7 +114,7 @@ def create_metric_alarm(test_case):
 
 def create_trace_alarm(test_case):
     """Create CloudWatch alarm for trace test case"""
-    session = boto3.Session()
+    session = boto3.Session(region_name=AWS_REGION)
     cloudwatch = session.client('cloudwatch')
     
     # Build alarm name

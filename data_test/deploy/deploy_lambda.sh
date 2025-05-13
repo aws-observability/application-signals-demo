@@ -3,10 +3,12 @@
 # Run from root directory of data_test, not from deploy directory
 
 # Set variables
-LAMBDA_FUNCTION_NAME="FILL IN YOUR LAMBDA FUNCTION NAME HERE"
+# Change this to your lambda function name
+LAMBDA_FUNCTION_NAME="APM_Demo_Test_Runner"
 LAMBDA_DIR="../lambda"
 DEPLOY_DIR="deploy_package"
 ZIP_FILE="lambda_deployment.zip"
+AWS_REGION="us-east-1"
 
 # Parse command line arguments
 while getopts "z:" opt; do
@@ -44,7 +46,7 @@ then
     aws lambda update-function-code \
         --function-name $LAMBDA_FUNCTION_NAME \
         --zip-file fileb://$ZIP_FILE \
-        --region us-east-1 | cat
+        --region $AWS_REGION | cat
 fi
 
 # Ask if you want to clean up temporary files
