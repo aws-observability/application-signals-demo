@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 设置默认 region
+# Set default region
 REGION=${1:-us-east-1}
 
 # Delete all alarms in the region starts with APMDemoTest

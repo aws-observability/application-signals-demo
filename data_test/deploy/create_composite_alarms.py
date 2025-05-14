@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 def parse_args():
     parser = argparse.ArgumentParser(description='Create CloudWatch composite alarms for test cases')
     parser.add_argument('--region', default='us-east-1', help='AWS region (default: us-east-1)')
-    parser.add_argument('--logs-file', default='../lambda/logs_test_cases.json', help='Path to logs test cases file (default: ../lambda/logs_test_cases.json)')
-    parser.add_argument('--metrics-file', default='../lambda/metrics_test_cases.json', help='Path to metrics test cases file (default: ../lambda/metrics_test_cases.json)')
-    parser.add_argument('--traces-file', default='../lambda/traces_test_cases.json', help='Path to traces test cases file (default: ../lambda/traces_test_cases.json)')
+    parser.add_argument('--logs-file', default='../test_cases/logs_test_cases.json', help='Path to logs test cases file (default: ../test_cases/logs_test_cases.json)')
+    parser.add_argument('--metrics-file', default='../test_cases/metrics_test_cases.json', help='Path to metrics test cases file (default: ../test_cases/metrics_test_cases.json)')
+    parser.add_argument('--traces-file', default='../test_cases/traces_test_cases.json', help='Path to traces test cases file (default: ../test_cases/traces_test_cases.json)')
     return parser.parse_args()
 
 def load_test_cases(json_file_path):
