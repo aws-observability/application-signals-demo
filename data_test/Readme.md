@@ -182,61 +182,69 @@ When adding new test cases:
 
 The framework supports running tests in AWS Lambda and monitoring test results through CloudWatch Alarms. The deployment process is managed through scripts in the `deploy` directory.
 
+### Directory Structure
+```
+data_test/
+├── deploy/
+│   ├── deploy_lambda.sh      # Deploy Lambda function
+│   ├── remove_lambda.sh      # Remove Lambda function
+│   ├── remove_alarms.sh      # Remove CloudWatch alarms
+│   ├── create_test_cases_alarms.py    # Create individual test alarms
+│   └── create_composite_alarms.py     # Create composite alarms
+├── test_cases/              # Test case JSON files
+└── lambda/                  # Lambda function code
+```
+
 ### Deployment Process
 
-1. **Prepare Lambda Package**
+1. **Deploy Lambda Function**
    ```bash
    # From the data_test directory
-   ./deploy/deploy_lambda.sh
+   ./deploy/deploy_lambda.sh [region]  # Example: ./deploy/deploy_lambda.sh ap-southeast-1
    ```
    This script will:
    - Create a deployment package with all necessary files
    - Optionally deploy to AWS Lambda
    - Clean up temporary files
 
-2. **Configure Lambda Function**
-   - Set the Lambda function name in `deploy_lambda.sh`
-   - Ensure the Lambda has appropriate IAM permissions for:
-     - Read Cloudwatch Metrics / Traces / Logs
-     - Publish Cloudwatch Metrics
+2. **Create CloudWatch Alarms**
+   ```bash
+   # Navigate to deploy directory
+   cd deploy
 
-### Monitoring Setup
+   # Create individual test alarms
+   python3 create_test_cases_alarms.py --region [region] \
+     --logs-file [path_to_logs_file] \
+     --metrics-file [path_to_metrics_file] \
+     --traces-file [path_to_traces_file]
+   
+   # Create composite alarms
+   python3 create_composite_alarms.py --region [region] \
+     --logs-file [path_to_logs_file] \
+     --metrics-file [path_to_metrics_file] \
+     --traces-file [path_to_traces_file]
+   ```
 
-The framework provides two scripts for setting up monitoring:
+   Note: The alarm creation scripts should be run from the `deploy` directory. Default paths for test case files are relative to the `deploy` directory:
+   - Default logs file: `../test_cases/logs_test_cases.json`
+   - Default metrics file: `../test_cases/metrics_test_cases.json`
+   - Default traces file: `../test_cases/traces_test_cases.json`
 
-1. **Individual Test Alarms** (`create_test_cases_alarms.py`)
-   - Creates CloudWatch Alarms for each test case
-   - Monitors test results in the `APMTestResults` namespace
-   - Alarms trigger when tests fail (value < 0.5)
-   - Sends notifications to configured SNS topic
-
-2. **Composite Alarms** (`create_composite_alarms.py`)
-   - Creates hierarchical alarm structure:
-     - Individual test case alarms
-     - Scenario-level composite alarms
-     - Root-level composite alarm
-   - Provides consolidated monitoring view
-   - Reduces alert noise through aggregation
+   Example:
+   ```bash
+   # Using default paths
+   python3 create_test_cases_alarms.py --region us-east-1
+   
+   # Using custom paths
+   python3 create_test_cases_alarms.py --region us-east-1 \
+     --logs-file ../test_cases/logs_test_cases.json \
+     --metrics-file ../test_cases/metrics_test_cases.json \
+     --traces-file ../test_cases/traces_test_cases.json
+   ```
 
 ### Alarm Configuration
 
-1. **Update SNS Topic**
-   - Set your SNS topic ARN in both alarm scripts:
-     ```python
-     ActionSNS = 'FILL IN YOUR SNS TOPIC ARN HERE'
-     ```
-
-2. **Run Alarm Creation**
-   ```bash
-   # Create individual test alarms
-   python3 deploy/create_test_cases_alarms.py
-
-   # Create composite alarms
-   python3 deploy/create_composite_alarms.py
-   ```
-
-### Alarm Structure
-
+#### Alarm Structure
 ```
 Root Composite Alarm
 ├── Scenario 1 Composite Alarm
@@ -250,8 +258,7 @@ Root Composite Alarm
 └── ...
 ```
 
-### Test Results Metrics
-
+#### Test Results Metrics
 - **Namespace**: `APMTestResults`
 - **Metric Name**: `TestResult`
 - **Dimensions**:
@@ -262,53 +269,40 @@ Root Composite Alarm
   - 1.0: Test passed
   - 0.0: Test failed
 
-### Alarm Parameters
-
+#### Alarm Parameters
 - **Evaluation Period**: 30 minutes
 - **Data Points**: 4 (2 hours)
 - **Threshold**: 0.5
 - **Operator**: LessThanThreshold
 - **Missing Data**: treated as missing
 
-## Cleanup and Removal
+### Cleanup Process
 
-### Removing Alarms
+1. **Remove CloudWatch Alarms**
+   ```bash
+   # From the data_test directory
+   ./deploy/remove_alarms.sh [region]  # Example: ./deploy/remove_alarms.sh ap-southeast-1
+   ```
+   This script will:
+   - Find all alarms starting with "APMDemoTest"
+   - Display the list of alarms to be deleted
+   - Delete these alarms
 
-To remove all test-related CloudWatch alarms, use the `deploy/remove_alarms.sh` script:
+2. **Remove Lambda Function**
+   ```bash
+   # From the data_test directory
+   ./deploy/remove_lambda.sh [region]  # Example: ./deploy/remove_lambda.sh ap-southeast-1
+   ```
+   This script will:
+   - Ask for confirmation before deletion
+   - Delete the Lambda function named "APM_Demo_Test_Runner"
+   - Provide feedback on the deletion status
 
-```bash
-# Run from the data_test directory
-./deploy/remove_alarms.sh
-```
+3. **Clean Up Temporary Files**
+   ```bash
+   # From the data_test directory
+   rm -rf deploy/*.zip
+   rm -rf deploy/temp_*
+   ```
 
-This script will:
-- Find all alarms starting with "APMDemoTest"
-- Display the list of alarms to be deleted
-- Delete these alarms
-
-### Removing Lambda Functions
-
-To remove the deployed Lambda function, use the `deploy/remove_lambda.sh` script:
-
-```bash
-# Run from the data_test directory
-./deploy/remove_lambda.sh
-```
-
-This script will:
-- Ask for confirmation before deletion
-- Delete the Lambda function named "APM_Demo_Test_Runner"
-- Provide feedback on the deletion status
-
-Note: Please ensure all related tests and monitoring have been stopped before deleting files and functions.
-
-
-### Removing Deployment Files (If you forgot to remove after deploy lambda script)
-
-To clean up temporary files created during deployment:
-
-```bash
-# Run from the data_test directory
-rm -rf deploy/*.zip
-rm -rf deploy/temp_*
-```
+Note: All scripts support specifying AWS region as a parameter. If not specified, us-east-1 will be used as the default region.

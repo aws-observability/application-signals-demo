@@ -2,10 +2,16 @@
 import json
 import os
 import boto3
+import argparse
 from datetime import datetime, timezone
 
-# Change this to your region
-AWS_REGION = 'us-east-1'
+def parse_args():
+    parser = argparse.ArgumentParser(description='Create CloudWatch composite alarms for test cases')
+    parser.add_argument('--region', default='us-east-1', help='AWS region (default: us-east-1)')
+    parser.add_argument('--logs-file', default='../lambda/logs_test_cases.json', help='Path to logs test cases file (default: ../lambda/logs_test_cases.json)')
+    parser.add_argument('--metrics-file', default='../lambda/metrics_test_cases.json', help='Path to metrics test cases file (default: ../lambda/metrics_test_cases.json)')
+    parser.add_argument('--traces-file', default='../lambda/traces_test_cases.json', help='Path to traces test cases file (default: ../lambda/traces_test_cases.json)')
+    return parser.parse_args()
 
 def load_test_cases(json_file_path):
     """Load test case JSON file"""
@@ -108,17 +114,18 @@ def create_root_composite_alarm(scenario_alarm_names, cloudwatch):
         print(f"❌ Failed to create root composite alarm {alarm_name}: {str(e)}")
 
 def main():
+    args = parse_args()
+    region = args.region
+    
     # Get current script directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # Build lambda directory path
-    lambda_dir = os.path.join(os.path.dirname(current_dir), 'lambda')
+    # Build file paths
+    logs_file = os.path.join(current_dir, args.logs_file)
+    metrics_file = os.path.join(current_dir, args.metrics_file)
+    traces_file = os.path.join(current_dir, args.traces_file)
     
     # Load all test cases
-    logs_file = os.path.join(lambda_dir, 'logs_test_cases.json')
-    metrics_file = os.path.join(lambda_dir, 'metrics_test_cases.json')
-    traces_file = os.path.join(lambda_dir, 'traces_test_cases.json')
-    
     logs_data = load_test_cases(logs_file)
     metrics_data = load_test_cases(metrics_file)
     traces_data = load_test_cases(traces_file)
@@ -140,11 +147,11 @@ def main():
     
     # Verify AWS credentials
     try:
-        session = boto3.Session(region_name=AWS_REGION)
+        session = boto3.Session(region_name=region)
         cloudwatch = session.client('cloudwatch')
         sts = session.client('sts')
         sts.get_caller_identity()
-        print("AWS credentials verified successfully")
+        print(f"AWS credentials verified successfully in region {region}")
     except Exception as e:
         print(f"Warning: AWS credentials verification failed: {str(e)}")
         return

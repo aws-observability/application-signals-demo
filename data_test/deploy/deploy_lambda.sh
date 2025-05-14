@@ -8,12 +8,13 @@ LAMBDA_FUNCTION_NAME="APM_Demo_Test_Runner"
 LAMBDA_DIR="../lambda"
 DEPLOY_DIR="deploy_package"
 ZIP_FILE="lambda_deployment.zip"
-AWS_REGION="us-east-1"
+AWS_REGION=${1:-us-east-1}
 
 # Parse command line arguments
-while getopts "z:" opt; do
+while getopts "z:r:" opt; do
   case $opt in
     z) ZIP_FILE="$OPTARG";;
+    r) AWS_REGION="$OPTARG";;
     \?) echo "invalid option: -$OPTARG" >&2; exit 1;;
   esac
 done
@@ -36,7 +37,7 @@ zip -r ../$ZIP_FILE .
 cd ..
 
 # Ask if you want to deploy to Lambda
-read -p "Do you want to deploy to Lambda? (y/n) " -n 1 -r
+read -p "Do you want to deploy to Lambda in region $AWS_REGION? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then

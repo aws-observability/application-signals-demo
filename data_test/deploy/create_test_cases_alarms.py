@@ -2,10 +2,16 @@
 import json
 import os
 import boto3
+import argparse
 from datetime import datetime, timezone
 
-# Change this to your region
-AWS_REGION = 'us-east-1'
+def parse_args():
+    parser = argparse.ArgumentParser(description='Create CloudWatch alarms for test cases')
+    parser.add_argument('--region', default='us-east-1', help='AWS region (default: us-east-1)')
+    parser.add_argument('--logs-file', default='../test_cases/logs_test_cases.json', help='Path to logs test cases file (default: ../test_cases/logs_test_cases.json)')
+    parser.add_argument('--metrics-file', default='../test_cases/metrics_test_cases.json', help='Path to metrics test cases file (default: ../test_cases/metrics_test_cases.json)')
+    parser.add_argument('--traces-file', default='../test_cases/traces_test_cases.json', help='Path to traces test cases file (default: ../test_cases/traces_test_cases.json)')
+    return parser.parse_args()
 
 def load_test_cases(json_file_path):
     """Load test case JSON file"""
@@ -20,9 +26,9 @@ def load_test_cases(json_file_path):
 def sanitize_name(name):
     return name.strip().replace(' ', '_')
 
-def create_log_alarm(test_case):
+def create_log_alarm(test_case, region):
     """Create CloudWatch alarm for log test case"""
-    session = boto3.Session(region_name=AWS_REGION)
+    session = boto3.Session(region_name=region)
     cloudwatch = session.client('cloudwatch')
     
     # Build alarm name
@@ -65,9 +71,9 @@ def create_log_alarm(test_case):
     except Exception as e:
         print(f"❌ Failed to create log alarm {alarm_name}: {str(e)}")
 
-def create_metric_alarm(test_case):
+def create_metric_alarm(test_case, region):
     """Create CloudWatch alarm for metric test case"""
-    session = boto3.Session(region_name=AWS_REGION)
+    session = boto3.Session(region_name=region)
     cloudwatch = session.client('cloudwatch')
     
     # Build alarm name
@@ -110,9 +116,9 @@ def create_metric_alarm(test_case):
     except Exception as e:
         print(f"❌ Failed to create metric alarm {alarm_name}: {str(e)}")
 
-def create_trace_alarm(test_case):
+def create_trace_alarm(test_case, region):
     """Create CloudWatch alarm for trace test case"""
-    session = boto3.Session(region_name=AWS_REGION)
+    session = boto3.Session(region_name=region)
     cloudwatch = session.client('cloudwatch')
     
     # Build alarm name
@@ -156,17 +162,18 @@ def create_trace_alarm(test_case):
         print(f"❌ Failed to create trace alarm {alarm_name}: {str(e)}")
 
 def main():
+    args = parse_args()
+    region = args.region
+    
     # Get current script directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # Build lambda directory path
-    lambda_dir = os.path.join(os.path.dirname(current_dir), 'lambda')
+    # Build file paths
+    logs_file = os.path.join(current_dir, args.logs_file)
+    metrics_file = os.path.join(current_dir, args.metrics_file)
+    traces_file = os.path.join(current_dir, args.traces_file)
     
     # Load all test cases
-    logs_file = os.path.join(lambda_dir, 'logs_test_cases.json')
-    metrics_file = os.path.join(lambda_dir, 'metrics_test_cases.json')
-    traces_file = os.path.join(lambda_dir, 'traces_test_cases.json')
-    
     logs_data = load_test_cases(logs_file)
     metrics_data = load_test_cases(metrics_file)
     traces_data = load_test_cases(traces_file)
@@ -185,9 +192,9 @@ def main():
     
     # Verify AWS credentials
     try:
-        sts = boto3.client('sts')
+        sts = boto3.client('sts', region_name=region)
         sts.get_caller_identity()
-        print("AWS credentials verified successfully")
+        print(f"AWS credentials verified successfully in region {region}")
     except Exception as e:
         print(f"Warning: AWS credentials verification failed: {str(e)}")
         return
@@ -198,17 +205,17 @@ def main():
     # Create log alarms
     print("\nCreating log alarms...")
     for test_case in log_test_cases:
-        create_log_alarm(test_case)
+        create_log_alarm(test_case, region)
     
     # Create metric alarms
     print("\nCreating metric alarms...")
     for test_case in metric_test_cases:
-        create_metric_alarm(test_case)
+        create_metric_alarm(test_case, region)
     
     # Create trace alarms
     print("\nCreating trace alarms...")
     for test_case in trace_test_cases:
-        create_trace_alarm(test_case)
+        create_trace_alarm(test_case, region)
     
     print("\nAll alarms created successfully")
 
