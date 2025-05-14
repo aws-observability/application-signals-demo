@@ -4,8 +4,6 @@ import os
 import boto3
 from datetime import datetime, timezone
 
-# Change this to your SNS Topic ARN
-ActionSNS = 'FILL IN YOUR SNS TOPIC ARN HERE'
 # Change this to your region
 AWS_REGION = 'us-east-1'
 
@@ -40,7 +38,7 @@ def create_log_alarm(test_case):
             AlarmDescription=alarm_description,
             ActionsEnabled=True,
             OKActions=[],
-            AlarmActions=[ActionSNS],
+            AlarmActions=[],
             InsufficientDataActions=[],
             MetricName='TestResult',
             Namespace='APMTestResults',
@@ -85,7 +83,7 @@ def create_metric_alarm(test_case):
             AlarmDescription=alarm_description,
             ActionsEnabled=True,
             OKActions=[],
-            AlarmActions=[ActionSNS],
+            AlarmActions=[],
             InsufficientDataActions=[],
             MetricName='TestResult',
             Namespace='APMTestResults',
@@ -130,7 +128,7 @@ def create_trace_alarm(test_case):
             AlarmDescription=alarm_description,
             ActionsEnabled=True,
             OKActions=[],
-            AlarmActions=[ActionSNS],
+            AlarmActions=[],
             InsufficientDataActions=[],
             MetricName='TestResult',
             Namespace='APMTestResults',

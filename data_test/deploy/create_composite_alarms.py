@@ -4,8 +4,6 @@ import os
 import boto3
 from datetime import datetime, timezone
 
-# Change this to your SNS Topic ARN
-ActionSNS = 'FILL IN YOUR SNS TOPIC ARN HERE'
 # Change this to your region
 AWS_REGION = 'us-east-1'
 
@@ -56,7 +54,7 @@ def create_scenario_composite_alarm(scenario, child_alarm_names, cloudwatch):
             AlarmDescription=alarm_description,
             ActionsEnabled=True,
             OKActions=[],
-            AlarmActions=[ActionSNS],
+            AlarmActions=[],
             InsufficientDataActions=[],
             AlarmRule=alarm_rule,
             Tags=[
@@ -90,7 +88,7 @@ def create_root_composite_alarm(scenario_alarm_names, cloudwatch):
             AlarmDescription=alarm_description,
             ActionsEnabled=True,
             OKActions=[],
-            AlarmActions=[ActionSNS],
+            AlarmActions=[],
             InsufficientDataActions=[],
             AlarmRule=alarm_rule,
             Tags=[

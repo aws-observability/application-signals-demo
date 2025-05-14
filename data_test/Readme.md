@@ -269,3 +269,46 @@ Root Composite Alarm
 - **Threshold**: 0.5
 - **Operator**: LessThanThreshold
 - **Missing Data**: treated as missing
+
+## Cleanup and Removal
+
+### Removing Alarms
+
+To remove all test-related CloudWatch alarms, use the `deploy/remove_alarms.sh` script:
+
+```bash
+# Run from the data_test directory
+./deploy/remove_alarms.sh
+```
+
+This script will:
+- Find all alarms starting with "APMDemoTest"
+- Display the list of alarms to be deleted
+- Delete these alarms
+
+### Removing Lambda Functions
+
+To remove the deployed Lambda function, use the `deploy/remove_lambda.sh` script:
+
+```bash
+# Run from the data_test directory
+./deploy/remove_lambda.sh
+```
+
+This script will:
+- Ask for confirmation before deletion
+- Delete the Lambda function named "APM_Demo_Test_Runner"
+- Provide feedback on the deletion status
+
+Note: Please ensure all related tests and monitoring have been stopped before deleting files and functions.
+
+
+### Removing Deployment Files (If you forgot to remove after deploy lambda script)
+
+To clean up temporary files created during deployment:
+
+```bash
+# Run from the data_test directory
+rm -rf deploy/*.zip
+rm -rf deploy/temp_*
+```
