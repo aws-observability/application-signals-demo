@@ -1,0 +1,177 @@
+{
+  "trace_test_cases": [
+    {
+      "test_case_id": "lambda_integration_fault_trace_availability_check",
+      "description": "Verify there is fault trace in appointment-service-get trace segments (Scenario 1)",
+      "test_scenario": "Scenario 1",
+      "time_range": {
+        "relative_minutes": 30
+      },
+      "filter_expression": "service(id(name: \"appointment-service-get\")) { fault }",
+      "validation_checks": [
+        {
+          "check_type": "count",
+          "expected_count": 1
+        },
+        {
+          "check_type": "metadata_check",
+          "metadata_key": "owner.id"
+        }
+      ]
+    },
+    {
+      "test_case_id": "lambda_integration_exception_message_trace_availability_check",
+      "description": "Validate Lambda Integration Exception Message (Scenario 1)",
+      "test_scenario": "Scenario 1",
+      "time_range": {
+        "relative_minutes": 30
+      },
+      "filter_expression": "((service(id(name:\"appointment-service-gateway/prod\", type:\"AWS::ApiGateway::Stage\"))) AND (service(id(name:\"appointment-service-get\", type:\"AWS::Lambda\"))) AND (service(id(name:\"appointment-service-get\", type:\"AWS::Lambda::Function\", account.id:\"140023401067\")))) AND ((service(id(name:\"appointment-service-get\"))) AND (Annotation[aws.local.environment] = \"lambda:default\")) AND (http.status != 200)",
+      "validation_checks": [
+        {
+          "check_type": "count",
+          "expected_count": 1,
+          "comparison_operator": "GreaterThanOrEqualToThreshold"
+        },
+        {
+          "check_type": "exception_message",
+          "expected": "Fail to parse the request. Cause: NullPointerException"
+        }
+      ],
+      "notes": "Corresponds to PDF scenario 1. Requires BatchGetTraces. Check how Lambda Integration Exception Message is represented."
+    },
+    {
+      "test_case_id": "postgresql_query_trace_availability_check",
+      "description": "Verify there is a trace to check postgresql query (Scenario 2)",
+      "test_scenario": "Scenario 2",
+      "time_range": {
+        "relative_minutes": 30
+      },
+      "filter_expression": "(service(id(name: \"postgresql\" , type: \"Database::SQL\" ))) AND ((service(id(name: \"billing-service-python\"  ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\"))",
+      "validation_checks": [
+        {
+          "check_type": "count",
+          "expected_count": 1
+        },
+        {
+          "check_type": "trace_attribute_value_match",
+          "attribute_type": "aws.remote.operation",
+          "expected_value": "{'StringValue': 'SELECT'}"
+        },
+        {
+          "check_type": "trace_attribute_value_match",
+          "attribute_type": "aws.remote.service",
+          "expected_value": "{'StringValue': 'postgresql'}"
+        }
+      ]
+    },
+    {
+      "test_case_id": "transaction_search_trace_availability_check",
+      "description": "Verify there is a trace to check transaction search (Scenario 4)",
+      "test_scenario": "Scenario 4",
+      "time_range": {
+        "relative_minutes": 30
+      },
+      "filter_expression": "(((((service(id(name: \"payment-service-dotnet\" , type: \"remote\" ))) OR ((service(id(name: \"payment-service-dotnet\"  ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\"))) AND ((service(id(name: \"nginx-proxy\"  ))) AND (Annotation[aws.local.environment] = \"generic:default\"))) AND ((service(id(name: \"pet-clinic-frontend-java\"  ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\"))) AND ((service(id(name: \"https://sqs.us-east-1.amazonaws.com/140023401067/audit-jobs\" , type: \"AWS::SQS::Queue\" ))) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))) AND (service(id(name: \"https://sqs.us-east-1.amazonaws.com/140023401067/audit-jobs\" , type: \"AWS::SQS::Queue\" ))) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))))) AND (http.status != 200)",
+      "validation_checks": [
+        {
+          "check_type": "count",
+          "expected_count": 1
+        },
+        {
+          "check_type": "metadata_check",
+          "metadata_key": "owner.id"
+        },
+        {
+          "check_type": "metadata_check",
+          "metadata_key": "order.id"
+        }
+      ]
+    },
+    {
+      "test_case_id": "dynamodb_throttling_exception_trace_availability_check",
+      "description": "Validate DynamoDB throttling exception (Scenario 6)",
+      "test_scenario": "Scenario 6",
+      "time_range": {
+        "relative_minutes": 180
+      },
+      "filter_expression": "service(id(name: \"visits-service-java\")) AND (http.method = \"POST\") AND (Annotation[aws:span.kind] = \"SERVER\") AND (http.status = 500)",
+      "validation_checks": [
+        {
+          "check_type": "count",
+          "expected_count": 1,
+          "comparison_operator": "GreaterThanOrEqualToThreshold"
+        },
+        {
+          "check_type": "exception_message",
+          "expected": "The level of configured provisioned throughput for the table was exceeded."
+        }
+      ]
+    },
+    {
+      "test_case_id": "container_insights_integration_trace_availability_check",
+      "description": "Verify container metrics integration (Scenario 7)",
+      "test_scenario": "Scenario 7",
+      "time_range": {
+        "relative_minutes": 30
+      },
+      "filter_expression": "((((service(id(name: \"pet-clinic-frontend-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND ((service(id(name: \"customers-service-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")))) AND (Annotation[aws.local.operation] = \"POST /api/customer/owners\" AND Annotation[aws.local.operation] = \"POST /api\" AND Annotation[aws.local.operation] = \"POST /owners\")",
+      "validation_checks": [  
+        {
+          "check_type": "count",
+          "expected_count": 1,
+          "comparison_operator": "GreaterThanOrEqualToThreshold"
+        },
+        {
+          "check_type": "metadata_check",
+          "metadata_key": "K8s.Pod"
+        }
+      ],
+      "notes": "Corresponds to PDF scenario 7"
+    },
+    {
+      "test_case_id": "sqs_errors_dependency_trace_availability_check",
+      "description": "Validate SQS 4xx errors (Scenario 8)",
+      "test_scenario": "Scenario 8",
+      "time_range": {
+        "relative_minutes": 30
+      },
+      "filter_expression": "((((service(id(name: \"pet-clinic-frontend-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND ((service(id(name: \"customers-service-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))) AND (service(id(name: \"hsqldb\" , type: \"Database::SQL\" ))))) AND (Annotation[span.name] = \"SQS.PurgeQueue\")",
+      "validation_checks": [
+        {
+          "check_type": "count",
+          "expected_count": 1,
+          "comparison_operator": "GreaterThanOrEqualToThreshold"
+        },
+        {
+          "check_type": "exception_message",
+          "expected": "Only one PurgeQueue operation on apm_test is allowed every 60 seconds."
+        }
+      ],
+      "cli_command_hint": "aws xray get-trace-summaries / aws xray batch-get-traces ...",
+      "notes": "Corresponds to PDF scenario 8. Requires BatchGetTraces. Check how SQS errors are represented (error flag vs exception, status code)."
+    },
+    {
+      "test_case_id": "rum_integration_errors_trace_availability_check",
+      "description": "Verify RUM error traces (Scenario 9)",
+      "test_scenario": "Scenario 9",
+      "time_range": {
+        "relative_minutes": 30
+      },
+      "filter_expression": "((service(id(name: \"pet-clinic-client\", type: \"client::RUM\"))) AND ((service(id(name: \"pet-clinic-frontend-java\")) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND ((service(id(name: \"visits-service-java\")) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND (http.status = 400))))",
+      "validation_checks": [  
+        {
+          "check_type": "count",
+          "expected_count": 1,
+          "comparison_operator": "GreaterThanOrEqualToThreshold"
+        },
+        {
+          "check_type": "metadata_check",
+          "metadata_key": "rum"
+        }
+      ],
+      "notes": "Corresponds to PDF scenario 9"
+    }
+  ]
+}
+

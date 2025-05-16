@@ -1,0 +1,371 @@
+{
+  "metric_test_cases": [
+    {
+      "test_case_id": "lambda_integration_SLO_metric_availability_check",
+      "description": "Verify SLO metric availability for appointment service availability SLO (Scenario 1)",
+      "test_scenario": "Scenario 1",
+      "metric_namespace": "AWS/ApplicationSignals",
+      "metric_name": "AttainmentRate",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "SloName", "Value": "appointment service availability"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 1"
+    },
+    {
+      "test_case_id": "lambda_integration_service_operation_metric_availability_check",
+      "description": "Verify SLO metric availability for appointment service availability SLO (Scenario 1)",
+      "test_scenario": "Scenario 1",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Fault",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "Operation", "Value": "appointment-service-get/FunctionHandler"},
+        {"Name": "Environment", "Value": "lambda:default"},
+        {"Name": "Service", "Value": "appointment-service-get"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 1"
+    },
+    {
+      "test_case_id": "database_insight_service_metric_availability_check",
+      "description": "Verify Service Latency metric availability for database insights dependency (Scenario 2)",
+      "test_scenario": "Scenario 2",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "p99",
+      "dimensions": [
+        {"Name": "Operation", "Value": "GET ^billings/$"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "billing-service-python"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 2"
+    },
+    {
+      "test_case_id": "database_insight_dependency_metric_availability_check",
+      "description": "Verify Dependency Latency metric availability for database insights dependency (Scenario 2)",
+      "test_scenario": "Scenario 2",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "p99",
+      "dimensions": [
+        {"Name": "Operation", "Value": "GET ^billings/$"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "billing-service-python"},
+        {"Name": "RemoteOperation", "Value": "SELECT"},
+        {"Name": "RemoteService", "Value": "postgresql"},
+        {"Name": "RemoteResourceType", "Value": "DB::Connection"},
+        {"Name": "RemoteResourceIdentifier", "Value": "postgres|petclinic-python.cluster-c2v0qqeiude3.us-east-1.rds.amazonaws.com|5432"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 2"
+    },
+    {
+      "test_case_id": "gen_ai_integration_model_titan_text_express_dependency_metric_availability_check",
+      "description": "Verify Service Latency metric availability for Gen AI Integration model (Scenario 3)",
+      "test_scenario": "Scenario 3",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "p99",
+      "dimensions": [
+        {"Name": "RemoteOperation", "Value": "InvokeModel"},
+        {"Name": "RemoteService", "Value": "AWS::BedrockRuntime"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "customers-service-java"},
+        {"Name": "RemoteResourceType", "Value": "AWS::Bedrock::Model"},
+        {"Name": "RemoteResourceIdentifier", "Value": "amazon.titan-text-express-v1"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 3"
+    },
+    {
+      "test_case_id": "gen_ai_integration_model_claude_v2_dependency_metric_availability_check",
+      "description": "Verify Service Latency metric availability for Gen AI Integration model (Scenario 3)",
+      "test_scenario": "Scenario 3",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "p99",
+      "dimensions": [
+        {"Name": "RemoteOperation", "Value": "InvokeModel"},
+        {"Name": "RemoteService", "Value": "AWS::BedrockRuntime"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "customers-service-java"},
+        {"Name": "RemoteResourceType", "Value": "AWS::Bedrock::Model"},
+        {"Name": "RemoteResourceIdentifier", "Value": "anthropic.claude-v2:1"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 3"
+    },
+    {
+      "test_case_id": "transaction_search_fault_service_metric_availability_check",
+      "description": "Verify Fault metric availability for Transaction Search (Scenario 4)",
+      "test_scenario": "Scenario 4",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Fault",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "Operation", "Value": "POST /owners/{ownerId:int}/pets/{petId:int}/payments/"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "payment-service-dotnet"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 4"
+    },
+    {
+      "test_case_id": "transaction_search_error_service_metric_availability_check",
+      "description": "Verify Error metric availability for Transaction Search (Scenario 4)",
+      "test_scenario": "Scenario 4",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Error",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "Operation", "Value": "POST /owners/{ownerId:int}/pets/{petId:int}/payments/"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "payment-service-dotnet"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 4"
+    },
+    {
+      "test_case_id": "transaction_search_request_metric_availability_check",
+      "description": "Verify Request metric availability for Transaction Search (Scenario 4)",
+      "test_scenario": "Scenario 4",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "SampleCount",
+      "dimensions": [
+        {"Name": "Operation", "Value": "GET /owners/{ownerId:int}/pets/{petId:int}/payments"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "payment-service-dotnet"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 4"
+    },
+    {
+      "test_case_id": "dynamodb_throttling_fault_service_metric_availability_check",
+      "description": "Verify Fault metric for visits-service-java during potential throttling (Scenario 6)",
+      "test_scenario": "Scenario 6",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Fault",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "Operation", "Value": "POST /owners/{ownerId}/pets/{petId}/visits"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "visits-service-java"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 6"
+    },
+    {
+      "test_case_id": "dynamodb_throttling_requests_service_metric_availability_check",
+      "description": "Verify Requests metric for visits-service-java during potential throttling (Scenario 6)",
+      "test_scenario": "Scenario 6",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "SampleCount",
+      "dimensions": [
+        {"Name": "Operation", "Value": "POST /owners/{ownerId}/pets/{petId}/visits"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "visits-service-java"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {  
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0  
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 6"
+    },
+    {
+      "test_case_id": "container_insights_integration_slo_metric_availability_check",
+      "description": "Verify container metrics integration (Scenario 7)",
+      "test_scenario": "Scenario 7",
+      "metric_namespace": "AWS/ApplicationSignals",
+      "metric_name": "AttainmentRate",
+      "statistic": "Average",
+      "dimensions": [
+        {"Name": "SloName", "Value": "Latency for Registering an Owner"}
+      ],
+      "evaluation_period_minutes": 60,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanThreshold",
+          "threshold_value": 0
+        }
+      ]
+      },
+      "cli_command_hint": "aws cloudwatch get-metric-data ...",
+      "notes": "Corresponds to PDF scenario 7"
+    },
+    {
+      "test_case_id": "container_insights_integration_latency_service_metric_availability_check",
+      "description": "Verify Service latency metric availability for container insights (Scenario 7)",
+      "test_scenario": "Scenario 7",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "p99",
+      "dimensions": [
+        {"Name": "Service", "Value": "pet-clinic-frontend-java"},
+        {"Name": "Operation", "Value": "POST /api/customer/owners"},
+        {"Name": "Environment", "Value": "eks:demo/default"}
+      ],
+      "evaluation_period_minutes": 60,
+      "threshold": {
+        "comparison_operator": [{ 
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 7"
+    },
+    {
+      "test_case_id": "sqs_dependency_errors_metric_availability_check",
+      "description": "Verify SQS error metrics (Scenario 8)",
+      "test_scenario": "Scenario 8",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Error",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "RemoteOperation", "Value": "PurgeQueue"},
+        {"Name": "RemoteService", "Value": "AWS::SQS"},
+        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Service", "Value": "customers-service-java"},
+        {"Name": "Operation", "Value": "POST /owners/{ownerId}/pets"},
+        {"Name": "RemoteResourceType", "Value": "AWS::SQS::Queue"},
+        {"Name": "RemoteResourceIdentifier", "Value": "apm_test"}
+      ],
+      "evaluation_period_minutes": 60,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 8"
+    },
+    {
+      "test_case_id": "rum_integration_errors_metric_availability_check",
+      "description": "Verify RUM error metrics (Scenario 9)",
+      "test_scenario": "Scenario 9",
+      "metric_namespace": "AWS/RUM",
+      "metric_name": "Http4xxCount",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "application_name", "Value": "pet-clinic-client"},
+        {"Name": "PageId", "Value": "/owners/details/{ownerId}"}
+      ],
+      "evaluation_period_minutes": 60,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 9"
+    },
+    {
+      "test_case_id": "monitoring_account_source_audit_service_latency_metric_availability_check",
+      "description": "Verify Monitoring Account Source Audit Service latency metric availability (Scenario 11)",
+      "test_scenario": "Scenario 11",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "p99",
+      "dimensions": [
+        {"Name": "Operation", "Value": "audit-service/LambdaService"},
+        {"Name": "Environment", "Value": "lambda:default"},
+        {"Name": "Service", "Value": "audit-service"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 11"
+    },
+    {
+      "test_case_id": "exclude_time_windows_metric_availability_check",
+      "description": "Verify SLO Exclude Time Windows (Scenario 12)",
+      "test_scenario": "Scenario 12",
+      "metric_namespace": "AWS/ApplicationSignals",
+      "metric_name": "BreachedCount",
+      "statistic": "Sum",
+      "dimensions": [
+        {"Name": "SloName", "Value": "Availability for Retrieving Payments"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 12"
+    }
+  ]
+}
+
