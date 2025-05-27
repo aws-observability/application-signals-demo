@@ -26,6 +26,7 @@ import javax.validation.constraints.Min;
 
 import io.micrometer.core.annotation.Timed;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +81,13 @@ class VisitResource {
         log.info("New visit date is {} days from today", durationInDays);
         if (durationInDays > 30) {
             String message = "Visit cannot be scheduled for a date more than 30 days in the future.";
-            throw new InvalidDateException(message);
+            InvalidDateException exception = new InvalidDateException(message);
+
+            // Record the exception in the current span
+            Span currentSpan = Span.current();
+            currentSpan.recordException(exception);
+            currentSpan.setStatus(StatusCode.ERROR, message);
+            throw exception;
         }
 
         log.info("Reaching Post api: owners/*/pets/{petId}/visits for petId: {}", petId);
