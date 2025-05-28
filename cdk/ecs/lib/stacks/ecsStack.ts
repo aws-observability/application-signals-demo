@@ -365,7 +365,7 @@ export class EcsClusterStack extends Stack {
 
         // Add Container to Task Definition
         taskDefinition.addContainer(`${TRAFFIC_GENERATOR}-container`, {
-            image: ContainerImage.fromRegistry(`public.ecr.aws/u8q5x3l1/traffic-generator`),
+            image: ContainerImage.fromRegistry(`${this.ecrImagePrefix}/traffic-generator`),
             cpu: 256,
             memoryLimitMiB: 512,
             essential: true,
