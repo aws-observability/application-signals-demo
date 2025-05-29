@@ -27,6 +27,7 @@ import javax.validation.constraints.Min;
 import io.micrometer.core.annotation.Timed;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,13 @@ class VisitResource {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
 
+        log.info("Reaching Post api: owners/*/pets/{petId}/visits for petId: {}", petId);
+        validateDate(visit);
+        return saveVisit(visit, petId);
+    }
+
+    @WithSpan("validateDate")
+    private void validateDate(Visit visit) {
         Date currentDate = new Date();
         Date visitDate = visit.getDate();
         long durationInDays = (visitDate.getTime() - currentDate.getTime())/1000/3600/24;
@@ -87,10 +95,13 @@ class VisitResource {
             Span currentSpan = Span.current();
             currentSpan.recordException(exception);
             currentSpan.setStatus(StatusCode.ERROR, message);
+
             throw exception;
         }
+    }
 
-        log.info("Reaching Post api: owners/*/pets/{petId}/visits for petId: {}", petId);
+    @WithSpan("saveVisit")
+    private Visit saveVisit(Visit visit, int petId) {
         ddbService.putItems();
         visit.setPetId(petId);
         // petId 9 is used for testing high traffic
