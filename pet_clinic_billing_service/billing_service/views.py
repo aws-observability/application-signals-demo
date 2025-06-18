@@ -3,22 +3,61 @@ from rest_framework.response import Response
 from django.db.models import Subquery
 from .models import Billing,CheckList
 from .serializers import BillingSerializer
+from opentelemetry import trace
 import logging
 import boto3
 import datetime
 import os
 import json
+import random
+import time
 
 logger = logging.getLogger(__name__)
 # Create your views here.
 
 class BillingViewSet(viewsets.ViewSet):
     def list(self, request):
-        invalid_names = CheckList.objects.values('invalid_name').distinct()[:100000]
-        queryset = Billing.objects.exclude(
+        span = trace.get_current_span()
+
+        # Read all three limits from environment (or use defaults)
+        small_limit = int(os.getenv("SMALL_NAME_LIMIT", 100))      # default 100
+        medium_limit = int(os.getenv("MEDIUM_NAME_LIMIT", 1_000))   # default 1k
+        large_limit = int(os.getenv("LARGE_NAME_LIMIT", 1_000_000))  # default 1M
+
+        # Pick with 1% → large, 10% → medium, otherwise → small
+        r = random.random()
+        if r < 0.01:
+            subquery_limit = large_limit
+        elif r < 0.11:
+            subquery_limit = medium_limit
+        else:
+            subquery_limit = small_limit
+
+        invalid_names = CheckList.objects.values('invalid_name').distinct()[:subquery_limit]
+
+        MAX_RESULTS_BOUND = int(os.getenv("MAX_BILLING_RESULTS", 10_000))
+        max_results = random.randint(int(MAX_RESULTS_BOUND/10), MAX_RESULTS_BOUND)
+        qs = Billing.objects.exclude(
             type_name__in=Subquery(invalid_names)
-        )
-        serializer = BillingSerializer(queryset, many=True)
+        )[:max_results]
+
+
+        # force the DB query and count rows
+        db_start = time.time()
+        # list(qs) actually hit the database
+        objs = list(qs)  
+        db_duration_ms = (time.time() - db_start) * 1_000
+        record_count = len(objs)
+        span.set_attribute("db.subquery_limit", subquery_limit)
+        span.set_attribute("db.record_count", record_count)
+        span.set_attribute("db.fetch_time_ms", db_duration_ms)
+
+        # measure serialization
+        ser_start = time.time()
+        serializer = BillingSerializer(objs, many=True)
+        ser_duration_ms = (time.time() - ser_start) * 1_000
+        span.set_attribute("serialization.time_ms", ser_duration_ms)
+
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None, owner_id=None, type=None, pet_id=None):
