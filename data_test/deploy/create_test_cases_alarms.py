@@ -55,8 +55,8 @@ def create_log_alarm(test_case, region):
                 {'Name': 'TestScenario', 'Value': test_case['test_scenario']}
             ],
             Period=1800,  # 30 minutes - matches test execution interval
-            EvaluationPeriods=4,  # 4 data points within 2 hours
-            DatapointsToAlarm=4,  # Alarm when all 4 data points trigger
+            EvaluationPeriods=8,  # 8 data points within 4 hours
+            DatapointsToAlarm=8,  # Alarm when all 8 data points trigger
             Threshold=0.5,  # Value is 0 when test fails, 1 when succeeds
             ComparisonOperator='LessThanThreshold',
             TreatMissingData='missing',
@@ -100,8 +100,8 @@ def create_metric_alarm(test_case, region):
                 {'Name': 'TestScenario', 'Value': test_case['test_scenario']}
             ],
             Period=1800,  # 30 minutes - matches test execution interval
-            EvaluationPeriods=4,  # 4 data points within 2 hours
-            DatapointsToAlarm=4,  # Alarm when all 4 data points trigger
+            EvaluationPeriods=8,  # 8 data points within 4 hours
+            DatapointsToAlarm=8,  # Alarm when all 8 data points trigger
             Threshold=0.5,  # Value is 0 when test fails, 1 when succeeds
             ComparisonOperator='LessThanThreshold',
             TreatMissingData='missing',
@@ -145,8 +145,8 @@ def create_trace_alarm(test_case, region):
                 {'Name': 'TestScenario', 'Value': test_case['test_scenario']}
             ],
             Period=1800,  # 30 minutes - matches test execution interval
-            EvaluationPeriods=4,  # 4 data points within 2 hours
-            DatapointsToAlarm=4,  # Alarm when all 4 data points trigger
+            EvaluationPeriods=8,  # 8 data points within 4 hours
+            DatapointsToAlarm=8,  # Alarm when all 8 data points trigger
             Threshold=0.5,  # Value is 0 when test fails, 1 when succeeds
             ComparisonOperator='LessThanThreshold',
             TreatMissingData='missing',
