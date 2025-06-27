@@ -127,7 +127,7 @@ export class CloudWatchRumStack extends Stack {
         dimensionKeys: {
           'metadata.pageId': 'PageId',
         },
-        eventPattern: '{"event_type":["com.amazon.rum.http_event"],"metadata":{"pageId":["/welcome"]}}',
+        eventPattern: '{"event_type":["com.amazon.rum.http_event"],"metadata":{"pageId":["/welcome"]},"event_details":{"response":{"status":[{"numeric":[">=",400]}]}}}',
       },
       {
         name: 'WebVitalsLargestContentfulPaint',
