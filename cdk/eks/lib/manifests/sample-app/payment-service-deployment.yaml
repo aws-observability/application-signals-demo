@@ -34,6 +34,8 @@ spec:
               value: "true"
             - name: eureka__instance__port
               value: "8089"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "Team=Backend,Organization=Marketplace,BusinessUnit=E-commerce,aws.application_signals.metric_resource_keys=Team&Organization&BusinessUnit"
 
           ports:
             - containerPort: 8089

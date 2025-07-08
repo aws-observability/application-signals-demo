@@ -52,5 +52,7 @@ spec:
               value: "${APP_MONITOR_IDENTITY_POOL_ID}"
             - name: APP_MONITOR_ID
               value: "${APP_MONITOR_ID}"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "Team=Backend,Organization=Marketplace,BusinessUnit=E-commerce,aws.application_signals.metric_resource_keys=Team&Organization&BusinessUnit"
       restartPolicy: Always
 status: {}

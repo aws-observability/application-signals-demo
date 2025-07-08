@@ -24,6 +24,8 @@ spec:
               value: http://discovery-server:8761/eureka
             - name: MONGO_URI
               value: mongodb://admin:admin@mongodb:27017/
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "Team=Backend,Organization=Marketplace,BusinessUnit=E-commerce,aws.application_signals.metric_resource_keys=Team&Organization&BusinessUnit"
           ports:
             - containerPort: 3000
           imagePullPolicy: Always

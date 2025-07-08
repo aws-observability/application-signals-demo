@@ -31,6 +31,9 @@ spec:
             - java
             - org.springframework.boot.loader.JarLauncher
           image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-discovery-server:latest
+          env: 
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "Team=Backend,Organization=Marketplace,BusinessUnit=E-commerce,aws.application_signals.metric_resource_keys=Team&Organization&BusinessUnit"
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
