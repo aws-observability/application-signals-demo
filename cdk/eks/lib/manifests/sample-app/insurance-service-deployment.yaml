@@ -39,6 +39,8 @@ spec:
               value: <HOST>
             - name: DB_SERVICE_PORT
               value: '5432'
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "Team=Backend,Organization=Marketplace,BusinessUnit=E-commerce,aws.application_signals.metric_resource_keys=Team&Organization&BusinessUnit"
           # command: ["sh", "-c"]
           # args: ['manage.py', 'runserver', '0.0.0.0:8000']
           command: ['sh', '-c']
