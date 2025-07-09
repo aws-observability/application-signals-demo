@@ -171,34 +171,7 @@ async def test_result(params: TestResult):
     global test_failed
     if not params.x:
         test_failed = True
-
-    session = Session()
-    cloudwatch = session.client('cloudwatch', region_name=region)
-
-    metric_name = "Failure"
-
-    cloudwatch.put_metric_data(
-        Namespace=cloudwatch_namespace,
-        MetricData=[
-            {
-                "MetricName": metric_name,
-                "Dimensions": [
-                    {
-                        "Name": "Language",
-                        "Value": "Python"
-                    },
-                    {
-                        "Name": "Source",
-                        "Value": "Local"
-                    }
-                ],
-                "Value": 0.0 if params.x else 1.0,
-            }
-        ]
-    )
-    print(f"Published metric: {metric_name} in namespace {cloudwatch_namespace} as {'0.0' if params.x else '1.0'}")
     return ActionResult(extracted_content="The task is COMPLETE - you can EXIT now. DO NOT conduct anymore steps!!!", is_done=True)
-
 
 @controller.action(
     'Access the node in the Service Map',
@@ -327,6 +300,49 @@ def authentication_open():
 
     return login_url
 
+def publish_metric(result, session):
+    cloudwatch = session.client('cloudwatch', region_name=region)
+
+    metric_name = "Failure"
+
+    cloudwatch.put_metric_data(
+        Namespace=cloudwatch_namespace,
+        MetricData=[
+            {
+                "MetricName": metric_name,
+                "Dimensions": [
+                    {
+                        "Name": "Language",
+                        "Value": "Python"
+                    },
+                    {
+                        "Name": "Source",
+                        "Value": "Local"
+                    }
+                ],
+                "Value": 0.0 if not result else 1.0,
+            }
+        ]
+    )
+    print(f"Published metric: {metric_name} in namespace {cloudwatch_namespace} as {'0.0' if not result else '1.0'}")
+
+def upload_s3(screenshots, test_id, session):
+    s3_client = session.client('s3', region_name=region)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    s3_prefix = f"screenshots/test-{test_id}/{timestamp}/"
+
+    for i, screenshot in enumerate(screenshots):
+        screenshot_data = base64.b64decode(screenshot)
+        s3_key = f"{s3_prefix}screenshot_{i}.png"
+
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=s3_key,
+            Body=screenshot_data,
+            ContentType="image/png"
+        )
+
 async def main():
     startTime = time.time()
     # Get test prompt file
@@ -379,22 +395,12 @@ async def main():
     history = await agent.run(max_steps=70)
 
     session = Session()
-    s3_client = session.client('s3', region_name=region)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    s3_prefix = f"screenshots/test-{test_id}/{timestamp}/"
+    publish_metric(test_failed, session)
 
     if debug_mode or test_failed:
-        for i, screenshot in enumerate(history.screenshots()):
-            screenshot_data = base64.b64decode(screenshot)
-            s3_key = f"{s3_prefix}screenshot_{i}.png"
-
-            s3_client.put_object(
-                Bucket=bucket_name,
-                Key=s3_key,
-                Body=screenshot_data,
-                ContentType="image/png"
-            )
+        upload_s3(history.screenshots(), test_id, session)
+    
     await browser_session.close()
     endTime = time.time()
     print(f"Time taken: {endTime - startTime} seconds")
