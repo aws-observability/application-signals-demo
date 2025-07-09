@@ -15,6 +15,7 @@ import json
 import re
 
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from boto3.session import Session
 from langchain_aws import ChatBedrockConverse
 from browser_use.browser.context import BrowserContext
@@ -328,6 +329,11 @@ def publish_metric(result, session):
 
 def upload_s3(screenshots, test_id, session):
     s3_client = session.client('s3', region_name=region)
+
+    try:
+        s3_client.head_bucket(Bucket=bucket_name)
+    except ClientError as e:
+        s3_client.create_bucket(Bucket=bucket_name)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     s3_prefix = f"screenshots/test-{test_id}/{timestamp}/"
