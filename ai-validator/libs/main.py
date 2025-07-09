@@ -301,7 +301,7 @@ def authentication_open():
 
     return login_url
 
-def publish_metric(result, session):
+def publish_metric(result, test_id, session):
     cloudwatch = session.client('cloudwatch', region_name=region)
 
     metric_name = "Failure"
@@ -313,12 +313,8 @@ def publish_metric(result, session):
                 "MetricName": metric_name,
                 "Dimensions": [
                     {
-                        "Name": "Language",
-                        "Value": "Python"
-                    },
-                    {
-                        "Name": "Source",
-                        "Value": "Local"
+                        "Name": "TestCase",
+                        "Value": test_id
                     }
                 ],
                 "Value": 0.0 if not result else 1.0,
@@ -402,7 +398,7 @@ async def main():
 
     session = Session()
 
-    publish_metric(test_failed, session)
+    publish_metric(test_failed, test_id, session)
 
     if debug_mode or test_failed:
         upload_s3(history.screenshots(), test_id, session)
