@@ -2,6 +2,10 @@ import os
 import subprocess
 import time
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+interval_duration = int(os.environ['INTERVAL_DURATION'])
 
 def run_tests():
     test_dir = 'tests'
@@ -20,8 +24,8 @@ def main():
     while True:
         print(f"[{datetime.now()}] Starting test run loop")
         run_tests()
-        print(f"[{datetime.now()}] Test run complete. Waiting 10 minutes.\n")
-        time.sleep(600)  # wait 10 minutes
+        print(f"[{datetime.now()}] Test run complete. Waiting {interval_duration} seconds.\n")
+        time.sleep(interval_duration)  # Wait 'interval_duration' seconds until running the tests again
 
 if __name__ == '__main__':
     main()
