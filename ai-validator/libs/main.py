@@ -28,6 +28,7 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 from browser_use.agent.memory import MemoryConfig
 from datetime import datetime
 from pathlib import Path
+from uuid import uuid4
 
 # Load environment variables
 load_dotenv()
@@ -361,7 +362,10 @@ async def main():
     llm = get_llm(model_id)
     authenticated_url = authentication_open()
 
+    unique_profile_path = Path.home() / f".config/browseruse/profiles/{uuid4().hex[:8]}"
+
     browser_profile = BrowserProfile(
+        user_data_dir=unique_profile_path,
 		headless=True,
         wait_between_actions=10.0,
         minimum_wait_page_load_time=10.0,
@@ -391,7 +395,6 @@ async def main():
         #     agent_id="my_custom_agent",
         #     memory_interval=30
         # ),
-        save_conversation_path="../logs/conversation",
     )
 
     history = await agent.run(max_steps=70)
