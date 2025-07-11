@@ -1,23 +1,16 @@
 """
-Automated end-to-end implementation for tests (from the APM demo status tracking) using Bedrock Claude 3.7 Sonnet.
+Automated end-to-end implementation for tests using Bedrock Claude 3.7 Sonnet.
 
-@dev Ensure AWS environment variables are set correctly for Console (Bedrock and CloudWatch) access.
+@dev Ensure AWS environment variables are set correctly for Console (Bedrock, CloudWatch, S3) access.
 """
 
 import time
-import base64
 import asyncio
 import os
 import sys
-import requests
-import urllib.parse
-import json
 import re
 
-from botocore.config import Config
-from botocore.exceptions import ClientError
 from boto3.session import Session
-from langchain_aws import ChatBedrockConverse
 from browser_use.browser.context import BrowserContext
 from pydantic import BaseModel
 from typing import Any
@@ -26,17 +19,15 @@ from browser_use import ActionResult, Agent, BrowserSession, BrowserProfile
 from dotenv import load_dotenv
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from browser_use.agent.memory import MemoryConfig
-from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
+# Add util functions from /utils/utils.py
+from utils.utils import *
+
 # Load environment variables
 load_dotenv()
-region = os.environ['AWS_REGION']
-account_id = os.environ['AWS_ACCOUNT_ID']
 debug_mode = os.environ['DEBUG_MODE'].lower() == 'true'
-bucket_name = os.environ['S3_BUCKET_NAME']
-cloudwatch_namespace = os.environ['CLOUDWATCH_NAMESPACE']
 
 test_failed = False
 
@@ -249,105 +240,9 @@ async def scrolling(params: ScrollingParameters, browser: BrowserContext):
         """, args)
     return ActionResult(extracted_content=logs, include_in_memory=False)
 
-def get_llm(modelID):
-    session = Session()
-
-    config = Config(
-        read_timeout=60*5,
-        retries={'max_attempts': 10, 'mode': 'adaptive'}
-    )
-    bedrock_client = session.client(
-        'bedrock-runtime', region_name=region, config=config)
-
-    rate_limiter = None
-    # rate_limiter = InMemoryRateLimiter(
-    #     requests_per_second=0.015,
-    #     check_every_n_seconds=0.05,
-    #     max_bucket_size=10,
-    # )
-
-    return ChatBedrockConverse(
-        model_id=f'arn:aws:bedrock:{region}:{account_id}:inference-profile/{modelID}',
-        temperature=0.0,
-        max_tokens=None,
-        client=bedrock_client,
-        provider='Antropic',
-        cache=False,
-        rate_limiter=rate_limiter
-    )
-
-def authentication_open():
-    session = Session(profile_name='auth-access')
-    creds = session.get_credentials().get_frozen_credentials()
-
-    session_dict = {
-        "sessionId": creds.access_key,
-        "sessionKey": creds.secret_key,
-        "sessionToken": creds.token,
-    }
-
-    session_json = urllib.parse.quote(json.dumps(session_dict))
-    signin_token_url = f"https://signin.aws.amazon.com/federation?Action=getSigninToken&Session={session_json}"
-    signin_token_response = requests.get(signin_token_url)
-    signin_token = signin_token_response.json()["SigninToken"]
-
-    destination = "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#home:"
-    login_url = (
-        "https://signin.aws.amazon.com/federation"
-        f"?Action=login"
-        f"&Issuer=my-script"
-        f"&Destination={urllib.parse.quote(destination)}"
-        f"&SigninToken={signin_token}"
-    )
-
-    return login_url
-
-def publish_metric(result, test_id, session):
-    cloudwatch = session.client('cloudwatch', region_name=region)
-
-    metric_name = "Failure"
-
-    cloudwatch.put_metric_data(
-        Namespace=cloudwatch_namespace,
-        MetricData=[
-            {
-                "MetricName": metric_name,
-                "Dimensions": [
-                    {
-                        "Name": "TestCase",
-                        "Value": test_id
-                    }
-                ],
-                "Value": 0.0 if not result else 1.0,
-            }
-        ]
-    )
-    print(f"Published metric: {metric_name} in namespace {cloudwatch_namespace} as {'0.0' if not result else '1.0'}")
-
-def upload_s3(screenshots, test_id, session):
-    s3_client = session.client('s3', region_name=region)
-
-    try:
-        s3_client.head_bucket(Bucket=bucket_name)
-    except ClientError as e:
-        s3_client.create_bucket(Bucket=bucket_name)
-
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    s3_prefix = f"screenshots/test-{test_id}/{timestamp}/"
-
-    for i, screenshot in enumerate(screenshots):
-        screenshot_data = base64.b64decode(screenshot)
-        s3_key = f"{s3_prefix}screenshot_{i}.png"
-
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key=s3_key,
-            Body=screenshot_data,
-            ContentType="image/png"
-        )
-
 async def main():
     startTime = time.time()
+
     # Get test prompt file
     file_path = sys.argv[1]
     file_name = Path(file_path).name
@@ -357,9 +252,13 @@ async def main():
     with open(file_path, "r", encoding="utf-8") as file:
         original_task = file.read()
 
+    # Create prompt
     task = prefix + original_task + end
 
+    # Get LLM model
     llm = get_llm(model_id)
+
+    # Generate federated AWS link
     authenticated_url = authentication_open()
 
     unique_profile_path = Path.home() / f".config/browseruse/profiles/{uuid4().hex[:8]}"
@@ -377,6 +276,7 @@ async def main():
         viewport={'width': 2560, 'height': 1440},
     )
 
+    # We do not need the LLM to generate the URL, so conduct this step before initialization
     initial_actions = [
         {'open_tab': {'url': authenticated_url}}
     ]
@@ -397,12 +297,15 @@ async def main():
         # ),
     )
 
+    # Run the agent to conduct the test
     history = await agent.run(max_steps=70)
 
     session = Session()
 
+    # Publish a metric to CloudWatch for the test
     publish_metric(test_failed, test_id, session)
 
+    # If debug_mode is True or this test failed, save the screenshots to S3
     if debug_mode or test_failed:
         upload_s3(history.screenshots(), test_id, session)
     
