@@ -60,27 +60,32 @@ export class AuditServiceStack extends cdk.Stack {
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
     );
 
-    // Add Admin permissions (same as in Terraform)
+    // Add Application Signals policy for Lambda
     lambdaExecutionRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')
+      iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchLambdaApplicationSignalsExecutionRolePolicy')
     );
 
-    // Create custom policy for CloudWatch logs
-    const logPolicy = new iam.Policy(this, 'LambdaPolicyAuditService', {
-      policyName: 'lambda_policy_audit_service',
+    // Add DynamoDB read permissions for PetClinicPayment table only
+    const dynamoDbPolicy = new iam.Policy(this, 'DynamoDBReadPolicy', {
+      policyName: 'lambda_dynamodb_read_policy',
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: [
-            'logs:CreateLogGroup',
-            'logs:CreateLogStream',
-            'logs:PutLogEvents',
+            'dynamodb:GetItem',
+            'dynamodb:BatchGetItem',
+            'dynamodb:Query',
+            'dynamodb:Scan',
+            'dynamodb:DescribeTable',
           ],
-          resources: ['arn:aws:logs:*:*:*'],
+          resources: [
+            `arn:aws:dynamodb:*:*:table/PetClinicPayment`,
+            `arn:aws:dynamodb:*:*:table/PetClinicPayment/index/*`
+          ],
         }),
       ],
     });
-    logPolicy.attachToRole(lambdaExecutionRole);
+    dynamoDbPolicy.attachToRole(lambdaExecutionRole);
 
     // OpenTelemetry Layer ARNs by region
     const layerArnsByRegion: { [key: string]: string } = {
