@@ -8,7 +8,6 @@ import time
 import asyncio
 import os
 import sys
-import re
 
 from boto3.session import Session
 from browser_use.browser.context import BrowserContext
@@ -17,8 +16,6 @@ from typing import Any
 from browser_use.controller.service import Controller
 from browser_use import ActionResult, Agent, BrowserSession, BrowserProfile
 from dotenv import load_dotenv
-from langchain_core.rate_limiters import InMemoryRateLimiter
-from browser_use.agent.memory import MemoryConfig
 from pathlib import Path
 from uuid import uuid4
 
@@ -28,6 +25,7 @@ from utils.utils import *
 # Load environment variables
 load_dotenv()
 debug_mode = os.environ['DEBUG_MODE'].lower() == 'true'
+headless_mode = os.environ['HEADLESS_MODE'].lower() == 'true'
 
 test_failed = False
 
@@ -84,22 +82,12 @@ class ScrollingParameters(BaseModel):
 async def click_graph_spike(params: PositionParameters, browser: BrowserContext):
     page = await browser.get_current_page()
 
-    js_file_path = os.path.join(os.path.dirname(
-        __file__), "jsInjectionScripts", "clickMaxGraphPoint.js")
-    with open(js_file_path, 'r') as file:
-        js_code = file.read()
-
     args = {
         "chartPosition": int(params.x),
         "checkboxPosition": int(params.y)
     }
 
-    logs = await page.evaluate(f"""
-        (args) => {{
-            {js_code}
-            return clickMaxGraphPoint(args.chartPosition, args.checkboxPosition);
-        }}
-        """, args)
+    logs = await evaluate_js(page, js_file="clickMaxGraphPoint.js", function_call="clickMaxGraphPoint(args.chartPosition, args.checkboxPosition)", args=args)
     return ActionResult(extracted_content=logs, include_in_memory=False)
 
 @controller.action(
@@ -109,22 +97,12 @@ async def click_graph_spike(params: PositionParameters, browser: BrowserContext)
 async def click_random_graph(params: PositionParameters, browser: BrowserContext):
     page = await browser.get_current_page()
 
-    js_file_path = os.path.join(os.path.dirname(
-        __file__), "jsInjectionScripts", "clickRandomGraphPoint.js")
-    with open(js_file_path, 'r') as file:
-        js_code = file.read()
-
     args = {
         "chartPosition": int(params.x),
         "checkboxPosition": int(params.y)
     }
 
-    logs = await page.evaluate(f"""
-        (args) => {{
-            {js_code}
-            return clickRandomGraphPoint(args.chartPosition, args.checkboxPosition);
-        }}
-        """, args)
+    logs = await evaluate_js(page, js_file="clickRandomGraphPoint.js", function_call="clickRandomGraphPoint(args.chartPosition, args.checkboxPosition)", args=args)
     return ActionResult(extracted_content=logs, include_in_memory=False)
 
 @controller.action(
@@ -134,23 +112,13 @@ async def click_random_graph(params: PositionParameters, browser: BrowserContext
 async def check_all_points_above_threshold(params: ThresholdParameters, browser: BrowserContext):
     page = await browser.get_current_page()
 
-    js_file_path = os.path.join(os.path.dirname(
-        __file__), "jsInjectionScripts", "checkAllPointAboveThreshold.js")
-    with open(js_file_path, 'r') as file:
-        js_code = file.read()
-
     args = {
         "chartPosition": int(params.x),
         "checkboxPosition": int(params.y),
         "checkZero": params.z,
     }
 
-    logs = await page.evaluate(f"""
-        async (args) => {{
-            {js_code}
-            return await checkAllPointAboveThreshold(args.chartPosition, args.checkboxPosition, args.checkZero);
-        }}
-    """, args)
+    logs = await evaluate_js(page, js_file="checkAllPointAboveThreshold.js", function_call="checkAllPointAboveThreshold(args.chartPosition, args.checkboxPosition, args.checkZero)", args=args, is_async=True)
     if logs:
         return ActionResult(extracted_content="The datapoints are above the threshold.", include_in_memory=False)
     else:
@@ -173,21 +141,11 @@ async def test_result(params: TestResult):
 async def access_node(params: NodeId, browser: BrowserContext):
     page = await browser.get_current_page()
 
-    js_file_path = os.path.join(os.path.dirname(
-        __file__), "jsInjectionScripts", "clickNode.js")
-    with open(js_file_path, 'r') as file:
-        js_code = file.read()
-
     args = {
         "nodeId": params.a
     }
 
-    logs = await page.evaluate(f"""
-        (args) => {{
-            {js_code}
-            return clickNode(args.nodeId);
-        }}
-        """, args)
+    logs = await evaluate_js(page, js_file="clickNode.js", function_call="clickNode(args.nodeId)", args=args)
     return ActionResult(extracted_content=logs, include_in_memory=True, is_done=False)
 
 @controller.action(
@@ -197,21 +155,11 @@ async def access_node(params: NodeId, browser: BrowserContext):
 async def expand_node_dropdown(params: NodeId, browser: BrowserContext):
     page = await browser.get_current_page()
 
-    js_file_path = os.path.join(os.path.dirname(
-        __file__), "jsInjectionScripts", "expandServiceMapNode.js")
-    with open(js_file_path, 'r') as file:
-        js_code = file.read()
-
     args = {
         "nodeId": params.a
     }
 
-    logs = await page.evaluate(f"""
-        (args) => {{
-            {js_code}
-            return expandServiceMapNode(args.nodeId);
-        }}
-        """, args)
+    logs = await evaluate_js(page, js_file="expandServiceMapNode.js", function_call="expandServiceMapNode(args.nodeId)", args=args)
     return ActionResult(extracted_content=logs, include_in_memory=True)
 
 @controller.action(
@@ -221,39 +169,40 @@ async def expand_node_dropdown(params: NodeId, browser: BrowserContext):
 async def scrolling(params: ScrollingParameters, browser: BrowserContext):
     page = await browser.get_current_page()
 
-    js_file_path = os.path.join(os.path.dirname(
-        __file__), "jsInjectionScripts", "scrollDown.js")
-    with open(js_file_path, 'r') as file:
-        js_code = file.read()
-
     args = {
         "iframeId": params.x,
         "elementId": params.y,
         "scrollTimes": int(params.z)
     }
 
-    logs = await page.evaluate(f"""
-        (args) => {{
-            {js_code}
-            return scrollDown(args.iframeId, args.elementId, args.scrollTimes);
-        }}
-        """, args)
+    logs = await evaluate_js(page, js_file="scrollDown.js", function_call="scrollDown(args.iframeId, args.elementId, args.scrollTimes)", args=args)
+    return ActionResult(extracted_content=logs, include_in_memory=False)
+
+@controller.action(
+    'Select the blue hexadecimal'
+)
+async def click_hexadecimal(browser: BrowserContext):
+    page = await browser.get_current_page()
+    logs = await evaluate_js(page, js_file="clickHexadecimal.js", function_call="clickHexadecimal()")
+
     return ActionResult(extracted_content=logs, include_in_memory=False)
 
 async def main():
-    startTime = time.time()
-
     # Get test prompt file
     file_path = sys.argv[1]
     file_name = Path(file_path).name
-    match = re.match(r'test-(.+?)\.script\.md', file_name)
-    test_id = match.group(1) if match else "unknown"
+    test_id = file_name.replace(".script.md", "")
 
     with open(file_path, "r", encoding="utf-8") as file:
         original_task = file.read()
 
     # Create prompt
     task = prefix + original_task + end
+
+    startTime = time.time()
+
+    global test_failed
+    test_failed = False
 
     # Get LLM model
     llm = get_llm(model_id)
@@ -265,11 +214,11 @@ async def main():
 
     browser_profile = BrowserProfile(
         user_data_dir=unique_profile_path,
-		headless=True,
+        headless=headless_mode,
         wait_between_actions=10.0,
         minimum_wait_page_load_time=10.0,
         chromium_sandbox=False
-	)
+    )
 
     browser_session = BrowserSession(
         browser_profile=browser_profile,
@@ -290,14 +239,8 @@ async def main():
         validate_output=True,
         extend_system_message="""REMEMBER it is ok if the test fails. When the test result is determined, DO NOT continue steps!!! JUST EXIT!!!""",
         enable_memory=False,
-        # memory_config=MemoryConfig(
-        #     llm_instance=llm,
-        #     agent_id="my_custom_agent",
-        #     memory_interval=30
-        # ),
     )
 
-    # Run the agent to conduct the test
     history = await agent.run(max_steps=70)
 
     session = Session()
@@ -308,9 +251,10 @@ async def main():
     # If debug_mode is True or this test failed, save the screenshots to S3
     if debug_mode or test_failed:
         upload_s3(history.screenshots(), test_id, session)
-    
+
     await browser_session.close()
     endTime = time.time()
-    print(f"Time taken: {endTime - startTime} seconds")
+    print(f"Time taken: {endTime - startTime} seconds", flush=True)
+
 
 asyncio.run(main())

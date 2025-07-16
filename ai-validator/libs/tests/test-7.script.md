@@ -19,13 +19,12 @@ Access a random graph point, PASS in 1 and 3 as a PARAMETERS.
 **Constraints:**
 - You MUST pass in parameters 1 and 3
 
-### 5. Click the blue hexadecimal string
+### 5. Select the blue hexadecimal
 
-In the right panel, click the first blue hexadecimal string under 'Trace ID' (it should look like this: "...d0f3ab63951df"). Then wait a few seconds.
+Select the blue hexadecimal
 
 **Constraints:**
-- You MUST ensure that the link you are trying to click is a blue hexadecimal string.
-- You MUST ensure the element you are clicking is an <a> tag with aria-label='Trace details for trace ...'
+- You MUST use the click_hexadecimal() function.
 
 ### 6. Click the 'pet-clinic-frontend-java' hyperlink
 

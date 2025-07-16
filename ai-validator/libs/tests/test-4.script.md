@@ -108,15 +108,13 @@ Check that there is more than one row displayed in the right panel.
 **Constraints:**
 - You MUST ensure the rows contain columns 'Owner id' and 'Spans'. If it does not, you need to type 'attributes.owner.id' again.
 
-### 22. Click 'X'
+### 22. Search for 'Name = GET /owners/{ownerId:int}/pets/{petId:int}/payments'
 
-Click the "X" button inside the blue tooltip box labeled "Requests DATE TIME" (Ex. 'Requests 2025/06/18 18:10:00') in the top-right corner of the "Requests and Availability" chart. If the next step fails, try to do this again.
+In the search field under 'Service operations' type 'Name = GET /owners/{ownerId:int}/pets/{petId:int}/payments' and PRESS Enter.
 
 ### 23. Access the graph and open the popup.
 
 Access the graph and open the popup, PASS in 2 and 5 as a PARAMETERS. Then wait a few seconds.
-
-If this fails, try to click 'X' again
 
 **Constraints:**
 - You MUST pass in parameters 2 and 5

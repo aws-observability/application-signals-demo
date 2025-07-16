@@ -1,6 +1,11 @@
 /**
  * Clicks a specific node inside the Service Map
  *
+ * Steps:
+ * 1. Get the iFrame for the current page
+ * 2. Query for the selected node in the Service Map
+ * 3. Click this node
+ * 
  * @param {string} testid - The value of the 'data-testid' element for the node
  *
  * @returns {string} - Confirmation string after JS injection utilized by the Browser Use agent.

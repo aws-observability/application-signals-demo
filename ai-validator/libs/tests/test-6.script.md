@@ -30,28 +30,27 @@ Access the graph and open the popup, PASS in 2 and 6 as a PARAMETERS. Then wait 
 **Constraints:**
 - You MUST pass in parameters 2 and 6
 
-### 8. Click the blue hexadecimal string
+### 7. Select the blue hexadecimal
 
-In the right panel, click the first blue hexadecimal string under 'Trace ID' (it should look like this: "...d0f3ab63951df"). Then wait a few seconds.
+Select the blue hexadecimal
 
 **Constraints:**
-- You MUST ensure that the link you are trying to click is a blue hexadecimal string.
-- You MUST ensure the element you are clicking is an <a> tag with aria-label='Trace details for trace ...'
+- You MUST use the click_hexadecimal() function.
 
-### 9. Close 'pet-clinic-frontend-java' dropdown.
+### 8. Close 'pet-clinic-frontend-java' dropdown.
 
 Close the 'pet-clinic-frontend-java' dropdown.
 
-### 10. Click the 'visits-service-java' row
+### 9. Click the 'visits-service-java' row
 Inside the 'visits-service-java' dropdown, click on the row with 'visits-service-java'. 
 
 **Constraints:**
 - You MUST ensure that it is inside the 'visits-service-java' dropdown
 
-### 11. Click the 'Exceptions' button
+### 10. Click the 'Exceptions' button
 
 In the right panel, click the 'Exceptions' button.
 
-### 12. Look for 'The level of configured provisioned throughput for the table was exceeded.'.
+### 11. Look for 'The level of configured provisioned throughput for the table was exceeded.'.
 
 Look for the message 'The level of configured provisioned throughput for the table was exceeded.'.

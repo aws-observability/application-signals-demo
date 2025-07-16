@@ -3,6 +3,7 @@ import urllib.parse
 import json
 import requests
 import base64
+import subprocess
 
 from boto3.session import Session
 from langchain_aws import ChatBedrockConverse
@@ -10,6 +11,8 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 from datetime import datetime
 from dotenv import load_dotenv
+from botocore.session import Session as BotoCoreSession
+from boto3 import Session as Boto3Session
 
 # Load environment variables
 load_dotenv()
@@ -53,7 +56,7 @@ def authentication_open():
     Returns:
         str: URL providing federated access to the AWS Console
     """
-    session = Session(profile_name='auth-access')
+    session = assume_cross_account_role()
     creds = session.get_credentials().get_frozen_credentials()
 
     session_dict = {
@@ -109,7 +112,7 @@ def publish_metric(result, test_id, session):
             }
         ]
     )
-    print(f"Published metric: {metric_name} in namespace {cloudwatch_namespace} as {'0.0' if not result else '1.0'}")
+    print(f"Published metric: {metric_name} in namespace {cloudwatch_namespace} as {'0.0' if not result else '1.0'}", flush=True)
 
 def upload_s3(screenshots, test_id, session):
     """
@@ -124,22 +127,90 @@ def upload_s3(screenshots, test_id, session):
         None
     """
     s3_client = session.client('s3', region_name=region)
+    unique_bucket_name = f"{bucket_name}-{account_id}-{region}".lower()
 
     try:
-        s3_client.head_bucket(Bucket=bucket_name)
+        s3_client.head_bucket(Bucket=unique_bucket_name)
     except ClientError as e:
-        s3_client.create_bucket(Bucket=bucket_name)
+        s3_client.create_bucket(Bucket=unique_bucket_name)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    s3_prefix = f"screenshots/test-{test_id}/{timestamp}/"
+    s3_prefix = f"screenshots/{test_id}/{timestamp}/"
 
     for i, screenshot in enumerate(screenshots):
         screenshot_data = base64.b64decode(screenshot)
         s3_key = f"{s3_prefix}screenshot_{i}.png"
 
         s3_client.put_object(
-            Bucket=bucket_name,
+            Bucket=unique_bucket_name,
             Key=s3_key,
             Body=screenshot_data,
             ContentType="image/png"
         )
+
+def assume_cross_account_role():
+    """
+    Assumes an IAM role in a different AWS account
+
+    Returns:
+        Session: boto3 session with temporary credentials for the assumed role
+    """
+    account_id = os.environ.get("AUTH_ACCESS_ACCOUNT_ID")
+    role_name = os.environ.get("AUTH_ACCESS_ROLE_ID")
+    role_arn = f"arn:aws:iam::{account_id}:role/{role_name}"
+
+    cmd = [
+        "aws", "sts", "assume-role",
+        "--role-arn", role_arn,
+        "--role-session-name", "auth-session",
+        "--output", "json"
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    creds = json.loads(result.stdout)["Credentials"]
+
+    # Return a boto3 session with assumed credentials
+    session = Boto3Session(
+        aws_access_key_id=creds["AccessKeyId"],
+        aws_secret_access_key=creds["SecretAccessKey"],
+        aws_session_token=creds["SessionToken"]
+    )
+
+    return session
+
+async def evaluate_js(
+        page,
+        js_file: str,
+        function_call: str,
+        args: dict = None,
+        is_async: bool = False
+    ):
+    """
+    Evaluates JavaScript code for tests from ./jsInjectionScripts
+
+    Args:
+        page: Browser Use page object to evaluate the script on
+        js_file (str): Name of the JavaScript file in ./jsInjectionScripts to run
+        function_call (str): JavaScript function call to execute after the script is injected
+        args (dict, optional): Dictionary of arguments to pass into the JavaScript function. Defaults to None
+        is_async (bool, optional): Whether the JavaScript function is asynchronous. Defaults to False
+
+    Returns:
+        Any: Result returned by the JavaScript function
+    """
+    js_file_path = os.path.join(os.path.dirname(
+        __file__), "..", "jsInjectionScripts", js_file)
+    with open(js_file_path, 'r') as file:
+        js_code = file.read()
+
+    js_args = args or {}
+    arg_string = "args" if js_args else ""
+
+    wrapper = "async" if is_async else ""
+
+    return await page.evaluate(f"""
+        {wrapper} ({arg_string}) => {{
+            {js_code}
+            return {"await " if is_async else ""}{function_call};
+        }}
+        """, js_args)

@@ -72,10 +72,10 @@ In the right panel make sure that there are statistics for each column (Count, D
 **Constraints:**
 - You MUST ensure you are looking at the right panel labelled 'Slow queries' for these statistics.
 
-### 15. Click 'Calling Services'
+### 17. Click 'Calling Services'
 
 Click the 'Calling Services' tab
 
-### 16. Check there is more than one row displayed.
+### 18. Check there is more than one row displayed.
 
 Check that there is more than one row displayed under 'Calling services and operations'.

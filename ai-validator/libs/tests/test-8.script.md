@@ -30,22 +30,17 @@ Access the graph and open the popup, PASS in 2 and 3 as a PARAMETERS. Then wait 
 **Constraints:**
 - You MUST pass in parameters 2 and 3
 
-### 7. Click the blue hexadecimal string
+### 7. Select the blue hexadecimal
 
-In the right panel, click the first blue hexadecimal string under 'Trace ID' (it should look like this: "...d0f3ab63951df"). Then wait a few seconds.
+Select the blue hexadecimal
 
 **Constraints:**
-- You MUST ensure that the link you are trying to click is a blue hexadecimal string.
-- You MUST ensure the element you are clicking is an <a> tag with aria-label='Trace details for trace ...'
+- You MUST use the click_hexadecimal() function.
 
-### 8. Click 'Open Segment Details Panel' button
-
-In the top right corner, open segment details panel IF it is not already expanded.
-
-### 9. Click 'Exceptions' button
+### 8. Click the 'Exceptions' button
 
 In the right panel, click the 'Exceptions' button.
 
-### 10. Look for 'Only one PurgeQueue operation on apm_test is allowed every 60 seconds.'.
+### 9. Look for 'Only one PurgeQueue operation on apm_test is allowed every 60 seconds.'.
 
 Look for the message 'Only one PurgeQueue operation on apm_test is allowed every 60 seconds.'.

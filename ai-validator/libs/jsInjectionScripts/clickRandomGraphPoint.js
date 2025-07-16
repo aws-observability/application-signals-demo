@@ -1,6 +1,15 @@
 /**
  * Selects the random point in the selected metric graph.
  *
+ * Steps:
+ * 1. Get the iFrame for the current page
+ * 2. De-select the line graph that we are not trying to access
+ * 3. Query for the metric graph
+ * 4. Hover over the graph to make the leaderboard datapoint visible
+ * 5. Hover over the leaderboard datapoint to make all datapoints visible
+ * 6. Return a random point in the metric graph
+ * 7. Click the returned datapoint
+ *
  * @param {number} chartPosition - Index of the target chart to be selected.
  * @param {number} checkboxPosition - Index of the legend checkbox to de-select to clearly display the correct line.
  *
@@ -16,7 +25,7 @@ function clickRandomGraphPoint(chartPosition, checkboxPosition) {
   const LEGEND_CHECKBOX_SELECTOR = "rect.legend-checkbox";
 
   const MAX_RETRIES = 10;
-  const RETRY_DELAY = 500;
+  const RETRY_DELAY = 500; // milliseconds (ms)
 
   // Get the iFrame
   const iframe = document.querySelector(IFRAME_SELECTOR);
@@ -33,25 +42,31 @@ function clickRandomGraphPoint(chartPosition, checkboxPosition) {
     const checkboxHoverX = checkboxBounds.left + checkboxBounds.width / 2;
     const checkboxHoverY = checkboxBounds.top + checkboxBounds.height / 2;
 
-    const checkboxHoverEvent = new MouseEvent("mousemove", {
-      clientX: checkboxHoverX,
-      clientY: checkboxHoverY,
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    });
+    for (let i = 0; i < MAX_RETRIES; i++) {
+      const checkboxHoverEvent = new MouseEvent("mousemove", {
+        clientX: checkboxHoverX,
+        clientY: checkboxHoverY,
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      });
 
-    checkbox.dispatchEvent(checkboxHoverEvent);
+      checkbox.dispatchEvent(checkboxHoverEvent);
 
-    const checkboxClickEvent = new MouseEvent("click", {
-      clientX: checkboxHoverX,
-      clientY: checkboxHoverY,
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    });
+      const checkboxClickEvent = new MouseEvent("click", {
+        clientX: checkboxHoverX,
+        clientY: checkboxHoverY,
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      });
 
-    checkbox.dispatchEvent(checkboxClickEvent);
+      checkbox.dispatchEvent(checkboxClickEvent);
+
+      if (checkboxGroup?.classList.contains("legend-disabled")) {
+        break;
+      }
+    }
   }
 
   // This will query all of the graphs in the iFrame

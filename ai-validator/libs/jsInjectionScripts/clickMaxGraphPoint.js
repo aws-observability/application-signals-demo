@@ -1,6 +1,15 @@
 /**
  * Clicks the maximum point in the selected metric graph.
  *
+ * Steps:
+ * 1. Get the iFrame for the current page
+ * 2. De-select the line graph that we are not trying to access
+ * 3. Query for the metric graph
+ * 4. Hover over the graph to make the leaderboard datapoint visible
+ * 5. Hover over the leaderboard datapoint to make all datapoints visible
+ * 6. Loop through all datapoints to return the highest point in the metric graph
+ * 7. Click the returned datapoint
+ * 
  * @param {number} chartPosition - Index of the metric chart to be selected.
  * @param {number} checkboxPosition - Index of the legend checkbox to de-select to clearly display the correct line.
  *
@@ -17,7 +26,7 @@ function clickMaxGraphPoint(chartPosition, checkboxPosition) {
   const LEGEND_CHECKBOX_SELECTOR = "rect.legend-checkbox";
 
   const MAX_RETRIES = 10;
-  const RETRY_DELAY = 500;
+  const RETRY_DELAY = 500; // milliseconds (ms)
 
   // Get the iFrame
   const iframe = document.querySelector(IFRAME_SELECTOR);
