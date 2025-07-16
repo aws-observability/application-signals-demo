@@ -115,7 +115,7 @@ export class SloStack extends Stack {
         "GreaterThan",
         awsApplicationTag,
         undefined,
-        "/owners/{ownerId:int}/pets/{petId:int}/payments/",
+        "/owners/{ownerId:int}/pets/{petId:int}/payments",
         "payment-service-dotnet",
         undefined,
         exclusionWindows

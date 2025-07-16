@@ -9,6 +9,7 @@ import { RdsStack } from '../lib/stacks/rds-stack';
 import { SyntheticCanaryStack } from '../lib/stacks/canary-stack';
 import { MyApplicationStack } from "../lib/stacks/my-application-stack";
 import { CloudWatchRumStack } from "../lib/stacks/rum-stack";
+import { TransactionSearchStack } from "../lib/stacks/transaction-search-stack";
 
 const app = new App();
 
@@ -30,6 +31,11 @@ const rumStack = new CloudWatchRumStack(app, 'AppSignalsRumStack', {
   sampleAppNamespace: 'pet-clinic', // Using the same namespace as in EksStack
 })
 
+// Add X-Ray Transaction Search Stack
+const transactionSearchStack = new TransactionSearchStack(app, 'AppSignalsTransactionSearchStack', {
+  indexingPercentage: 100, // Use 100% for the demo
+})
+
 const eksStack = new EksStack(app, 'AppSignalsEksClusterStack', {
   vpc: networkStack.vpc,
   eksClusterRoleProp: iamStack.eksClusterRoleProp,
@@ -49,6 +55,7 @@ eksStack.addDependency(iamStack);
 eksStack.addDependency(rdsStack);
 eksStack.addDependency(myApplicationStack);
 eksStack.addDependency(rumStack);
+eksStack.addDependency(transactionSearchStack); // Add dependency on Transaction Search Stack
 
 const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticCanaryStack', {
   vpc: networkStack.vpc,
