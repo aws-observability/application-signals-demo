@@ -9,5 +9,5 @@ new AuditServiceStack(app, 'AuditServiceStack', {
     account: process.env.CDK_DEFAULT_ACCOUNT, 
     region: process.env.CDK_DEFAULT_REGION || 'us-east-1'
   },
-  description: 'Audit Service Lambda with SQS trigger and OpenTelemetry instrumentation'
+  description: 'Lambda Audit Service with SQS trigger and OpenTelemetry instrumentation'
 });

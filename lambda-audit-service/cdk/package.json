@@ -1,8 +1,8 @@
 {
-  "name": "audit-service-lambda-cdk",
+  "name": "lambda-audit-service-cdk",
   "version": "0.1.0",
   "bin": {
-    "audit-service-lambda-cdk": "bin/audit-service-app.js"
+    "lambda-audit-service-cdk": "bin/audit-service-app.js"
   },
   "scripts": {
     "build": "tsc",

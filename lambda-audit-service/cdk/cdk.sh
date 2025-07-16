@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to synthesize, deploy, or destroy AWS CDK stacks for audit-service-lambda
+# Script to synthesize, deploy, or destroy AWS CDK stacks for lambda-audit-service
 # Usage: ./cdk.sh <action>
 # Example for deploy: ./cdk.sh deploy
 # Example for destroy: ./cdk.sh destroy
@@ -50,18 +50,18 @@ fi
 
 # Deploy or destroy the stack
 if [[ "$ACTION" == "deploy" ]]; then
-  echo "Starting CDK deployment for audit-service-lambda"
+  echo "Starting CDK deployment for lambda-audit-service"
   if npx cdk deploy --require-approval never; then
-    echo "Deployment successful for audit-service-lambda"
+    echo "Deployment successful for lambda-audit-service"
   else
     echo "Deployment failed. Attempting to clean up resources..."
     npx cdk destroy --force --verbose
     exit 1
   fi
 elif [[ "$ACTION" == "destroy" ]]; then
-  echo "Starting CDK destroy for audit-service-lambda"
+  echo "Starting CDK destroy for lambda-audit-service"
   npx cdk destroy --force --verbose
-  echo "Destroy complete for audit-service-lambda"
+  echo "Destroy complete for lambda-audit-service"
 else
   echo "Invalid action: $ACTION. Please use 'synth', 'deploy', or 'destroy'."
   exit 1

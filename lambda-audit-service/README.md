@@ -1,4 +1,4 @@
-# Audit Service Lambda
+# Lambda Audit Service
 
 This directory contains a CDK implementation of a Lambda function that processes payment audit information. It is triggered by messages in an SQS queue named `audit-jobs` and uses OpenTelemetry for observability.
 
