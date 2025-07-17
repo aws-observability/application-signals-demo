@@ -20,6 +20,7 @@ region = os.environ['DEFAULT_ACCOUNT_AWS_REGION']
 account_id = os.environ['DEFAULT_AWS_ACCOUNT_ID']
 cloudwatch_namespace = os.environ['CLOUDWATCH_NAMESPACE']
 bucket_name = os.environ['S3_BUCKET_NAME_PREFIX']
+manual_mode = os.environ['MANUAL_MODE'].lower() == 'true'
 
 def get_llm(modelID):
     """
@@ -56,7 +57,7 @@ def authentication_open():
     Returns:
         str: URL providing federated access to the AWS Console
     """
-    session = assume_cross_account_role()
+    session = assume_cross_account_role() if not manual_mode else Session(profile_name='auth-access')
     creds = session.get_credentials().get_frozen_credentials()
 
     session_dict = {
