@@ -176,7 +176,6 @@ function clickMaxGraphPoint(chartPosition, checkboxPosition) {
   /**
    * Simulates a full mouse click (mousedown → mouseup → click) on the provided data point.
    *
-   * Reference: Console team code (https://code.amazon.com/packages/CloudWatchConsole-ApplicationMonitoringTests/blobs/4cea84c2b68bccc4ca05269b23223004798db39f/--/src/selectors/triage/charts.ts#L233)
    *
    * @param {string} selector - Selector (DATA_POINT_SELECTOR) to identify the SVG circle element to click.
    * @returns {Promise<void>}

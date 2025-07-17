@@ -171,7 +171,6 @@ function clickRandomGraphPoint(chartPosition, checkboxPosition) {
    * Simulates a full mouse click (mousedown → mouseup → click) on the provided data point.
    * Will retry if the point is not found, has invalid coordinates, or fails to open a valid popup.
    *
-   * Reference: Console team code (https://code.amazon.com/packages/CloudWatchConsole-ApplicationMonitoringTests/blobs/4cea84c2b68bccc4ca05269b23223004798db39f/--/src/selectors/triage/charts.ts#L233)
    *
    * @param {string} selector - CSS selector (DATA_POINT_SELECTOR) to identify the SVG circle to click.
    * @returns {Promise<void>}
