@@ -19,13 +19,13 @@ Click the 'Name' hyperlink 'TicketingSystem' in the 'Services' list in the main 
 
 Click the 'Service operations' button.
 
-### 5. Search for 'Name = TicketingSystem/FunctionHandler'
+### 5. Search for 'Name = TicketingSystem/LambdaService'
 
-In the search field under 'Service operations' type 'Name = TicketingSystem/FunctionHandler' and PRESS Enter.
+In the search field under 'Service operations' type 'Name = TicketingSystem/LambdaService' and PRESS Enter.
 
-### 6. Access a random graph point.
+### 6. Access the graph and open the popup.
 
-Access a random graph point, PASS in 1 and 4 as a PARAMETERS. Then wait a few seconds.
+Access the graph and open the popup, PASS in 1 and 4 as a PARAMETERS. Then wait a few seconds.
 
 **Constraints:**
 - You MUST pass in parameters 1 and 4
