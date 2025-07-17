@@ -55,6 +55,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 controller = Controller()
 
+"""
+Browser Use (version 0.2.5) has trouble passing parameters into custom Actions when they have descriptive variable names (chartPosition, testResult).
+To resolve this, we use simple variable names (x, y, z), which allows Browser Use to accurately pass parameters.
+"""
+
 class PositionParameters(BaseModel):
      x: Any # chartPosition
      y: Any # checkboxPosition
@@ -179,11 +184,11 @@ async def scrolling(params: ScrollingParameters, browser: BrowserContext):
     return ActionResult(extracted_content=logs, include_in_memory=False)
 
 @controller.action(
-    'Select the blue hexadecimal'
+    'Select the trace ID'
 )
-async def click_hexadecimal(browser: BrowserContext):
+async def click_trace_id(browser: BrowserContext):
     page = await browser.get_current_page()
-    logs = await evaluate_js(page, js_file="clickHexadecimal.js", function_call="clickHexadecimal()")
+    logs = await evaluate_js(page, js_file="clickTraceId.js", function_call="clickTraceId()")
 
     return ActionResult(extracted_content=logs, include_in_memory=False)
 

@@ -19,7 +19,7 @@ To run this project, create a `.env` file in the root directory based on the pro
 AWS_REGION=<Region for default account>
 AWS_ACCOUNT_ID=<Account ID for default account>
 DEBUG_MODE=<True/False>
-S3_BUCKET_NAME=<S3 Bucket Name to store test results>
+S3_BUCKET_NAME_PREFIX=<S3 Bucket Name to store test results>
 CLOUDWATCH_NAMESPACE=<CloudWatch namespace to publish metrics>
 AUTH_ACCESS_ACCOUNT_ID=<Account ID for auth-access>
 AUTH_ACCESS_ROLE_ID=<Role name in auth-access account (used to assume role)>

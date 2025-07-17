@@ -19,12 +19,12 @@ Access a random graph point, PASS in 1 and 3 as a PARAMETERS.
 **Constraints:**
 - You MUST pass in parameters 1 and 3
 
-### 5. Select the blue hexadecimal
+### 5. Select the trace ID
 
-Select the blue hexadecimal
+Select the trace ID
 
 **Constraints:**
-- You MUST use the click_hexadecimal() function.
+- You MUST use the click_trace_id() function.
 
 ### 6. Click the 'pet-clinic-frontend-java' hyperlink
 

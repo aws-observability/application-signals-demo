@@ -26,12 +26,12 @@ Access a random graph point, PASS in 2 and 2 as a PARAMETERS. Then wait a few se
 **Constraints:**
 - You MUST pass in parameters 2 and 2
 
-### 6. Select the blue hexadecimal
+### 6. Select the trace ID
 
-Select the blue hexadecimal
+Select the trace ID
 
 **Constraints:**
-- You MUST use the click_hexadecimal() function.
+- You MUST use the click_trace_id() function.
 
 ### 7. Click the 'validateDate' row
 Inside the 'visits-service-java' dropdown, click on the row with 'validateDate'. 

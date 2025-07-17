@@ -39,12 +39,12 @@ In the right panel, check that the top row is the only row that contains non-zer
 
 In the right panel, click the 'Correlated Spans' tab
 
-### 10. Select the blue hexadecimal
+### 10. Select the trace ID
 
-Select the blue hexadecimal
+Select the trace ID
 
 **Constraints:**
-- You MUST use the click_hexadecimal() function.
+- You MUST use the click_trace_id() function.
 
 ### 11. Click 'Exceptions' button 
 

@@ -49,12 +49,12 @@ Access a random graph point, PASS in 1 and 3 as a PARAMETERS. Then wait a few se
 **Constraints:**
 - You MUST pass in parameters 1 and 3
 
-### 11. Select the blue hexadecimal
+### 11. Select the trace ID
 
-Select the blue hexadecimal
+Select the trace ID
 
 **Constraints:**
-- You MUST use the click_hexadecimal() function.
+- You MUST use the click_trace_id() function.
 
 ### 12. Scroll injection down
 

@@ -26,12 +26,12 @@ Access the graph and open the popup, PASS in 1 and 2 as a PARAMETERS. Then wait 
 **Constraints:**
 - You MUST pass in parameters 1 and 2
 
-### 6. Select the blue hexadecimal
+### 6. Select the trace ID
 
-Select the blue hexadecimal
+Select the trace ID
 
 **Constraints:**
-- You MUST use the click_hexadecimal() function.
+- You MUST use the click_trace_id() function.
 
 ### 7. Close 'AWS::Lambda::Function' dropdown.
 

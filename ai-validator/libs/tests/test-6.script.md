@@ -30,12 +30,12 @@ Access the graph and open the popup, PASS in 2 and 6 as a PARAMETERS. Then wait 
 **Constraints:**
 - You MUST pass in parameters 2 and 6
 
-### 7. Select the blue hexadecimal
+### 7. Select the trace ID
 
-Select the blue hexadecimal
+Select the trace ID
 
 **Constraints:**
-- You MUST use the click_hexadecimal() function.
+- You MUST use the click_trace_id() function.
 
 ### 8. Close 'pet-clinic-frontend-java' dropdown.
 

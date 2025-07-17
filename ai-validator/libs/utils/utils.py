@@ -19,7 +19,7 @@ load_dotenv()
 region = os.environ['AWS_REGION']
 account_id = os.environ['AWS_ACCOUNT_ID']
 cloudwatch_namespace = os.environ['CLOUDWATCH_NAMESPACE']
-bucket_name = os.environ['S3_BUCKET_NAME']
+bucket_name = os.environ['S3_BUCKET_NAME_PREFIX']
 
 def get_llm(modelID):
     """
