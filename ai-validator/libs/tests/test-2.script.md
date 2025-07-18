@@ -41,27 +41,31 @@ Access a random graph point, PASS in 1 and 5 as a PARAMETERS. Then wait a few se
 
 In the right panel, click the hyperlink 'View in Database Insights'.
 
-### 9. Click 'Database instance'
+### 9. Switch tabs
+
+Switch to the new tab that was just opened.
+
+### 10. Click 'Database instance'
 
 On the new page, under the 'Database Views' dropdown, click 'Database Instance'
 
-### 10. Select the radio button for the first item inside 'Top SQL'
+### 11. Select the radio button for the first item inside 'Top SQL'
 
 Click the `<input type="radio">` element that belongs to the first selectable item in the 'Top SQL' section.
 
-### 11. Check that the 'SQL Text' is displayed
+### 12. Check that the 'SQL Text' is displayed
 
 Check that the following text is shown under 'SQL Text': SELECT "billing_service_billing"."id", "billing_service_billing"."owner_id", "billing_service_billing"."type", "billing_service_billing"."type_name", "billing_service_billing"."pet_id", "billing_service_billing"."payment", "billing_service_billing"."status" FROM "billing_service_billing" WHERE NOT ("billing_service_billing"."type_name" IN (SELECT DISTINCT U0."invalid_name" FROM "check_list" U0 LIMIT ?))
 
-### 12. Click 'Database Telemetry'
+### 13. Click 'Database Telemetry'
 
 Click the 'Database Telemetry' tab.
 
-### 13. Click 'Slow SQL Queries'
+### 14. Click 'Slow SQL Queries'
 
 Click the 'Slow SQL Queries' tab. Wait a few seconds
 
-### 14. Click the first row in "Slow query patterns"
+### 15. Click the first row in "Slow query patterns"
 
 Click the first row in "Slow query patterns" 
 

@@ -149,10 +149,10 @@ In the search field under 'Service operations' type 'Name = GET /api/visit/owner
 
 ### 26. Access the graph and open the popup.
 
-Access the graph and open the popup, PASS in 1 and 3 as a PARAMETERS. Then wait a few seconds.
+Access the graph and open the popup, PASS in 1 and 4 as a PARAMETERS. Then wait a few seconds.
 
 **Constraints:**
-- You MUST pass in parameters 1 and 3
+- You MUST pass in parameters 1 and 4
 
 ### 27. Type 'attributes.owner.id'
 
