@@ -242,26 +242,80 @@ export class EksStack extends Stack {
 
   // The role name is required as a parameter because cdk cannot resovlve the rolename of the role at synthesis time
   addFederatedPrincipal(role: Role, roleName: string, isServiceAccount: boolean) {
-    const openIdConnectProviderIssuer = this.cluster.openIdConnectProvider.openIdConnectProviderIssuer;
-    const stringCondition = new CfnJson(this, `${roleName}OidcCondition`, {
+    const openIdConnectProviderIssuer = this.cluster.openIdConnectProvider.openIdConnectProviderArn;
+    
+    // If this is not a service account, use the original approach with a single condition
+    if (!isServiceAccount) {
+      const stringCondition = new CfnJson(this, `${roleName}OidcCondition`, {
+        value: {
+          [`${this.cluster.openIdConnectProvider.openIdConnectProviderIssuer}:aud`]: 'sts.amazonaws.com',
+        },
+      });
+
+      const federatedPrincipal = new FederatedPrincipal(
+        this.cluster.openIdConnectProvider.openIdConnectProviderArn,
+        {
+          'StringEquals': stringCondition,
+        },
+        'sts:AssumeRoleWithWebIdentity'
+      )
+    
+      role.assumeRolePolicy?.addStatements(
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          principals: [federatedPrincipal],
+          actions: ['sts:AssumeRoleWithWebIdentity'],
+        })
+      );
+      return;
+    }
+    
+    // For service accounts, create separate trust relationships for each service account
+    
+    // Add trust policy for the visits service account
+    const visitsCondition = new CfnJson(this, `${roleName}VisitsOidcCondition`, {
       value: {
-        [`${openIdConnectProviderIssuer}:aud`]: 'sts.amazonaws.com',
-        ...(isServiceAccount? { [`${openIdConnectProviderIssuer}:sub`]: `system:serviceaccount:${this.SAMPLE_APP_NAMESPACE}:${this.VISITS_SERVICE_ACCOUNT_NAME}` }: {}),
+        [`${this.cluster.openIdConnectProvider.openIdConnectProviderIssuer}:aud`]: 'sts.amazonaws.com',
+        [`${this.cluster.openIdConnectProvider.openIdConnectProviderIssuer}:sub`]: `system:serviceaccount:${this.SAMPLE_APP_NAMESPACE}:${this.VISITS_SERVICE_ACCOUNT_NAME}`,
       },
     });
-
-    const federatedPrincipal = new FederatedPrincipal(
+    
+    const visitsPrincipal = new FederatedPrincipal(
       this.cluster.openIdConnectProvider.openIdConnectProviderArn,
       {
-        'StringEquals': stringCondition,
+        'StringEquals': visitsCondition,
       },
       'sts:AssumeRoleWithWebIdentity'
-    )
-  
+    );
+    
     role.assumeRolePolicy?.addStatements(
       new PolicyStatement({
         effect: Effect.ALLOW,
-        principals: [federatedPrincipal],
+        principals: [visitsPrincipal],
+        actions: ['sts:AssumeRoleWithWebIdentity'],
+      })
+    );
+    
+    // Add trust policy for the otel collector service account
+    const otelCondition = new CfnJson(this, `${roleName}OtelOidcCondition`, {
+      value: {
+        [`${this.cluster.openIdConnectProvider.openIdConnectProviderIssuer}:aud`]: 'sts.amazonaws.com',
+        [`${this.cluster.openIdConnectProvider.openIdConnectProviderIssuer}:sub`]: `system:serviceaccount:${this.SAMPLE_APP_NAMESPACE}:${this.OTEL_COLLECTOR_SERVICE_ACCOUNT_NAME}`,
+      },
+    });
+    
+    const otelPrincipal = new FederatedPrincipal(
+      this.cluster.openIdConnectProvider.openIdConnectProviderArn,
+      {
+        'StringEquals': otelCondition,
+      },
+      'sts:AssumeRoleWithWebIdentity'
+    );
+    
+    role.assumeRolePolicy?.addStatements(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        principals: [otelPrincipal],
         actions: ['sts:AssumeRoleWithWebIdentity'],
       })
     );
