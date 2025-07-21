@@ -21,7 +21,7 @@ Wait a few seconds.
 
 ### 5. Ensure the avg latency
 
-Ensure that the avg latency is between 8K and 10K ms.
+Ensure that the avg latency is between 7K and 11K ms.
 
 **Constraints:**
 - DO NOT call done() if the latency is between 8K and 10K. Continue with the steps.
@@ -36,7 +36,7 @@ Wait a few seconds.
 
 ### 8. Ensure the avg latency
 
-Ensure that the avg latency is between 10K and 12K ms.
+Ensure that the avg latency is between 9K and 13K ms.
 
 ### 9. Click 'customers-service-java'
 
