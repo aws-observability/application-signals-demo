@@ -142,7 +142,7 @@ function clickMaxGraphPoint(chartPosition, checkboxPosition) {
         console.warn("No element with a `cy` value found.");
       }
     });
-  }, 2500);
+  }, 1000);
 
   /**
    * Waits for the chart to populate all data points and returns the element
