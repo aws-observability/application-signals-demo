@@ -5,6 +5,7 @@ set -ex
 DEFAULT_REGION="us-east-1"
 OPERATION="create"
 USE_OTLP="false"  # Default value for OTLP
+DESTROY_ON_FAIL="true"  # Default value for destroying stacks on failure
 
 # Read command line arguments
 for i in "$@"; do
@@ -21,6 +22,20 @@ for i in "$@"; do
     USE_OTLP="${i#*=}"
     shift
     ;;
+  --destroy-on-fail=*)
+    DESTROY_ON_FAIL="${i#*=}"
+    shift
+    ;;
+  --help)
+    echo "Usage: $0 [--operation=create|delete] [--region=REGION_NAME] [--use-otlp=true|false] [--destroy-on-fail=true|false]"
+    echo ""
+    echo "Parameters:"
+    echo "  --operation        - Operation to perform (create or delete). Default: create"
+    echo "  --region           - AWS region to use. Default: us-east-1"
+    echo "  --use-otlp         - Whether to use OTLP collector. Default: false"
+    echo "  --destroy-on-fail  - Whether to destroy all stacks on failure. Default: true"
+    exit 0
+    ;;
   *)
     # unknown option
     ;;
@@ -36,7 +51,7 @@ function run_cdk() {
   echo "Running CDK..."
   # jump to the cdk folder, run the cdk commands, and then jump back to current folder
   pushd ../../../cdk/eks >/dev/null
-  ./eks-cdk.sh $1 $USE_OTLP
+  ./eks-cdk.sh $1 $USE_OTLP $DESTROY_ON_FAIL
   popd >/dev/null
 }
 

@@ -1,19 +1,39 @@
 #!/bin/bash
 
 # Script to synthesize, deploy, or destroy AWS CDK stacks with stack dependencies
-# Usage: ./cdk-deploy.sh <action>
-# Example for deploy: ./cdk-deploy.sh deploy
-# Example for destroy: ./cdk-deploy.sh destroy
-# Example to only synth: ./cdk-deploy.sh synth
+# Usage: ./cdk-deploy.sh <action> [use-otlp] [destroy-on-fail]
+# 
+# Parameters:
+#   action         - Required: 'synth', 'deploy', or 'destroy'
+#   use-otlp       - Optional: 'true' or 'false' (default: false) - Use OTLP collector
+#   destroy-on-fail - Optional: 'true' or 'false' (default: true) - Destroy all stacks if deployment fails
+#
+# Examples:
+#   ./cdk-deploy.sh deploy                        - Deploy with default settings
+#   ./cdk-deploy.sh deploy true                   - Deploy with OTLP collector
+#   ./cdk-deploy.sh deploy false false            - Deploy without OTLP and keep stacks on failure
+#   ./cdk-deploy.sh deploy true false             - Deploy with OTLP and keep stacks on failure
+#   ./cdk-deploy.sh destroy                       - Destroy all stacks
+#   ./cdk-deploy.sh synth                         - Only synthesize CloudFormation templates
 
 ACTION=$1
 USE_OTLP=${2:-false}  # Default value is false
+DESTROY_ON_FAIL=${3:-true}  # Default to true for backward compatibility
 
 # Check for action parameter
 if [[ -z "$ACTION" ]]; then
-  echo "Usage: $0 <action>"
-  echo "action can be 'synth', 'deploy', or 'destroy'"
-  echo "use-otlp is optional and can be 'true' or 'false' (default: false)"
+  echo "Usage: $0 <action> [use-otlp] [destroy-on-fail]"
+  echo ""
+  echo "Parameters:"
+  echo "  action         - Required: 'synth', 'deploy', or 'destroy'"
+  echo "  use-otlp       - Optional: 'true' or 'false' (default: false)"
+  echo "  destroy-on-fail - Optional: 'true' or 'false' (default: true)"
+  echo ""
+  echo "Examples:"
+  echo "  $0 deploy                        - Deploy with default settings"
+  echo "  $0 deploy true                   - Deploy with OTLP collector"
+  echo "  $0 deploy false false            - Deploy without OTLP and keep stacks on failure"
+  echo "  $0 deploy true false             - Deploy with OTLP and keep stacks on failure"
   exit 1
 fi
 
@@ -65,12 +85,22 @@ if [[ "$ACTION" == "deploy" ]]; then
       echo "Synthetic canary and SLO was deployed successfully"
     else
       echo "Synthetic canary and SLO failed to deploy"
-      cdk destroy --context enableSlo=True --all --force --verbose
+      if [[ "$DESTROY_ON_FAIL" == "true" ]]; then
+        echo "DESTROY_ON_FAIL is set to true, destroying all stacks..."
+        cdk destroy --context enableSlo=True --all --force --verbose
+      else
+        echo "DESTROY_ON_FAIL is set to false, keeping existing stacks for debugging..."
+      fi
       exit 1
     fi
   else
-    echo "Deployment failed. Attempting to clean up resources by destroying all stacks..."
-    cdk destroy --all --force --verbose
+    echo "Deployment failed."
+    if [[ "$DESTROY_ON_FAIL" == "true" ]]; then
+      echo "DESTROY_ON_FAIL is set to true, attempting to clean up resources by destroying all stacks..."
+      cdk destroy --all --force --verbose
+    else
+      echo "DESTROY_ON_FAIL is set to false, keeping existing stacks for debugging..."
+    fi
     exit 1
   fi
 elif [[ "$ACTION" == "destroy" ]]; then
