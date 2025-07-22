@@ -97,7 +97,7 @@ export class SloStack extends Stack {
         "billing-service-python"
     ));
 
-    const exclusionWindows = [{
+    const exclusionWindows: ExclusionWindowProperty[] = [{
          window: {
              duration: 16,
              durationUnit: 'HOUR',
