@@ -19,9 +19,9 @@ Click the hyperlink 'pet-clinic-frontend-java' in the 'Services' list in the mai
 
 Click the 'Service operations' button.
 
-### 5. Search for 'Name = GET /api/payments/owners/{ownerId}/pets/{petId}'
+### 5. Search for 'Name = POST /api/payments/owners/{ownerId}/pets/{petId}'
 
-In the search field under 'Service operations' type 'Name = GET /api/payments/owners/{ownerId}/pets/{petId}' and PRESS Enter.
+In the search field under 'Service operations' type 'Name = POST /api/payments/owners/{ownerId}/pets/{petId}' and PRESS Enter.
 
 ### 6. Access the graph and open the popup.
 
@@ -50,16 +50,16 @@ Check that there is at least one row displayed in the right panel.
 
 Click the 'Clear filters' button
 
-### 10. Search for 'Name = GET /api/gateway/owners/{ownerId}'
+### 10. Search for 'Name = POST /api/customer/owners/{ownerId}/pets'
 
-In the search field under 'Service operations' type 'Name = GET /api/gateway/owners/{ownerId}' and PRESS Enter.
+In the search field under 'Service operations' type 'Name = POST /api/customer/owners/{ownerId}/pets' and PRESS Enter.
 
 ### 11. Access the graph and open the popup.
 
-Access the graph and open the popup, PASS in 2 and 5 as a PARAMETERS. Then wait a few seconds.
+Access the graph and open the popup, PASS in 2 and 6 as a PARAMETERS. Then wait a few seconds.
 
 **Constraints:**
-- You MUST pass in parameters 2 and 5
+- You MUST pass in parameters 2 and 6
 
 ### 12. Type 'attributes.owner.id'
 
@@ -70,7 +70,7 @@ In the right panel, in the search field with placeholder text 'Choose an attribu
 - You MUST ensure that this is under the text 'Group spans by'
 - You MUST ensure that you press Enter
 
-### 13. Check there is at least one row displayed
+### 13. Check there is at least one row displayed.
 
 Check that there is at least one row displayed in the right panel.
 

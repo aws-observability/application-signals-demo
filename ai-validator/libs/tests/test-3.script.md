@@ -24,7 +24,7 @@ Wait a few seconds.
 Ensure that the avg latency is between 7K and 11K ms.
 
 **Constraints:**
-- DO NOT call done() if the latency is between 8K and 10K. Continue with the steps.
+- DO NOT call done() if the latency is between 7K and 11K. Continue with the steps.
 
 ### 6. Access the node.
 

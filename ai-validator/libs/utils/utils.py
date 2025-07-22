@@ -140,7 +140,8 @@ def upload_s3(screenshots, test_id, session):
 
     for i, screenshot in enumerate(screenshots):
         screenshot_data = base64.b64decode(screenshot)
-        s3_key = f"{s3_prefix}screenshot_{i}.png"
+        screenshot_index = f"{i:02}"
+        s3_key = f"{s3_prefix}screenshot_{screenshot_index}.png"
 
         s3_client.put_object(
             Bucket=unique_bucket_name,
