@@ -51,7 +51,20 @@ export REGION='us-east-1'
    cd scripts/eks/appsignals && ./setup-eks-demo.sh --region=region-name
    ``` 
 
-2. Clean up after you are done with the sample app. Replace `region-name` with the same value that you use in previous step.
+2. Access the EKS cluster using kubectl to check pod status and logs:
+
+   ```shell
+   # Configure kubectl to use the EKS cluster
+   aws eks update-kubeconfig --name eks-pet-clinic-demo --region <your-region> --role-arn arn:aws:iam::<your-account>:role/PetClinicEksClusterRole
+
+   # View the microservices pods
+   kubectl get pods -n pet-clinic
+
+   # Get the ingress URL
+   kubectl get svc -n ingress-nginx | grep "ingress-nginx" | awk '{print $4}'
+   ```
+
+3. Clean up after you are done with the sample app. Replace `region-name` with the same value that you use in previous step.
    ```
    cd scripts/eks/appsignals/ && ./setup-eks-demo.sh --operation=delete --region=region-name
    ```
