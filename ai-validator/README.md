@@ -53,19 +53,19 @@ To debug in headless mode to save screenshots of each step to your directory, up
 
 ### Credentials
 
-In the project, we must use two different sets of AWS credentials. We have a default AWS account (which runs ECS, S3, Bedrock, CloudWatch), and we have an account that is currently running the demo application:
+In the project, we must use two different sets of AWS credentials. We have a default AWS account and an account that is currently running the demo application:
 
-#### Default Credentials 
+#### Default Account Credentials 
 
 Default credentials are used for S3, CloudWatch, ECS, and Bedrock access. This is the account where metrics and logs are published to CloudWatch, test screenshots are uploaded to S3, ECS cluster lives, and Bedrock tokens are from. 
 
-#### Demo (auth-access) Credentials
+#### Demo Account (auth-access) Credentials
 
 Credentials with `profile=auth-access` are used to define the account that is currently running the demo which we want to run the tests on. We use these credentials in our source code to generate a federated link (with the [`authentication_open()`](https://github.com/aws-observability/application-signals-demo/blob/main/ai-validator/libs/utils/utils.py#L53) function) to provide read access to our default account. 
 
 ### Assume Role and Permissions
 
-In order to provide our default account (where tests are run in an ECS cluster) with the correct permissions to read from the account that is running the demo, we must set up these permissions and trust relationships on the account that is running the demo. This will allow the default account to assume the role and run tests.
+In order to provide our default account with the correct permissions to read from the account that is running the demo, we must set up these permissions and trust relationships. This will allow the default account to assume the role and run tests from this account.
 
 #### Demo Account
 
@@ -110,6 +110,8 @@ On the account that is running the demo app, you must follow the steps below:
 - Select the policy you made above (“ExamplePolicy”) then click “Next”
 - Name the role (we will reference this policy as “ExampleRole” below)
 - Click “Create role”
+
+**Note**: The name that you give this role must be the name that is added to your `.env` for the `DEMO_ROLE_ID` variable (`DEMO_ROLE_ID=ExampleRole`).
 ##### Edit trust policy:
 - Under the “Access management” tab in "IAM", click on “Roles”
 - Search for the role you just created (“ExampleRole”)
