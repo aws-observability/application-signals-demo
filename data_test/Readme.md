@@ -170,13 +170,6 @@ When adding new test cases:
 3. Ensure proper error handling and logging
 4. Test thoroughly before committing
 
-## Notes
-
-- All timestamps are handled in UTC
-- Business hours are considered as UTC 9:00-17:00
-- Test cases should be designed to be idempotent
-- Consider rate limits when designing test cases
-
 
 ## Optional: Lambda Deployment and Monitoring
 
@@ -186,61 +179,54 @@ The framework supports running tests in AWS Lambda and monitoring test results t
 ```
 data_test/
 ├── deploy/
-│   ├── deploy_lambda.sh      # Deploy Lambda function
-│   ├── remove_lambda.sh      # Remove Lambda function
-│   ├── remove_alarms.sh      # Remove CloudWatch alarms
-│   ├── create_test_cases_alarms.py    # Create individual test alarms
-│   └── create_composite_alarms.py     # Create composite alarms
+│   ├── deploy_lambda_cdk.sh  # Deploy Lambda function and CloudWatch alarms using CDK
+│   ├── compare_composite_alarms.sh # Compare alarms across accounts
+│   └── cdk_lambda/           # CDK project for Lambda and alarm deployment
+│       ├── lib/
+│       │   ├── lambda-stack.ts    # CDK stack for Lambda function
+│       │   └── alarms-stack.ts    # CDK stack for CloudWatch alarms
+│       └── ...
 ├── test_cases/              # Test case JSON files
 └── lambda/                  # Lambda function code
 ```
 
 ### Deployment Process
 
-1. **Deploy Lambda Function**
+1. **Deploy Lambda Function with CDK**
    ```bash
    # From the data_test directory
-   ./deploy/deploy_lambda.sh [region]  # Example: ./deploy/deploy_lambda.sh ap-southeast-1
+   ./deploy/deploy_lambda_cdk.sh --region=<region-name>  # Example: ./deploy/deploy_lambda_cdk.sh --region=us-east-1
+   
+   # To specify a custom function name
+   ./deploy/deploy_lambda_cdk.sh --region=<region-name> --function-name=<function-name>
    ```
    This script will:
-   - Create a deployment package with all necessary files
-   - Optionally deploy to AWS Lambda
-   - Clean up temporary files
+   - Create a temporary deployment package with Lambda code and test cases
+   - Deploy the Lambda function using AWS CDK
+   - Configure an EventBridge rule to trigger the function every 30 minutes
+   - Clean up temporary files automatically
 
 2. **Create CloudWatch Alarms**
-   ```bash
-   # Navigate to deploy directory
-   cd deploy
 
-   # Create individual test alarms
-   python3 create_test_cases_alarms.py --region [region] \
-     --logs-file [path_to_logs_file] \
-     --metrics-file [path_to_metrics_file] \
-     --traces-file [path_to_traces_file]
+   CloudWatch alarms are created automatically using the CDK deployment script by adding the `--create-alarms=true` parameter:
    
-   # Create composite alarms
-   python3 create_composite_alarms.py --region [region] \
-     --logs-file [path_to_logs_file] \
-     --metrics-file [path_to_metrics_file] \
-     --traces-file [path_to_traces_file]
-   ```
-
-   Note: The alarm creation scripts should be run from the `deploy` directory. Default paths for test case files are relative to the `deploy` directory:
-   - Default logs file: `../test_cases/logs_test_cases.json`
-   - Default metrics file: `../test_cases/metrics_test_cases.json`
-   - Default traces file: `../test_cases/traces_test_cases.json`
-
-   Example:
    ```bash
-   # Using default paths
-   python3 create_test_cases_alarms.py --region us-east-1
-   
-   # Using custom paths
-   python3 create_test_cases_alarms.py --region us-east-1 \
-     --logs-file ../test_cases/logs_test_cases.json \
-     --metrics-file ../test_cases/metrics_test_cases.json \
-     --traces-file ../test_cases/traces_test_cases.json
+   # Deploy Lambda function and create CloudWatch alarms
+   ./deploy/deploy_lambda_cdk.sh --region=<region-name> --create-alarms=true
    ```
+   
+   This creates:
+   - Individual alarms for each test case
+   - Composite alarms grouped by scenario
+   - A root composite alarm that monitors all scenarios
+   
+   The alarms will be created in a separate CloudFormation stack named `APMDemoTestAlarmsStack`.
+   
+   The CDK code for alarms is defined in `deploy/cdk_lambda/lib/alarms-stack.ts` and uses test case files from:
+   - Logs file: `test_cases/logs_test_cases.json`
+   - Metrics file: `test_cases/metrics_test_cases.json`
+   - Traces file: `test_cases/traces_test_cases.json`
+   
 
 ### Alarm Configuration
 
@@ -271,38 +257,24 @@ Root Composite Alarm
 
 #### Alarm Parameters
 - **Evaluation Period**: 30 minutes
-- **Data Points**: 4 (2 hours)
+- **Data Points**: 8 (4 hours)
 - **Threshold**: 0.5
 - **Operator**: LessThanThreshold
 - **Missing Data**: treated as missing
 
 ### Cleanup Process
 
-1. **Remove CloudWatch Alarms**
+1. **Remove Lambda Function and CloudWatch Alarms**
    ```bash
    # From the data_test directory
-   ./deploy/remove_alarms.sh [region]  # Example: ./deploy/remove_alarms.sh ap-southeast-1
+   # To remove just the Lambda function
+   ./deploy/deploy_lambda_cdk.sh --operation=destroy --region=<region-name>
+   
+   # To remove both Lambda function and CloudWatch alarms (if previously created)
+   ./deploy/deploy_lambda_cdk.sh --operation=destroy --region=<region-name> --create-alarms=true
    ```
    This script will:
-   - Find all alarms starting with "APMDemoTest"
-   - Display the list of alarms to be deleted
-   - Delete these alarms
-
-2. **Remove Lambda Function**
-   ```bash
-   # From the data_test directory
-   ./deploy/remove_lambda.sh [region]  # Example: ./deploy/remove_lambda.sh ap-southeast-1
-   ```
-   This script will:
-   - Ask for confirmation before deletion
-   - Delete the Lambda function named "APM_Demo_Test_Runner"
+   - Destroy the CloudFormation stack(s) containing the Lambda function and/or alarms
+   - Remove the EventBridge rule and all associated resources
+   - Remove all CloudWatch alarms if --create-alarms=true was specified
    - Provide feedback on the deletion status
-
-3. **Clean Up Temporary Files**
-   ```bash
-   # From the data_test directory
-   rm -rf deploy/*.zip
-   rm -rf deploy/temp_*
-   ```
-
-Note: All scripts support specifying AWS region as a parameter. If not specified, us-east-1 will be used as the default region.
