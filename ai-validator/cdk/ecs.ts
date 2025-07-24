@@ -8,12 +8,14 @@ import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as path from "path";
 import * as dotenv from "dotenv";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 // Load environment variables
 const DEMO_AWS_ACCOUNT_ID = process.env.DEMO_AWS_ACCOUNT_ID;
 const DEMO_ROLE_ID = process.env.DEMO_ROLE_ID;
+const CLOUDWATCH_NAMESPACE = process.env.CLOUDWATCH_NAMESPACE || "";
 
 export class AIValidatorStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -88,6 +90,8 @@ export class AIValidatorStack extends cdk.Stack {
       "test-13-pet-clinic-frontend-java-5.script.md",
     ];
 
+    const failureAlarms: cloudwatch.Alarm[] = [];
+
     testFiles.forEach((scriptFile) => {
       const testId = scriptFile.replace(".script.md", "");
 
@@ -128,6 +132,40 @@ export class AIValidatorStack extends cdk.Stack {
           }),
         ],
       });
+
+      // Set up alarm for each specific test
+      const failureMetric = new cloudwatch.Metric({
+        namespace: CLOUDWATCH_NAMESPACE,
+        metricName: "Failure",
+        dimensionsMap: {
+          TestCase: testId,
+        },
+        period: cdk.Duration.hours(12),
+        statistic: "Sum",
+      });
+
+      const alarm = new cloudwatch.Alarm(this, `FailureAlarm-${testId}`, {
+        alarmName: `FailureAlarm-${testId}`,
+        metric: failureMetric,
+        threshold: 4,
+        evaluationPeriods: 1,
+        comparisonOperator:
+          cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+
+      failureAlarms.push(alarm);
+    });
+
+    // Set up composite alarm that is triggered if any of its children (any specific test) alarm is triggered
+    new cloudwatch.CfnCompositeAlarm(this, "RootFailureAlarm", {
+      alarmName: "AnyTestFailureAlarm",
+      alarmDescription: "Triggered if any test failure alarm is triggered",
+      alarmRule: cloudwatch.AlarmRule.anyOf(
+        ...failureAlarms.map((alarm) =>
+          cloudwatch.AlarmRule.fromAlarm(alarm, cloudwatch.AlarmState.ALARM)
+        )
+      ).renderAlarmRule(),
     });
 
     new cdk.CfnOutput(this, "ClusterArn", {
