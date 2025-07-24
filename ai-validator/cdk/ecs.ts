@@ -159,7 +159,7 @@ export class AIValidatorStack extends cdk.Stack {
 
     // Set up composite alarm that is triggered if any of its children (any specific test) alarm is triggered
     new cloudwatch.CfnCompositeAlarm(this, "RootFailureAlarm", {
-      alarmName: "AnyTestFailureAlarm",
+      alarmName: "APMDemoAITest.root",
       alarmDescription: "Triggered if any test failure alarm is triggered",
       alarmRule: cloudwatch.AlarmRule.anyOf(
         ...failureAlarms.map((alarm) =>
