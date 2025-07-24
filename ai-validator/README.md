@@ -49,6 +49,97 @@ If you want to view the visual browser UI, set your `HEADLESS_MODE` variable in 
 To debug in headless mode to save screenshots of each step to your directory, update your `DEBUG_MODE` variable in `.env` to `True`:
 `DEBUG_MODE=True`
 
+## AWS Account Permissions
+
+### Credentials
+
+In the project, we must use two different sets of AWS credentials. We have a default AWS account and an account that is currently running the demo application:
+
+#### Default Account Credentials 
+
+Default credentials are used for S3, CloudWatch, ECS, and Bedrock access. This is the account where metrics and logs are published to CloudWatch, test screenshots are uploaded to S3, ECS cluster lives, and Bedrock tokens are from. 
+
+#### Demo Account (auth-access) Credentials
+
+Credentials with `profile=auth-access` are used to define the account that is currently running the demo which we want to run the tests on. We use these credentials in our source code to generate a federated link (with the [`authentication_open()`](https://github.com/aws-observability/application-signals-demo/blob/main/ai-validator/libs/utils/utils.py#L53) function) to provide read access to our default account. 
+
+### Assume Role and Permissions
+
+In order to provide our default account with the correct permissions to read from the account that is running the demo, we must set up these permissions and trust relationships. This will allow the default account to assume the role and run tests from this account.
+
+#### Demo Account
+
+On the account that is running the demo app, you must follow the steps below:
+
+##### Create Policy:
+- On the AWS console, search for “IAM”
+- Under the “Access management“ tab, click on “Policies”
+- Click “Create policy” in the top right corner
+- In the “Policy Editor” section, click “JSON” and paste the following to provide the correct permissions for the tests:
+``` 
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:*",
+                "logs:*",
+                "xray:*",
+                "rum:*",
+                "servicecatalog:*",
+                "resource-explorer-2:*",
+                "rds:*",
+                "pi:*",
+                "tag:GetResources",
+                "application-signals:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+- Click “Next”
+- Name the policy (we will reference this policy as “ExamplePolicy” below)
+- Click “Create policy”
+##### Create Role:
+- Under the “Access management“ tab in "IAM", click on ”Roles“
+- Click “Create role” in the top right corner
+- Under “Trusted entity type”, select “AWS account” → “Another AWS account”
+- Enter the account ID of the default account
+- Select the policy you made above (“ExamplePolicy”) then click “Next”
+- Name the role (we will reference this policy as “ExampleRole” below)
+- Click “Create role”
+
+**Note**: The name that you give this role must be the name that is added to your `.env` for the `DEMO_ROLE_ID` variable (`DEMO_ROLE_ID=ExampleRole`).
+##### Edit trust policy:
+- Under the “Access management” tab in "IAM", click on “Roles”
+- Search for the role you just created (“ExampleRole”)
+- Click on the “Trust relationships” tab and “Edit trust policy”
+- Paste the following to provide the default account with the correct permissions:
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::<DEFAULT ACCOUNT ID>:root"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {
+                "StringEquals": {
+                    "aws:PrincipalArn": "arn:aws:iam::<DEFAULT ACCOUNT ID>:role/ValidationTestRole"
+                }
+            }
+        }
+    ]
+}
+```
+#### Default Account
+
+The role and policies required for the default account are set up through the CDK stack.
+
 ## How to Write Successful Prompts
 
 With numerous steps and large queries, Browser Use is slow, and each test could take 15-25 minutes to run. To ensure that you do not waste time having to revise your steps, it is crucial to follow good prompt engineering practices:
@@ -171,4 +262,3 @@ class TestParameters(BaseModel):
 2. Write out each step required for the test
     1. Note: see How to Write Successful Prompts for notes on how to structure steps and call Custom Actions
 3. Run `python main.py tests/test-X.script.md` in the console 
-
