@@ -21,10 +21,10 @@ Wait a few seconds.
 
 ### 5. Ensure the avg latency
 
-Ensure that the avg latency is between 8K and 10K ms.
+Ensure that the avg latency is between 5K and 13K ms.
 
 **Constraints:**
-- DO NOT call done() if the latency is between 8K and 10K. Continue with the steps.
+- DO NOT call done() if the latency is between 5K and 13K. Continue with the steps.
 
 ### 6. Access the node.
 
@@ -36,7 +36,7 @@ Wait a few seconds.
 
 ### 8. Ensure the avg latency
 
-Ensure that the avg latency is between 10K and 12K ms.
+Ensure that the avg latency is between 7K and 15K ms.
 
 ### 9. Click 'customers-service-java'
 

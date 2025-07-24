@@ -69,79 +69,80 @@ function clickRandomGraphPoint(chartPosition, checkboxPosition) {
     }
   }
 
-  // This will query all of the graphs in the iFrame
-  const charts = iframeDoc.querySelectorAll(TRIAGE_CHART_SELECTOR);
-
-  // Select the specific chart
-  const chart = charts[chartPosition];
-
-  // Get the <rect> element within this chart. This will help us hover over the dynamic part
-  const eventLayer = chart.querySelector(EVENT_LAYER_SELECTOR);
-
-  // Get the position of this object relative to the viewport (https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect)
-  const rect = eventLayer.getBoundingClientRect();
-
-  // Hover over the middle of this element (does not have to be the middle, but this step is required to access all <circle> element datapoints)
-  const hoverX = rect.left + rect.width / 2;
-  const hoverY = rect.top + rect.height / 2;
-
-  // Create new MouseEvent to move the mouse to these specific hover coordinates
-  const hoverEvent = new MouseEvent("mousemove", {
-    clientX: hoverX,
-    clientY: hoverY,
-    bubbles: true,
-    cancelable: true,
-    view: window,
-  });
-
-  // Send this hover event to the eventLayer object (https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/dispatchEvent)
-  eventLayer.dispatchEvent(hoverEvent);
-
   // Wait 1 second for hover event to update the graph
-  setTimeout(() => {}, 1000);
+  setTimeout(() => {
+    // This will query all of the graphs in the iFrame
+    const charts = iframeDoc.querySelectorAll(TRIAGE_CHART_SELECTOR);
 
-  // Get the leaderboard datapoint
-  const leaderBoardDataPoint = chart.querySelector(
-    LEADER_BOARD_DATA_POINT_SELECTOR
-  );
+    // Select the specific chart
+    const chart = charts[chartPosition];
 
-  // Get the position of this object relative to the viewpoint
-  const leaderBoardDataPointRect = leaderBoardDataPoint.getBoundingClientRect();
+    // Get the <rect> element within this chart. This will help us hover over the dynamic part
+    const eventLayer = chart.querySelector(EVENT_LAYER_SELECTOR);
 
-  const leaderBoardDataPointX =
-    leaderBoardDataPointRect.left + leaderBoardDataPointRect.width / 2;
-  const leaderBoardDataPointY =
-    leaderBoardDataPointRect.top + leaderBoardDataPointRect.height / 2;
+    // Get the position of this object relative to the viewport (https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect)
+    const rect = eventLayer.getBoundingClientRect();
 
-  const leaderBoardDataPointEvent = new MouseEvent("mousemove", {
-    clientX: leaderBoardDataPointX,
-    clientY: leaderBoardDataPointY,
-    bubbles: true,
-    cancelable: true,
-    view: window,
-  });
-  leaderBoardDataPoint.dispatchEvent(leaderBoardDataPointEvent);
+    // Hover over the middle of this element (does not have to be the middle, but this step is required to access all <circle> element datapoints)
+    const hoverX = rect.left + rect.width / 2;
+    const hoverY = rect.top + rect.height / 2;
 
-  waitForRandomDatapoint().then((element) => {
-    if (element) {
-      const elementRect = element.getBoundingClientRect();
-      const elementX = elementRect.left + elementRect.width / 2;
-      const elementY = elementRect.top + elementRect.height / 2;
+    // Create new MouseEvent to move the mouse to these specific hover coordinates
+    const hoverEvent = new MouseEvent("mousemove", {
+      clientX: hoverX,
+      clientY: hoverY,
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    });
 
-      const hoverEvent = new MouseEvent("mousemove", {
-        clientX: elementX,
-        clientY: elementY,
-        bubbles: true,
-        cancelable: true,
-        view: window,
-      });
+    // Send this hover event to the eventLayer object (https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/dispatchEvent)
+    eventLayer.dispatchEvent(hoverEvent);
 
-      element.dispatchEvent(hoverEvent);
-      clickDataPoint(DATA_POINT_SELECTOR);
-    } else {
-      console.warn("No element with a `cy` value found.");
-    }
-  });
+    // Get the leaderboard datapoint
+    const leaderBoardDataPoint = chart.querySelector(
+      LEADER_BOARD_DATA_POINT_SELECTOR
+    );
+
+    // Get the position of this object relative to the viewpoint
+    const leaderBoardDataPointRect =
+      leaderBoardDataPoint.getBoundingClientRect();
+
+    const leaderBoardDataPointX =
+      leaderBoardDataPointRect.left + leaderBoardDataPointRect.width / 2;
+    const leaderBoardDataPointY =
+      leaderBoardDataPointRect.top + leaderBoardDataPointRect.height / 2;
+
+    const leaderBoardDataPointEvent = new MouseEvent("mousemove", {
+      clientX: leaderBoardDataPointX,
+      clientY: leaderBoardDataPointY,
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    });
+    leaderBoardDataPoint.dispatchEvent(leaderBoardDataPointEvent);
+
+    waitForRandomDatapoint().then((element) => {
+      if (element) {
+        const elementRect = element.getBoundingClientRect();
+        const elementX = elementRect.left + elementRect.width / 2;
+        const elementY = elementRect.top + elementRect.height / 2;
+
+        const hoverEvent = new MouseEvent("mousemove", {
+          clientX: elementX,
+          clientY: elementY,
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        });
+
+        element.dispatchEvent(hoverEvent);
+        clickDataPoint(DATA_POINT_SELECTOR, chart);
+      } else {
+        console.warn("No element with a `cy` value found.");
+      }
+    });
+  }, 1000);
 
   /**
    * Waits for the chart to populate all data points and returns a random element.
@@ -171,11 +172,11 @@ function clickRandomGraphPoint(chartPosition, checkboxPosition) {
    * Simulates a full mouse click (mousedown → mouseup → click) on the provided data point.
    * Will retry if the point is not found, has invalid coordinates, or fails to open a valid popup.
    *
-   *
    * @param {string} selector - CSS selector (DATA_POINT_SELECTOR) to identify the SVG circle to click.
+   * @param {Element} chart - The chart element containing the datapoint.}
    * @returns {Promise<void>}
    */
-  async function clickDataPoint(selector) {
+  async function clickDataPoint(selector, chart) {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         const datapoint = chart.querySelector(selector);
