@@ -9,16 +9,10 @@ To deploy the CDK stack on your local machine, ensure you are inside this direct
 4. Run `cdk deploy`
 
 ### Environment Variables
-In the `Dockerfile`, you MUST update the following environment variables:
-- `DEFAULT_ACCOUNT_AWS_REGION`: Update this to the region you want to run the stack on (this should match the account in Step 2 in the Quick Start)
-- `DEFAULT_AWS_ACCOUNT_ID`: Update this to the account you are deploying to (this should match the account in Step 2 in the Quick Start)
-- `DEBUG_MODE`: Set to `True` if you want to save screenshots to S3 for all test runs or `False` if you only want to save screenshots to S3 for failed test runs
-- `S3_BUCKET_NAME_PREFIX`: Name of your S3 bucket where screenshots will be saved
-- `CLOUDWATCH_NAMESPACE`: Name of your CloudWatch namespace where metrics will be published
-- `DEMO_AWS_ACCOUNT_ID`: Update this to the account you run the demo app from
-- `DEMO_ROLE_ID`: Update this to the IAM role name in the account that runs the demo app (used to assume role)
+Please follow the [`.env` setup](https://github.com/aws-observability/application-signals-demo/tree/main/ai-validator#environment-variables) to set up all of your environment variables. Although most of these will be used to run the project locally, you MUST also paste these into the [`Dockerfile`](https://github.com/aws-observability/application-signals-demo/tree/main/ai-validator/cdk/Dockerfile#L31) (with the exception of `HEADLESS_MODE` and `MANUAL_MODE` - please see below).
+
 - `HEADLESS_MODE`: DO NOT update this variable. It is used to run tests in a headless Chromium browser in ECS
 - `MANUAL_MODE`: DO NOT update this variable. It is used to run tests in ECS
 
 ### Notes
-- `ecs.ts` uses the `DEMO_AWS_ACCOUNT_ID` and `DEMO_ROLE_ID` from your `.env` to assume role. You should ensure to follow [these steps](https://github.com/aws-observability/application-signals-demo/tree/main/ai-validator#environment-variables) to ensure these environent variables are set up (at minimum, `DEMO_AWS_ACCOUNT_ID` and `DEMO_ROLE_ID` should be added to run the stack locally).
+- `ecs.ts` directly uses the `DEMO_AWS_ACCOUNT_ID`, `DEMO_ROLE_ID`, and `CLOUDWATCH_NAMESPACE` from your `.env`, so you MUST set up a `.env` file with these environment variables. However, it is best practice to set all the environment variables if you ever want to test the project locally. 
