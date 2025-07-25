@@ -28,7 +28,7 @@ aws_session_token=<...>
 **Note:** To run tests through the console, you MUST ensure that you set your `MANUAL_MODE` variable in `.env` to `True`: `MANUAL_MODE=True`. `MANUAL_MODE=False` is used to run the tests in ECS.
 
 ## Environment Variables
-To run this project, create a `.env` file in the root directory based on the provided `.env.example`:
+To run this project, create a `.env` file in the root directory (`/ai-validator/.env`) based on the provided `.env.example`:
 
 ```
 DEFAULT_ACCOUNT_AWS_REGION=<Region for default account (used for S3, CloudWatch, Bedrock, ECS access)>
