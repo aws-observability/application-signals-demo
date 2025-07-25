@@ -10,7 +10,7 @@ import * as path from "path";
 import * as dotenv from "dotenv";
 import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 // Load environment variables
 const DEMO_AWS_ACCOUNT_ID = process.env.DEMO_AWS_ACCOUNT_ID;
