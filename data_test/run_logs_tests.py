@@ -3,11 +3,12 @@ import json
 import sys
 import boto3
 from datetime import datetime, timedelta, timezone
+from string_replacer import load_and_apply_replacements
 
 def load_test_cases(json_file_path):
     try:
-        with open(json_file_path, 'r') as f:
-            data = json.load(f)
+        # 使用替换功能加载测试用例
+        data = load_and_apply_replacements(json_file_path, "STRING_REPLACEMENT_RULES")
         return data.get("log_test_cases", [])
     except FileNotFoundError:
         print(f"ERROR: JSON Not Found {json_file_path}", file=sys.stderr)

@@ -162,6 +162,78 @@ python3 run_trace_tests.py <path_to_test_cases.json>
 - `error_code`: Checks for specific error codes
 - `http_status_code`: Validates HTTP status codes
 
+## String Replacement Configuration
+
+The testing framework supports dynamic string replacement in test cases through the `STRING_REPLACEMENT_RULES` environment variable. This feature allows you to parameterize test cases and replace placeholder values at runtime.
+
+### Configuration Format
+
+The `STRING_REPLACEMENT_RULES` environment variable supports two formats:
+
+#### Simple Format
+```bash
+export STRING_REPLACEMENT_RULES="placeholder1:actual_value1,placeholder2:actual_value2"
+```
+
+#### Quoted Format
+```bash
+export STRING_REPLACEMENT_RULES='"placeholder1":"actual_value1","placeholder2":"actual_value2"'
+```
+
+### Usage Examples
+
+#### Example 1: Replace Function Names
+```bash
+export STRING_REPLACEMENT_RULES="FUNCTION_NAME:my-lambda-function,LOG_GROUP:/aws/lambda/my-lambda-function"
+```
+
+Test case JSON:
+```json
+{
+  "log_test_cases": [
+    {
+      "test_case_id": "test-1",
+      "description": "Test FUNCTION_NAME logs",
+      "log_group_names": ["LOG_GROUP"],
+      "query_string": "fields @timestamp, @message | filter @message like /FUNCTION_NAME/"
+    }
+  ]
+}
+```
+
+#### Example 2: Replace Service Names in Traces
+```bash
+export STRING_REPLACEMENT_RULES="SERVICE_NAME:my-service,REGION:us-east-1"
+```
+
+Test case JSON:
+```json
+{
+  "trace_test_cases": [
+    {
+      "test_case_id": "test-1",
+      "description": "Test SERVICE_NAME traces",
+      "parameters": {
+        "filter_expression": "service(\"SERVICE_NAME\") AND annotation.region = \"REGION\""
+      }
+    }
+  ]
+}
+```
+
+### How It Works
+
+1. The framework automatically loads replacement rules from the `STRING_REPLACEMENT_RULES` environment variable
+2. All string values in test case JSON files are processed for replacements
+3. Replacements are applied recursively to nested objects and arrays
+4. The original test case files remain unchanged - replacements happen at runtime
+
+### Benefits
+
+- **Environment-specific testing**: Use the same test cases across different environments by replacing environment-specific values
+- **Dynamic configuration**: Change test parameters without modifying JSON files
+- **Parameterized testing**: Create reusable test templates with placeholders
+
 ## Contributing
 
 When adding new test cases:
@@ -169,6 +241,7 @@ When adding new test cases:
 2. Follow the existing validation patterns
 3. Ensure proper error handling and logging
 4. Test thoroughly before committing
+5. Consider using placeholder values for environment-specific configurations
 
 
 ## Optional: Lambda Deployment and Monitoring
