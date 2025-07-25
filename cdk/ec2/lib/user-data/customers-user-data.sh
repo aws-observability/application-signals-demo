@@ -152,7 +152,7 @@ tmux send-keys -t customers "export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true" C
 tmux send-keys -t customers "export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics" C-m
 tmux send-keys -t customers "export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf" C-m
 tmux send-keys -t customers "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces" C-m
-tmux send-keys -t customers "export OTEL_RESOURCE_ATTRIBUTES=\"service.name=${service_name}\"" C-m
+tmux send-keys -t customers "export OTEL_RESOURCE_ATTRIBUTES=\"service.name=${service_name},Team=Frontend,Organization=Marketplace,BusinessUnit=E-commerce,aws.application_signals.metric_resource_keys=Team&Organization&BusinessUnit\"" C-m
 tmux send-keys -t customers "export SPRING_PROFILES_ACTIVE=ec2" C-m
 tmux send-keys -t customers "java -jar spring-petclinic-customer*.jar" C-m
 EOF

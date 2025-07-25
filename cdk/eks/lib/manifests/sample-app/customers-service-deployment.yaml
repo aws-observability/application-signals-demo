@@ -40,5 +40,8 @@ spec:
           name: customers-service-java
           ports:
             - containerPort: 8081
+          env:
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "Team=Backend,Organization=Marketplace,BusinessUnit=E-commerce,aws.application_signals.metric_resource_keys=Team&Organization&BusinessUnit"
       restartPolicy: Always
 status: {}
