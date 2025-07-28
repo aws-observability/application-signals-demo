@@ -76,7 +76,7 @@
         {"Name": "RemoteOperation", "Value": "SELECT"},
         {"Name": "RemoteService", "Value": "postgresql"},
         {"Name": "RemoteResourceType", "Value": "DB::Connection"},
-        {"Name": "RemoteResourceIdentifier", "Value": "afsklj;aklfalksdflakflas"}
+        {"Name": "RemoteResourceIdentifier", "Value": "NO_VALIDATE"}
       ],
       "evaluation_period_minutes": 180,
       "threshold": {
