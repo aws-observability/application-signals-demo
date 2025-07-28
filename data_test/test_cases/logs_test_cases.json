@@ -50,7 +50,7 @@
       "description": "Verify owner.id in payment service logs (Scenario 4)",
       "test_scenario": "Scenario 4",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message,traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"payment-service-dotnet\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /owners/{ownerId:int}/pets/{petId:int}/payments\" and not ispresent(attributes.aws.remote.service) and statusCode>=400 and statusCode<500  | limit 10",
+      "query_string": "fields @timestamp, @message,traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"payment-service-dotnet\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /owners/{ownerId:int}/pets/{petId:int}/payments\" and not ispresent(attributes.aws.remote.service) and statusCode>=400 and statusCode<500  | limit 10",
       "time_range": {
         "relative_minutes": 30
       },
@@ -73,7 +73,7 @@
       "description": "Verify ProvisionedThroughputExceededException in visits-service-java logs (Scenario 6)",
       "test_scenario": "Scenario 6",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration | filter attributes.aws.local.service=\"visits-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) and (statusCode>=500 or statusCode=\"ERROR\")  #no-attribute-selected | limit 10",
+      "query_string": "fields @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration | filter attributes.aws.local.service=\"visits-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) and (statusCode>=500 or statusCode=\"ERROR\")  #no-attribute-selected | limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -96,7 +96,7 @@
       "description": "Verify container metrics integration (Scenario 7)",
       "test_scenario": "Scenario 7",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration | filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /api/customer/owners\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
+      "query_string": "fields @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration | filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /api/customer/owners\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
       "time_range": {
         "relative_minutes": 30
       },
@@ -114,7 +114,7 @@
       "description": "Verify SQS error logs (Scenario 8)",
       "test_scenario": "Scenario 8",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration | filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.remote.service = \"AWS::SQS\" and attributes.aws.remote.operation = \"PurgeQueue\" and attributes.aws.remote.resource.identifier = \"apm_test\" and statusCode>=400 and statusCode<500 | limit 10",
+      "query_string": "fields @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration | filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.remote.service = \"AWS::SQS\" and attributes.aws.remote.operation = \"PurgeQueue\" and attributes.aws.remote.resource.identifier = \"apm_test\" and statusCode>=400 and statusCode<500 | limit 10",
       "time_range": {
         "relative_minutes": 30
       },
@@ -132,7 +132,7 @@
       "description": "Verify owner.id in customers-service-java PUT /owners/{ownerId}/pets/{petId} operationlogs (Scenario 13)",
       "log_group_names": ["aws/spans"],
       "test_scenario": "Scenario 13",
-      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"PUT /owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
+      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"PUT /owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -154,7 +154,7 @@
       "description": "Verify owner.id in customers-service-java PUT /owners/{ownerId}/pets/{petId} operationlogs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message,traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"PUT /owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
+      "query_string": "fields @timestamp, @message,traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"PUT /owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -177,7 +177,7 @@
       "description": "Verify owner.id in customers-service-java POST /owners/{ownerId}/pets operationlogs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /owners/{ownerId}/pets\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
+      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /owners/{ownerId}/pets\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -200,7 +200,7 @@
       "description": "Verify owner.id in customers-service-java GET /owners/{ownerId} operationlogs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /owners/{ownerId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
+      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /owners/{ownerId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -223,7 +223,7 @@
       "description": "Verify owner.id in customers-service-java GET /owners/{ownerId}/pets/{petId} operationlogs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
+      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -246,7 +246,7 @@
       "description": "Verify owner.id in customers-service-java GET /diagnose/owners/{ownerId}/pets/{petId} operationlogs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /diagnose/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
+      "query_string": "fields @message, @timestamp, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"customers-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /diagnose/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service)  | sort duration asc | limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -315,7 +315,7 @@
       "description": "Verify owner.id in visit-service-java POST /owners/{ownerId}/pets/{petId}/visits operation logs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"visits-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"visits-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -338,7 +338,7 @@
       "description": "Verify owner.id in visit-service-java GET /owners/{ownerId}/pets/{petId}/visits operation logs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"visits-service-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"visits-service-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -361,7 +361,7 @@
       "description": "Verify owner.id in payment-ser  vice-dotnet GET /owners/{ownerId:int}/pets/{petId:int}/payments operation logs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp,@message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"payment-service-dotnet\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /owners/{ownerId:int}/pets/{petId:int}/payments\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp,@message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"payment-service-dotnet\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /owners/{ownerId:int}/pets/{petId:int}/payments\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -384,7 +384,7 @@
       "description": "Verify owner.id in payment-service-dotnet POST /owners/{ownerId:int}/pets/{petId:int}/payments/ operation logs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp,@message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"payment-service-dotnet\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /owners/{ownerId:int}/pets/{petId:int}/payments/\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp,@message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"payment-service-dotnet\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /owners/{ownerId:int}/pets/{petId:int}/payments/\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -407,7 +407,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java PUT /api/customer/owners/{ownerId}/pets/{petId} operation logs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"PUT /api/customer/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"PUT /api/customer/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -430,7 +430,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java POST /api/visit/owners/{ownerId}/pets/{petId}/visits operation logs (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /api/visit/owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /api/visit/owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -453,7 +453,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java POST /api/payments/owners/{ownerId}/pets/{petId} (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /api/payments/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /api/payments/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -476,7 +476,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java POST /api/customer/owners/{ownerId}/pets (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"POST /api/customer/owners/{ownerId}/pets\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"POST /api/customer/owners/{ownerId}/pets\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -499,7 +499,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java GET /api/visit/owners/{ownerId}/pets/{petId}/visits (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /api/visit/owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /api/visit/owners/{ownerId}/pets/{petId}/visits\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -522,7 +522,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java GET /api/payments/owners/{ownerId}/pets/{petId} (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /api/payments/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /api/payments/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -545,7 +545,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java GET /api/gateway/owners/{ownerId} (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /api/gateway/owners/{ownerId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /api/gateway/owners/{ownerId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -568,7 +568,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java GET /api/customer/owners/{ownerId} (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /api/customer/owners/{ownerId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /api/customer/owners/{ownerId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -591,7 +591,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java GET /api/customer/owners/{ownerId}/pets/{petId} (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /api/customer/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /api/customer/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },
@@ -614,7 +614,7 @@
       "description": "Verify owner.id in pet-clinic-frontend-java GET /api/customer/diagnose/owners/{ownerId}/pets/{petId} (Scenario 13)",
       "test_scenario": "Scenario 13",
       "log_group_names": ["aws/spans"],
-      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"eks:demo/default\"  and attributes.aws.local.operation = \"GET /api/customer/diagnose/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
+      "query_string": "fields @timestamp, @message, traceId, endTimeUnixNano/1000000 as timestamp, spanId, name, coalesce(attributes.http.response.status_code, attributes.http.status_code, status.code) as statusCode, durationNano/1000000 as duration| filter attributes.aws.local.service=\"pet-clinic-frontend-java\" and attributes.aws.local.environment = \"ENVIRONMENT_NAME_PLACEHOLDER\"  and attributes.aws.local.operation = \"GET /api/customer/diagnose/owners/{ownerId}/pets/{petId}\" and not ispresent(attributes.aws.remote.service) | sort duration asc| limit 10",
       "time_range": {
         "relative_minutes": 180
       },

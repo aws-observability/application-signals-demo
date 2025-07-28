@@ -14,6 +14,8 @@ The testing framework consists of three main components:
    - Tests CloudWatch Metrics data collection and threshold validations
    - Supports business hours and non-business hours testing
    - Includes various comparison operators for threshold validation
+   - **NEW**: Supports CloudWatch Metrics Insights SQL queries with `use_query_style: true`
+   - **NEW**: Supports `NO_VALIDATE` dimensions for existence-only validation in SQL queries
 
 3. **Trace Testing** (`run_trace_tests.py`)
    - Tests AWS X-Ray trace collection and analysis
@@ -44,6 +46,14 @@ data_test/
   - CloudWatch Logs
   - CloudWatch Metrics
   - X-Ray
+
+## Environment Variables
+
+The framework automatically reads and replaces placeholders using environment variables:
+
+- **`AWS_REGION`**: Automatically replaces `REGION_NAME_PLACEHOLDER` in test cases
+- **`ENV_NAME`**: Automatically replaces `ENVIRONMENT_NAME_PLACEHOLDER` in test cases
+- **Account ID**: Automatically replaces `ACCOUNT_ID_PLACEHOLDER` with the current AWS account ID running in lambda environment
 
 ## Usage
 
@@ -116,6 +126,41 @@ python3 run_trace_tests.py <path_to_test_cases.json>
 }
 ```
 
+### Metrics Test Case with SQL Query (NEW)
+```json
+{
+  "metric_test_cases": [
+    {
+      "test_case_id": "test-2",
+      "description": "Test metric with SQL query",
+      "use_query_style": true,
+      "metric_namespace": "AWS/Lambda",
+      "metric_name": "Errors",
+      "dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "ENVIRONMENT_NAME_PLACEHOLDER"
+        },
+        {
+          "Name": "Region",
+          "Value": "NO_VALIDATE"
+        }
+      ],
+      "statistic": "Sum",
+      "evaluation_period_minutes": 5,
+      "threshold": {
+        "comparison_operator": [
+          {
+            "operator": "LessThanThreshold",
+            "threshold_value": 1
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
 ### Trace Test Case Example
 ```json
 {
@@ -151,6 +196,7 @@ python3 run_trace_tests.py <path_to_test_cases.json>
   - `LessThanThreshold`
   - `GreaterThanOrEqualToThreshold`
   - `LessThanOrEqualToThreshold`
+- **NEW**: `NO_VALIDATE` dimension values for existence-only validation, this only effect with SQL type query
 
 ### Trace Validation Types
 - `count`: Validates trace count
@@ -167,9 +213,9 @@ python3 run_trace_tests.py <path_to_test_cases.json>
 When adding new test cases:
 1. Create appropriate JSON test case files
 2. Follow the existing validation patterns
-3. Ensure proper error handling and logging
-4. Test thoroughly before committing
-
+3. Use placeholders for environment-specific values
+4. Ensure proper error handling and logging
+5. Test thoroughly before committing
 
 ## Optional: Lambda Deployment and Monitoring
 

@@ -2,7 +2,11 @@
 import json
 import sys
 import boto3
+import os
 from datetime import datetime, timedelta, timezone
+
+
+environment_name = os.environ.get("ENV_NAME", "eks:eks-pet-clinic-demo/pet-clinic")
 
 def load_test_cases(json_file_path):
     try:
@@ -24,8 +28,7 @@ def get_time_range_params(test_case):
 
 def get_non_business_hours_ranges(start_dt, end_dt):
     """
-    Get non-business time periods (UTC 9-5以外的时间) in the last 24 hours
-    
+    Get non-business time periods in the last 24 hours
     """
     ranges = []
     
@@ -59,53 +62,100 @@ def get_non_business_hours_ranges(start_dt, end_dt):
     return ranges
 
 
-def execute_metric_test(test_case):
+def build_metric_expression(test_case):
+    """
+    Build CloudWatch Metrics Insights expression from test case
+    Supports NO_VALIDATE for dimensions - includes dimension in SCHEMA but skips WHERE clause
+    """
+    namespace = test_case["metric_namespace"]
+    metric_name = test_case["metric_name"]
+    statistic = test_case["statistic"]
+    dimensions = test_case.get("dimensions", [])
+    
+    # Build SCHEMA clause with all dimension names
+    schema_parts = [f'"{namespace}"']
+    dimension_filters = []
+    no_validate_dimensions = []
+    
+    if dimensions:
+        # Add all dimension names to SCHEMA clause
+        dimension_names = [dim["Name"] for dim in dimensions]
+        schema_parts.extend(dimension_names)
+        
+        # Build WHERE clause with dimension value filters
+        # Skip dimensions with NO_VALIDATE value
+        for dim in dimensions:
+            if dim["Value"] == "NO_VALIDATE":
+                no_validate_dimensions.append(dim["Name"])
+            else:
+                # Escape single quotes in dimension values by doubling them
+                escaped_value = dim["Value"].replace("'", "''")
+                dimension_filters.append(f"{dim['Name']} = '{escaped_value}'")
+    
+    # Build SCHEMA clause
+    schema_clause = f"SCHEMA({', '.join(schema_parts)})"
+    
+    # Build WHERE clause if we have dimension filters (excluding NO_VALIDATE dimensions)
+    where_clause = ""
+    if dimension_filters:
+        where_clause = f" WHERE {' AND '.join(dimension_filters)}"
+    
+    # Build the complete expression using CloudWatch Metrics Insights syntax
+    expression = f'SELECT {statistic}({metric_name}) FROM {schema_clause}{where_clause}'
+
+    expression = expression.replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name)
+    
+    # Log information about NO_VALIDATE dimensions
+    if no_validate_dimensions:
+        print(f"📋 NO_VALIDATE dimensions (existence only): {', '.join(no_validate_dimensions)}")
+    
+    return expression
+
+def execute_metric_test_with_expression(test_case, start_dt, end_dt):
+    """Execute metric test using CloudWatch Metrics Insights Expression format"""
     session = boto3.Session()
     cloudwatch = session.client('cloudwatch')
     
-    start_dt, end_dt = get_time_range_params(test_case)
+    # Build the metric expression
+    expression = build_metric_expression(test_case)
     
-    # Check if only non-business hours are needed
-    if test_case.get("non_business_hours_only", False):
-        non_business_ranges = get_non_business_hours_ranges(start_dt, end_dt)
-        if not non_business_ranges:
-            print("⚠️ No non-business time periods in the specified time range")
-            return None
-        
-        all_results = []
-        for range_start, range_end in non_business_ranges:
-            try:
-                response = cloudwatch.get_metric_data(
-                    StartTime=range_start,
-                    EndTime=range_end,
-                    MetricDataQueries=[
-                        {
-                            'Id': 'm1',
-                            'MetricStat': {
-                                'Metric': {
-                                    'Namespace': test_case["metric_namespace"],
-                                    'MetricName': test_case["metric_name"],
-                                    'Dimensions': test_case.get("dimensions", [])
-                                },
-                                'Period': 60,
-                                'Stat': test_case["statistic"]
-                            },
-                            'ReturnData': True
-                        }
-                    ]
-                )
-                if response and response.get("MetricDataResults"):
-                    all_results.extend(response["MetricDataResults"][0].get("Values", []))
-            except Exception as e:
-                print(f"❌ Failed to get metric data in non-business time period {range_start} to {range_end}: {str(e)}")
-        
-        # Merge all non-business time period results
-        if all_results:
-            print(f"✅ Successfully got metric data in non-business time periods")
-            return {"MetricDataResults": [{"Values": all_results}]}
+    try:
+        response = cloudwatch.get_metric_data(
+            StartTime=start_dt,
+            EndTime=end_dt,
+            MetricDataQueries=[
+                {
+                    'Id': 'm1',
+                    'Expression': expression,
+                    'Period': 60,
+                    'ReturnData': True
+                }
+            ]
+        )
+        return response                
+    except Exception as e:
+        print(f"❌ Failed to get metric data with Expression: {str(e)}")
         return None
+
+def execute_metric_test_with_metricstat(test_case, start_dt, end_dt):
+    """Execute metric test using original MetricStat format"""
+    session = boto3.Session()
+    cloudwatch = session.client('cloudwatch')
+        
+    # MetricStat mode - use all dimensions as-is, NO_VALIDATE is not supported
+    dimensions = test_case.get("dimensions", [])
+
+    new_dimensions = []
+    for dim in dimensions:
+        if isinstance(dim.get("Value"), str) and 'ENVIRONMENT_NAME_PLACEHOLDER' in dim["Value"]:
+            new_dim = dim.copy()
+            new_dim["Value"] = dim["Value"].replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name)
+            new_dimensions.append(new_dim)
+        else:
+            new_dimensions.append(dim)
+
+    dimensions = new_dimensions
     
-    # Original query logic
     try:
         response = cloudwatch.get_metric_data(
             StartTime=start_dt,
@@ -117,7 +167,7 @@ def execute_metric_test(test_case):
                         'Metric': {
                             'Namespace': test_case["metric_namespace"],
                             'MetricName': test_case["metric_name"],
-                            'Dimensions': test_case.get("dimensions", [])
+                            'Dimensions': dimensions
                         },
                         'Period': 60,
                         'Stat': test_case["statistic"]
@@ -128,8 +178,49 @@ def execute_metric_test(test_case):
         )
         return response                
     except Exception as e:
-        print(f"❌ Failed to get metric data: {str(e)}")
+        print(f"❌ Failed to get metric data with MetricStat: {str(e)}")
         return None
+
+def execute_metric_test(test_case):
+    session = boto3.Session()
+    cloudwatch = session.client('cloudwatch')
+    
+    start_dt, end_dt = get_time_range_params(test_case)
+    
+    # Check if we should use query style (Expression) or original style (MetricStat)
+    use_query_style = test_case.get("use_query_style", False)
+    
+    # Check if only non-business hours are needed
+    if test_case.get("non_business_hours_only", False):
+        non_business_ranges = get_non_business_hours_ranges(start_dt, end_dt)
+        if not non_business_ranges:
+            print("⚠️ No non-business time periods in the specified time range")
+            return None
+        
+        all_results = []
+        for range_start, range_end in non_business_ranges:
+            try:
+                if use_query_style:
+                    response = execute_metric_test_with_expression(test_case, range_start, range_end)
+                else:
+                    response = execute_metric_test_with_metricstat(test_case, range_start, range_end)
+                
+                if response and response.get("MetricDataResults"):
+                    all_results.extend(response["MetricDataResults"][0].get("Values", []))
+            except Exception as e:
+                print(f"❌ Failed to get metric data in non-business time period {range_start} to {range_end}: {str(e)}")
+        
+        # Merge all non-business time period results
+        if all_results:
+            print(f"✅ Successfully got metric data in non-business time periods")
+            return {"MetricDataResults": [{"Values": all_results}]}
+        return None
+    
+    # Execute based on the chosen style
+    if use_query_style:
+        return execute_metric_test_with_expression(test_case, start_dt, end_dt)
+    else:
+        return execute_metric_test_with_metricstat(test_case, start_dt, end_dt)
 
 def execute_and_validate_command(response, test_case):
     if not response:

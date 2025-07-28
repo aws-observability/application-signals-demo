@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import json
 import sys
+import os
 import boto3
 from datetime import datetime, timedelta, timezone
+
+environment_name = os.environ.get("ENV_NAME", "eks:eks-pet-clinic-demo/pet-clinic")
 
 def load_test_cases(json_file_path):
     try:
@@ -43,10 +46,25 @@ def execute_trace_test(test_case):
         next_token = None
         
         while True:
+            filter_expression = params.get("filter_expression", "")
+            
+            # Check if ACCOUNT_ID_PLACEHOLDER exists in filter expression and replace it
+            if "ACCOUNT_ID_PLACEHOLDER" in filter_expression:
+                client = boto3.client('sts')
+                account_id = client.get_caller_identity()['Account']
+                filter_expression = filter_expression.replace('ACCOUNT_ID_PLACEHOLDER', account_id)
+            
+            # Check if REGION_NAME_PLACEHOLDER exists in filter expression and replace it
+            if "REGION_NAME_PLACEHOLDER" in filter_expression:
+                region_name = os.environ.get("AWS_REGION", "us-east-1")
+                filter_expression = filter_expression.replace('REGION_NAME_PLACEHOLDER', region_name)
+
+            filter_expression = filter_expression.replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name)
+
             query_params = {
                 'StartTime': start_timestamp,
                 'EndTime': end_timestamp,
-                'FilterExpression': params.get("filter_expression", ""),
+                'FilterExpression': filter_expression,
                 'Sampling': False
             }
             
@@ -65,7 +83,7 @@ def execute_trace_test(test_case):
             'TraceSummaries': all_trace_summaries
         }
         
-        print(f"Filter Expression: {params.get('filter_expression', '')}")
+        print(f"Filter Expression: {filter_expression}")
         print(f"Total traces collected: {len(all_trace_summaries)}")
         return complete_response
     except Exception as e:

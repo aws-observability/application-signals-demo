@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import json
 import sys
-import boto3
+import boto3, os
 from datetime import datetime, timedelta, timezone
+
+environment_name = os.environ.get("ENV_NAME", "eks:eks-pet-clinic-demo/pet-clinic")
+
 
 def load_test_cases(json_file_path):
     try:
@@ -48,8 +51,10 @@ def execute_logs_test(test_case):
             logGroupNames=test_case["log_group_names"],
             startTime=int(start_dt.timestamp() * 1000),
             endTime=int(end_dt.timestamp() * 1000),
-            queryString=test_case["query_string"]
+            queryString=test_case["query_string"].replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name)
         )
+
+        print(test_case["query_string"].replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name))
         
         query_id = response['queryId']
         

@@ -6,6 +6,7 @@ from metrics_tester import run_test as run_metric_test
 from traces_tester import run_test as run_trace_test
 from logs_tester import run_test as run_logs_test
 
+
 # initialize aws clients
 cloudwatch = boto3.client('cloudwatch')
 xray = boto3.client('xray')
@@ -294,6 +295,7 @@ def load_test_cases_from_files():
         if os.path.exists(metrics_file):
             with open(metrics_file, 'r') as f:
                 metrics_data = json.load(f)
+
                 test_cases['metrics'] = metrics_data
     except Exception as e:
         print(f"Failed to load metric test cases: {str(e)}")
@@ -303,6 +305,7 @@ def load_test_cases_from_files():
         if os.path.exists(traces_file):
             with open(traces_file, 'r') as f:
                 traces_data = json.load(f)
+
                 test_cases['traces'] = traces_data
     except Exception as e:
         print(f"Failed to load trace test cases: {str(e)}")
@@ -312,6 +315,7 @@ def load_test_cases_from_files():
         if os.path.exists(logs_file):
             with open(logs_file, 'r') as f:
                 logs_data = json.load(f)
+
                 test_cases['logs'] = logs_data
     except Exception as e:
         print(f"Failed to load logs test cases: {str(e)}")
@@ -325,6 +329,8 @@ def lambda_handler(event, context):
         'traces': json.loads(os.environ.get('TRACES_TEST_CASES', '{"trace_test_cases": []}')),
         'logs': json.loads(os.environ.get('LOGS_TEST_CASES', '{"log_test_cases": []}'))
     }
+    
+
     
     if not any(len(test_cases[test_type].get(f'{test_type}_test_cases', [])) > 0 for test_type in test_cases):
         test_cases = load_test_cases_from_files()
