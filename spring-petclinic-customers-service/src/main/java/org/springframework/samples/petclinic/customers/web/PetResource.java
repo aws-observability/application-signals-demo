@@ -180,12 +180,10 @@ class PetResource {
 
         // enrich with nutrition
         PetNutrition petNutrition = null;
-        try{
-            ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
-            petNutrition = response.getBody();
-        } catch (Exception ex){
-            ex.printStackTrace();
-        }
+        // will throw exception when the pet type is not found
+        ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
+        petNutrition = response.getBody();
+
         if(petNutrition == null){
             System.out.println("empty petNutrition");
             return detail;
