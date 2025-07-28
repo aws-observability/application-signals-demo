@@ -138,8 +138,8 @@ export class EksStack extends Stack {
       instanceTypes: [
         new InstanceType('m5.large'),
       ],
-      minSize: 3, 
-      maxSize: 5,
+      minSize: 5, 
+      maxSize: 10,
       releaseVersion: nodeGroupAmiReleaseVersion,
     });
 
