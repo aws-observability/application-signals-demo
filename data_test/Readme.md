@@ -196,8 +196,7 @@ python3 run_trace_tests.py <path_to_test_cases.json>
   - `LessThanThreshold`
   - `GreaterThanOrEqualToThreshold`
   - `LessThanOrEqualToThreshold`
-- **NEW**: `NO_VALIDATE` dimension values for existence-only validation
-- **NEW**: CloudWatch Metrics Insights SQL queries with `use_query_style: true`
+- **NEW**: `NO_VALIDATE` dimension values for existence-only validation, this only effect with SQL type query
 
 ### Trace Validation Types
 - `count`: Validates trace count
@@ -208,23 +207,6 @@ python3 run_trace_tests.py <path_to_test_cases.json>
 - `exception_message`: Validates exception messages
 - `error_code`: Checks for specific error codes
 - `http_status_code`: Validates HTTP status codes
-
-## New Features
-
-### Automatic Environment Variable Replacement
-The framework automatically replaces placeholders in test cases:
-- `ACCOUNT_ID_PLACEHOLDER` → Current AWS account ID
-- `REGION_NAME_PLACEHOLDER` → `AWS_REGION` environment variable
-- `ENVIRONMENT_NAME_PLACEHOLDER` → `ENV_NAME` environment variable
-
-### CloudWatch Metrics Insights SQL Queries
-Enable SQL-style metric queries by setting `"use_query_style": true` in metric test cases:
-- Uses CloudWatch Metrics Insights syntax
-- Supports `NO_VALIDATE` dimensions for existence-only validation
-- More flexible dimension filtering
-
-### Non-Business Hours Testing
-Set `"non_business_hours_only": true` to test metrics during non-business hours (outside 9 AM - 5 PM UTC).
 
 ## Contributing
 
