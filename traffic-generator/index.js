@@ -9,12 +9,28 @@ const burstMinDelay = parseInt(process.env.BURST_DELAY_MIN, 10) || 60;
 const lowLoadMaxRequests = parseInt(process.env.LOW_LOAD_MAX, 10) || 60;
 const lowLoadMinRequests = parseInt(process.env.LOW_LOAD_MIN, 10) || 20;
 
+const pets = new Map([
+    [1, 1],
+    [2, 2],
+    [3, 3],
+    [4, 3],
+    [5, 4],
+    [6, 5],
+    [7, 6],
+    [8, 6],
+    [9, 7],
+    [10, 8],
+    [11, 9],
+    [12, 10],
+    [13, 10]
+  ]);
+
+
 function getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-const postPaymentData = (amount, notes) => {
-    const url = `${baseUrl}/api/payments/owners/1/pets/1`;
+const postPaymentData = (url, amount, notes) => {
     const data = {
         amount: amount,
         notes: notes
@@ -23,8 +39,7 @@ const postPaymentData = (amount, notes) => {
     return axios.post(url, data, { timeout: 10000 });
 }
 
-const postVisitData = (date, description) => {
-    const url = `${baseUrl}/api/visit/owners/7/pets/9/visits`;
+const postVisitData = (url, date, description) => {
     const data = {
         date: date,
         description: description
@@ -43,7 +58,10 @@ const lowTrafficTask = cron.schedule('* * * * *', () => {
     for (let i = 0; i < lowLoad; i++) {
         console.log('send low load traffic: ' + (i + 1))
         sleep(2 * 1000)
-        postVisitData('2023-08-01', `low-traffic-visit-${i + 1}`)
+        const pet = getRandomNumber(1, 13);
+        const owner = pets.get(pet);
+        const url = `${baseUrl}/api/visit/owners/${owner}/pets/${pet}/visits`;
+        postVisitData(url, '2023-08-01', `low-traffic-visit-${i + 1}`)
             .catch(err => {
                 console.error("Failed to post /api/visit/owners/7/pets/9/visits, error: " + (err.response ? err.response.data : err.toString()));
 
@@ -61,7 +79,7 @@ const generateHighLoad = async () => {
     const highLoad = getRandomNumber(highLoadMinRequests, highLoadMaxRequests);
     for (let i = 0; i < highLoad; i++) {
         console.log('send high traffic: ' + (i + 1))
-        postVisitData('2023-08-08', `high-traffic-visit-${i + 1}`)
+        postVisitData(`${baseUrl}/api/visit/owners/7/pets/9/visits`, '2023-08-08', `high-traffic-visit-${i + 1}`)
             .catch(err => {
                 console.error("Failed to post /api/visit/owners/7/pets/9/visits, error: " + (err.response ? err.response.data : err.toString()));
             }); // Catch and log errors
@@ -170,17 +188,26 @@ for (let i = 0; i < 2; i++) {
 
 postPetsHighTrafficTask.start();
 
-const lowTrafficPaymentTask = cron.schedule('*/2 * * * *', () => {
-    console.log('add 1 payment every 2 minutes');
-    postPaymentData(100, `low-traffic-payment`)
-        .catch(err => {
-            console.error("Failed to post /api/payments/owners/1/pets/1, error: " + (err.response ? err.response.data : err.toString()));
 
-        }); // Catch and log errors
-    axios.get(`${baseUrl}/api/payments/owners/1/pets/1`, { timeout: 10000 })
-        .catch(err => {
-            console.error(`${baseUrl}/api/payments/owners/1/pets/1, error: ` + (err.response ? err.response.data : err.toString()));
-        }); // Catch and log errors
+const lowTrafficPaymentTask = cron.schedule('* * * * *', () => {
+    const lowLoad = getRandomNumber(lowLoadMinRequests, lowLoadMaxRequests);
+    for (let i = 0; i < lowLoad * 2; i++) {
+        console.log('send low load payment traffic: ' + (i + 1))
+        const amount = getRandomNumber(1,111)
+        const pet = getRandomNumber(1, 13);
+        const owner = pets.get(pet);
+        const url = `${baseUrl}/api/payments/owners/${owner}/pets/${pet}`;
+        postPaymentData(url, amount, `low-traffic-payment`)
+            .catch(err => {
+                console.error("Failed to post to " + url + ". Error: " + err.message);
+    
+            }); // Catch and log errors
+        axios.get(url, { timeout: 20000 })
+            .catch(err => {
+                console.error("Failed to get " + url + ". Error: " + err.message);
+            }); // Catch and log errors
+    }
+   
 }, { scheduled: false });
 
 lowTrafficPaymentTask.start();
