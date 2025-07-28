@@ -14,6 +14,8 @@ The testing framework consists of three main components:
    - Tests CloudWatch Metrics data collection and threshold validations
    - Supports business hours and non-business hours testing
    - Includes various comparison operators for threshold validation
+   - **NEW**: Supports CloudWatch Metrics Insights SQL queries with `use_query_style: true`
+   - **NEW**: Supports `NO_VALIDATE` dimensions for existence-only validation in SQL queries
 
 3. **Trace Testing** (`run_trace_tests.py`)
    - Tests AWS X-Ray trace collection and analysis
@@ -44,6 +46,14 @@ data_test/
   - CloudWatch Logs
   - CloudWatch Metrics
   - X-Ray
+
+## Environment Variables
+
+The framework automatically reads and replaces placeholders using environment variables:
+
+- **`AWS_REGION`**: Automatically replaces `REGION_NAME_PLACEHOLDER` in test cases
+- **`ENV_NAME`**: Automatically replaces `ENVIRONMENT_NAME_PLACEHOLDER` in test cases
+- **Account ID**: Automatically replaces `ACCOUNT_ID_PLACEHOLDER` with the current AWS account ID running in lambda environment
 
 ## Usage
 
@@ -116,6 +126,41 @@ python3 run_trace_tests.py <path_to_test_cases.json>
 }
 ```
 
+### Metrics Test Case with SQL Query (NEW)
+```json
+{
+  "metric_test_cases": [
+    {
+      "test_case_id": "test-2",
+      "description": "Test metric with SQL query",
+      "use_query_style": true,
+      "metric_namespace": "AWS/Lambda",
+      "metric_name": "Errors",
+      "dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "ENVIRONMENT_NAME_PLACEHOLDER"
+        },
+        {
+          "Name": "Region",
+          "Value": "NO_VALIDATE"
+        }
+      ],
+      "statistic": "Sum",
+      "evaluation_period_minutes": 5,
+      "threshold": {
+        "comparison_operator": [
+          {
+            "operator": "LessThanThreshold",
+            "threshold_value": 1
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
 ### Trace Test Case Example
 ```json
 {
@@ -151,6 +196,8 @@ python3 run_trace_tests.py <path_to_test_cases.json>
   - `LessThanThreshold`
   - `GreaterThanOrEqualToThreshold`
   - `LessThanOrEqualToThreshold`
+- **NEW**: `NO_VALIDATE` dimension values for existence-only validation
+- **NEW**: CloudWatch Metrics Insights SQL queries with `use_query_style: true`
 
 ### Trace Validation Types
 - `count`: Validates trace count
@@ -162,87 +209,31 @@ python3 run_trace_tests.py <path_to_test_cases.json>
 - `error_code`: Checks for specific error codes
 - `http_status_code`: Validates HTTP status codes
 
-## String Replacement Configuration
+## New Features
 
-The testing framework supports dynamic string replacement in test cases through the `STRING_REPLACEMENT_RULES` environment variable. This feature allows you to parameterize test cases and replace placeholder values at runtime.
+### Automatic Environment Variable Replacement
+The framework automatically replaces placeholders in test cases:
+- `ACCOUNT_ID_PLACEHOLDER` → Current AWS account ID
+- `REGION_NAME_PLACEHOLDER` → `AWS_REGION` environment variable
+- `ENVIRONMENT_NAME_PLACEHOLDER` → `ENV_NAME` environment variable
 
-### Configuration Format
+### CloudWatch Metrics Insights SQL Queries
+Enable SQL-style metric queries by setting `"use_query_style": true` in metric test cases:
+- Uses CloudWatch Metrics Insights syntax
+- Supports `NO_VALIDATE` dimensions for existence-only validation
+- More flexible dimension filtering
 
-The `STRING_REPLACEMENT_RULES` environment variable supports two formats:
-
-#### Simple Format
-```bash
-export STRING_REPLACEMENT_RULES="placeholder1:actual_value1,placeholder2:actual_value2"
-```
-
-#### Quoted Format
-```bash
-export STRING_REPLACEMENT_RULES='"placeholder1":"actual_value1","placeholder2":"actual_value2"'
-```
-
-### Usage Examples
-
-#### Example 1: Replace Function Names
-```bash
-export STRING_REPLACEMENT_RULES="FUNCTION_NAME:my-lambda-function,LOG_GROUP:/aws/lambda/my-lambda-function"
-```
-
-Test case JSON:
-```json
-{
-  "log_test_cases": [
-    {
-      "test_case_id": "test-1",
-      "description": "Test FUNCTION_NAME logs",
-      "log_group_names": ["LOG_GROUP"],
-      "query_string": "fields @timestamp, @message | filter @message like /FUNCTION_NAME/"
-    }
-  ]
-}
-```
-
-#### Example 2: Replace Service Names in Traces
-```bash
-export STRING_REPLACEMENT_RULES="SERVICE_NAME:my-service,REGION:us-east-1"
-```
-
-Test case JSON:
-```json
-{
-  "trace_test_cases": [
-    {
-      "test_case_id": "test-1",
-      "description": "Test SERVICE_NAME traces",
-      "parameters": {
-        "filter_expression": "service(\"SERVICE_NAME\") AND annotation.region = \"REGION\""
-      }
-    }
-  ]
-}
-```
-
-### How It Works
-
-1. The framework automatically loads replacement rules from the `STRING_REPLACEMENT_RULES` environment variable
-2. All string values in test case JSON files are processed for replacements
-3. Replacements are applied recursively to nested objects and arrays
-4. The original test case files remain unchanged - replacements happen at runtime
-
-### Benefits
-
-- **Environment-specific testing**: Use the same test cases across different environments by replacing environment-specific values
-- **Dynamic configuration**: Change test parameters without modifying JSON files
-- **Parameterized testing**: Create reusable test templates with placeholders
+### Non-Business Hours Testing
+Set `"non_business_hours_only": true` to test metrics during non-business hours (outside 9 AM - 5 PM UTC).
 
 ## Contributing
 
 When adding new test cases:
 1. Create appropriate JSON test case files
 2. Follow the existing validation patterns
-3. Ensure proper error handling and logging
-4. Test thoroughly before committing
-5. Consider using placeholder values for environment-specific configurations
-
+3. Use placeholders for environment-specific values
+4. Ensure proper error handling and logging
+5. Test thoroughly before committing
 
 ## Optional: Lambda Deployment and Monitoring
 

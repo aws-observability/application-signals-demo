@@ -26,7 +26,7 @@
       "time_range": {
         "relative_minutes": 30
       },
-      "filter_expression": "((service(id(name:\"appointment-service-gateway/prod\", type:\"AWS::ApiGateway::Stage\"))) AND (service(id(name:\"appointment-service-get\", type:\"AWS::Lambda\"))) AND (service(id(name:\"appointment-service-get\", type:\"AWS::Lambda::Function\", account.id:\"140023401067\")))) AND ((service(id(name:\"appointment-service-get\"))) AND (Annotation[aws.local.environment] = \"lambda:default\")) AND (http.status != 200)",
+      "filter_expression": "((service(id(name:\"appointment-service-gateway/prod\", type:\"AWS::ApiGateway::Stage\"))) AND (service(id(name:\"appointment-service-get\", type:\"AWS::Lambda\"))) AND (service(id(name:\"appointment-service-get\", type:\"AWS::Lambda::Function\", account.id:\"ACCOUNT_ID_PLACEHOLDER\")))) AND ((service(id(name:\"appointment-service-get\"))) AND (Annotation[aws.local.environment] = \"lambda:default\")) AND (http.status != 200)",
       "validation_checks": [
         {
           "check_type": "count",
@@ -47,7 +47,7 @@
       "time_range": {
         "relative_minutes": 30
       },
-      "filter_expression": "(service(id(name: \"postgresql\" , type: \"Database::SQL\" ))) AND ((service(id(name: \"billing-service-python\"  ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\"))",
+      "filter_expression": "(service(id(name: \"postgresql\" , type: \"Database::SQL\" ))) AND ((service(id(name: \"billing-service-python\"  ))) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\"))",
       "validation_checks": [
         {
           "check_type": "count",
@@ -72,7 +72,7 @@
       "time_range": {
         "relative_minutes": 30
       },
-      "filter_expression": "(((((service(id(name: \"payment-service-dotnet\" , type: \"remote\" ))) OR ((service(id(name: \"payment-service-dotnet\"  ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\"))) AND ((service(id(name: \"nginx-proxy\"  ))) AND (Annotation[aws.local.environment] = \"generic:default\"))) AND ((service(id(name: \"pet-clinic-frontend-java\"  ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\"))) AND ((service(id(name: \"https://sqs.us-east-1.amazonaws.com/140023401067/audit-jobs\" , type: \"AWS::SQS::Queue\" ))) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))) AND (service(id(name: \"https://sqs.us-east-1.amazonaws.com/140023401067/audit-jobs\" , type: \"AWS::SQS::Queue\" ))) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))))) AND (http.status != 200)",
+      "filter_expression": "(((((service(id(name: \"payment-service-dotnet\" , type: \"remote\" ))) OR ((service(id(name: \"payment-service-dotnet\"  ))) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\"))) AND ((service(id(name: \"nginx-proxy\"  ))) AND (Annotation[aws.local.environment] = \"generic:default\"))) AND ((service(id(name: \"pet-clinic-frontend-java\"  ))) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\"))) AND ((service(id(name: \"https://sqs.REGION_NAME_PLACEHOLDER.amazonaws.com/ACCOUNT_ID_PLACEHOLDER/audit-jobs\" , type: \"AWS::SQS::Queue\" ))) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))) AND (service(id(name: \"https://sqs.REGION_NAME_PLACEHOLDER.amazonaws.com/ACCOUNT_ID_PLACEHOLDER/audit-jobs\" , type: \"AWS::SQS::Queue\" ))) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))))) AND (http.status != 200)",
       "validation_checks": [
         {
           "check_type": "count",
@@ -115,8 +115,8 @@
       "time_range": {
         "relative_minutes": 30
       },
-      "filter_expression": "((((service(id(name: \"pet-clinic-frontend-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND ((service(id(name: \"customers-service-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")))) AND (Annotation[aws.local.operation] = \"POST /api/customer/owners\" AND Annotation[aws.local.operation] = \"POST /api\" AND Annotation[aws.local.operation] = \"POST /owners\")",
-      "validation_checks": [  
+      "filter_expression": "((((service(id(name: \"pet-clinic-frontend-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\")) AND ((service(id(name: \"customers-service-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\")))) AND (Annotation[aws.local.operation] = \"POST /api/customer/owners\" AND Annotation[aws.local.operation] = \"POST /api\" AND Annotation[aws.local.operation] = \"POST /owners\")",
+      "validation_checks": [
         {
           "check_type": "count",
           "expected_count": 1,
@@ -136,7 +136,7 @@
       "time_range": {
         "relative_minutes": 30
       },
-      "filter_expression": "((((service(id(name: \"pet-clinic-frontend-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND ((service(id(name: \"customers-service-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))) AND (service(id(name: \"hsqldb\" , type: \"Database::SQL\" ))))) AND (Annotation[span.name] = \"SQS.PurgeQueue\")",
+      "filter_expression": "((((service(id(name: \"pet-clinic-frontend-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\")) AND ((service(id(name: \"customers-service-java\" , type: \"AWS::EKS::Container\" ))) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\")) AND (service(id(name: \"SQS\" , type: \"AWS::SQS\" ))) AND (service(id(name: \"hsqldb\" , type: \"Database::SQL\" ))))) AND (Annotation[span.name] = \"SQS.PurgeQueue\")",
       "validation_checks": [
         {
           "check_type": "count",
@@ -158,8 +158,8 @@
       "time_range": {
         "relative_minutes": 30
       },
-      "filter_expression": "((service(id(name: \"pet-clinic-client\", type: \"client::RUM\"))) AND ((service(id(name: \"pet-clinic-frontend-java\")) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND ((service(id(name: \"visits-service-java\")) AND (Annotation[aws.local.environment] = \"eks:demo/default\")) AND (http.status = 400))))",
-      "validation_checks": [  
+      "filter_expression": "((service(id(name: \"pet-clinic-client\", type: \"client::RUM\"))) AND ((service(id(name: \"pet-clinic-frontend-java\")) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\")) AND ((service(id(name: \"visits-service-java\")) AND (Annotation[aws.local.environment] = \"ENVIRONMENT_NAME_PLACEHOLDER\")) AND (http.status = 400))))",
+      "validation_checks": [
         {
           "check_type": "count",
           "expected_count": 1,
@@ -174,4 +174,3 @@
     }
   ]
 }
-

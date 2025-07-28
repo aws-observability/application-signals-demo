@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 import json
 import sys
-import boto3
+import boto3, os
 from datetime import datetime, timedelta, timezone
-from string_replacer import load_and_apply_replacements
+
+environment_name = os.environ.get("ENV_NAME", "eks:eks-pet-clinic-demo/pet-clinic")
+
 
 def load_test_cases(json_file_path):
     try:
-        # 使用替换功能加载测试用例
-        data = load_and_apply_replacements(json_file_path, "STRING_REPLACEMENT_RULES")
+        with open(json_file_path, 'r') as f:
+            data = json.load(f)
         return data.get("log_test_cases", [])
     except FileNotFoundError:
         print(f"ERROR: JSON Not Found {json_file_path}", file=sys.stderr)
@@ -49,8 +51,10 @@ def execute_logs_test(test_case):
             logGroupNames=test_case["log_group_names"],
             startTime=int(start_dt.timestamp() * 1000),
             endTime=int(end_dt.timestamp() * 1000),
-            queryString=test_case["query_string"]
+            queryString=test_case["query_string"].replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name)
         )
+
+        print(test_case["query_string"].replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name))
         
         query_id = response['queryId']
         

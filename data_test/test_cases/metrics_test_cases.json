@@ -49,7 +49,7 @@
       "statistic": "p99",
       "dimensions": [
         {"Name": "Operation", "Value": "GET ^billings/$"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "billing-service-python"}
       ],
       "evaluation_period_minutes": 180,
@@ -63,19 +63,20 @@
     },
     {
       "test_case_id": "database_insight_dependency_metric_availability_check",
+      "use_query_style": true,
       "description": "Verify Dependency Latency metric availability for database insights dependency (Scenario 2)",
       "test_scenario": "Scenario 2",
       "metric_namespace": "ApplicationSignals",
       "metric_name": "Latency",
-      "statistic": "p99",
+      "statistic": "MAX",
       "dimensions": [
         {"Name": "Operation", "Value": "GET ^billings/$"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "billing-service-python"},
         {"Name": "RemoteOperation", "Value": "SELECT"},
         {"Name": "RemoteService", "Value": "postgresql"},
         {"Name": "RemoteResourceType", "Value": "DB::Connection"},
-        {"Name": "RemoteResourceIdentifier", "Value": "postgres|petclinic-python.cluster-c2v0qqeiude3.us-east-1.rds.amazonaws.com|5432"}
+        {"Name": "RemoteResourceIdentifier", "Value": "afsklj;aklfalksdflakflas"}
       ],
       "evaluation_period_minutes": 180,
       "threshold": {
@@ -96,7 +97,7 @@
       "dimensions": [
         {"Name": "RemoteOperation", "Value": "InvokeModel"},
         {"Name": "RemoteService", "Value": "AWS::BedrockRuntime"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "customers-service-java"},
         {"Name": "RemoteResourceType", "Value": "AWS::Bedrock::Model"},
         {"Name": "RemoteResourceIdentifier", "Value": "amazon.titan-text-express-v1"}
@@ -120,7 +121,7 @@
       "dimensions": [
         {"Name": "RemoteOperation", "Value": "InvokeModel"},
         {"Name": "RemoteService", "Value": "AWS::BedrockRuntime"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "customers-service-java"},
         {"Name": "RemoteResourceType", "Value": "AWS::Bedrock::Model"},
         {"Name": "RemoteResourceIdentifier", "Value": "anthropic.claude-v2:1"}
@@ -143,7 +144,7 @@
       "statistic": "Sum",
       "dimensions": [
         {"Name": "Operation", "Value": "POST /owners/{ownerId:int}/pets/{petId:int}/payments/"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "payment-service-dotnet"}
       ],
       "evaluation_period_minutes": 180,
@@ -164,7 +165,7 @@
       "statistic": "Sum",
       "dimensions": [
         {"Name": "Operation", "Value": "POST /owners/{ownerId:int}/pets/{petId:int}/payments/"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "payment-service-dotnet"}
       ],
       "evaluation_period_minutes": 180,
@@ -185,7 +186,7 @@
       "statistic": "SampleCount",
       "dimensions": [
         {"Name": "Operation", "Value": "GET /owners/{ownerId:int}/pets/{petId:int}/payments"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "payment-service-dotnet"}
       ],
       "evaluation_period_minutes": 180,
@@ -206,7 +207,7 @@
       "statistic": "Sum",
       "dimensions": [
         {"Name": "Operation", "Value": "POST /owners/{ownerId}/pets/{petId}/visits"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "visits-service-java"}
       ],
       "evaluation_period_minutes": 180,
@@ -227,7 +228,7 @@
       "statistic": "SampleCount",
       "dimensions": [
         {"Name": "Operation", "Value": "POST /owners/{ownerId}/pets/{petId}/visits"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "visits-service-java"}
       ],
       "evaluation_period_minutes": 180,
@@ -270,7 +271,7 @@
       "dimensions": [
         {"Name": "Service", "Value": "pet-clinic-frontend-java"},
         {"Name": "Operation", "Value": "POST /api/customer/owners"},
-        {"Name": "Environment", "Value": "eks:demo/default"}
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"}
       ],
       "evaluation_period_minutes": 60,
       "threshold": {
@@ -291,7 +292,7 @@
       "dimensions": [
         {"Name": "RemoteOperation", "Value": "PurgeQueue"},
         {"Name": "RemoteService", "Value": "AWS::SQS"},
-        {"Name": "Environment", "Value": "eks:demo/default"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
         {"Name": "Service", "Value": "customers-service-java"},
         {"Name": "Operation", "Value": "POST /owners/{ownerId}/pets"},
         {"Name": "RemoteResourceType", "Value": "AWS::SQS::Queue"},

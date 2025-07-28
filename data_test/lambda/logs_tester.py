@@ -1,7 +1,9 @@
-import boto3
+import boto3, os
 from datetime import datetime, timedelta, timezone
 
 logs = boto3.client('logs')
+
+environment_name = os.environ.get("ENV_NAME", "eks:eks-pet-clinic-demo/pet-clinic")
 
 def get_time_range_params(params):
     """Get time range params"""
@@ -20,7 +22,7 @@ def execute_test(test_case):
             logGroupNames=test_case["log_group_names"],
             startTime=int(start_dt.timestamp() * 1000),
             endTime=int(end_dt.timestamp() * 1000),
-            queryString=test_case["query_string"]
+            queryString=test_case["query_string"].replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name)
         )
         
         query_id = response['queryId']
