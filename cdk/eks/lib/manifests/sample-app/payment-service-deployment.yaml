@@ -34,6 +34,12 @@ spec:
               value: "true"
             - name: eureka__instance__port
               value: "8089"
+            - name: eureka__client__eurekaServerConnectTimeoutSeconds
+              value: "30"
+            - name: eureka__client__eurekaServerReadTimeoutSeconds
+              value: "30"
+            - name: eureka__client__registryFetchIntervalSeconds
+              value: "30"
 
           ports:
             - containerPort: 8089
