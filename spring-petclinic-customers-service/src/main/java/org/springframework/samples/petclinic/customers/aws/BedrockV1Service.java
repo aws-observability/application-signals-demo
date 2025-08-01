@@ -53,7 +53,7 @@ public class BedrockV1Service {
             }
         } catch (Exception e) {
             log.error("Failed to GetGuardrailRequest. Error: %s", e.getMessage());
-            throw e;
+            return "";
         }
         return "Guardrail ID: " + responseString;
     }
