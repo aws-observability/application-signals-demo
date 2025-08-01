@@ -53,6 +53,7 @@ The framework automatically reads and replaces placeholders using environment va
 
 - **`AWS_REGION`**: Automatically replaces `REGION_NAME_PLACEHOLDER` in test cases
 - **`ENV_NAME`**: Automatically replaces `ENVIRONMENT_NAME_PLACEHOLDER` in test cases
+- **`EKS_CLUSTER_NAME`**: Automatically replaces `EKS_CLUSTER_PLACEHOLDER` in test cases
 - **Account ID**: Automatically replaces `ACCOUNT_ID_PLACEHOLDER` with the current AWS account ID running in lambda environment
 
 ## Usage

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 logs = boto3.client('logs')
 
 environment_name = os.environ.get("ENV_NAME", "eks:eks-pet-clinic-demo/pet-clinic")
+eks_cluster_name = os.environ.get("EKS_CLUSTER_NAME", "eks-pet-clinic-demo")
 
 def get_time_range_params(params):
     """Get time range params"""
@@ -17,9 +18,14 @@ def execute_test(test_case):
     """Execute logs test"""
     start_dt, end_dt = get_time_range_params(test_case)
     
+    # Process log group names to replace EKS_CLUSTER_PLACEHOLDER
+    processed_log_groups = []
+    for log_group in test_case["log_group_names"]:
+        processed_log_groups.append(log_group.replace('EKS_CLUSTER_PLACEHOLDER', eks_cluster_name))
+    
     try:
         response = logs.start_query(
-            logGroupNames=test_case["log_group_names"],
+            logGroupNames=processed_log_groups,
             startTime=int(start_dt.timestamp() * 1000),
             endTime=int(end_dt.timestamp() * 1000),
             queryString=test_case["query_string"].replace('ENVIRONMENT_NAME_PLACEHOLDER', environment_name)

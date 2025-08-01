@@ -24,7 +24,7 @@
       "description": "Verify specific prompt exists in Customers-service-java logs (Scenario 3)",
       "test_scenario": "Scenario 3",
       "log_group_names": [
-        "/aws/containerinsights/demo/application"
+        "/aws/containerinsights/EKS_CLUSTER_PLACEHOLDER/application"
       ],
       "query_string": "fields @timestamp, @message | filter @message like /What are the best preventive measures for common cat diseases/ | limit 1",
       "time_range": {

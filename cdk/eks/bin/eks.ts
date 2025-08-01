@@ -11,6 +11,8 @@ import { MyApplicationStack } from "../lib/stacks/my-application-stack";
 import { CloudWatchRumStack } from "../lib/stacks/rum-stack";
 import { TransactionSearchStack } from "../lib/stacks/transaction-search-stack";
 import { ApplicationSignalsStack } from "../lib/stacks/application-signals-stack";
+import { KnowledgeBaseStack } from "../lib/stacks/knowledge-base-stack";
+import { GuardrailStack } from "../lib/stacks/guardrail-stack";
 
 const app = new App();
 
@@ -40,6 +42,12 @@ const transactionSearchStack = new TransactionSearchStack(app, 'AppSignalsTransa
 // Add Application Signals Stack to enable AWS Application Signals
 const applicationSignalsStack = new ApplicationSignalsStack(app, 'AppSignalsEnableStack')
 
+// Add Knowledge Base Stack for Application Signals documentation
+const knowledgeBaseStack = new KnowledgeBaseStack(app, 'AppSignalsKnowledgeBaseStack')
+
+// Add Guardrail Stack for Application Signals
+const guardrailStack = new GuardrailStack(app, 'AppSignalsGuardrailStack')
+
 const eksStack = new EksStack(app, 'AppSignalsEksClusterStack', {
   vpc: networkStack.vpc,
   eksClusterRoleProp: iamStack.eksClusterRoleProp,
@@ -61,6 +69,8 @@ eksStack.addDependency(myApplicationStack);
 eksStack.addDependency(rumStack);
 eksStack.addDependency(transactionSearchStack); // Add dependency on Transaction Search Stack
 eksStack.addDependency(applicationSignalsStack); // Add dependency on Application Signals Stack
+eksStack.addDependency(knowledgeBaseStack); // Add dependency on Knowledge Base Stack
+eksStack.addDependency(guardrailStack); // Add dependency on Guardrail Stack
 
 const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticCanaryStack', {
   vpc: networkStack.vpc,
