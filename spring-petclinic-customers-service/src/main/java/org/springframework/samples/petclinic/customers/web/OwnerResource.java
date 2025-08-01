@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.http.HttpStatus;
+import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.samples.petclinic.customers.Util.WellKnownAttributes;
 import org.springframework.samples.petclinic.customers.model.Owner;
 import org.springframework.samples.petclinic.customers.model.OwnerRepository;
@@ -65,6 +66,7 @@ class OwnerResource {
     public Owner createOwner(@Valid @RequestBody Owner owner) throws Exception {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, UUID.randomUUID().toString());
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, UUID.randomUUID().toString());
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "createOwner");
 
         // don't save the owner for testing traffic
         if (owner.getFirstName().equals("random-traffic")) {
@@ -80,6 +82,7 @@ class OwnerResource {
     public Optional<Owner> findOwner(@PathVariable("ownerId") int ownerId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, ownerId);
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "findOwner");
 
         if (ownerId < 1) {
             log.error("Invalid owner id provided: {}", ownerId);
@@ -94,6 +97,7 @@ class OwnerResource {
      */
     @GetMapping
     public List<Owner> findAll() {
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "findAll");
         return ownerRepository.findAll();
     }
 
@@ -105,6 +109,7 @@ class OwnerResource {
     public void updateOwner(@PathVariable("ownerId") @Min(1) int ownerId, @Valid @RequestBody Owner ownerRequest) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, UUID.randomUUID().toString());
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "updateOwner");
 
         final Optional<Owner> owner = ownerRepository.findById(ownerId);
         final Owner ownerModel = owner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));

@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.samples.petclinic.customers.Util.WellKnownAttributes;
 import org.springframework.samples.petclinic.customers.aws.*;
 import org.springframework.samples.petclinic.customers.model.*;
@@ -64,6 +65,7 @@ class PetResource {
 
     @GetMapping("/petTypes")
     public List<PetType> getPetTypes() {
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "getPetTypes");
         return petRepository.findPetTypes();
     }
 
@@ -76,6 +78,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petRequest.getId());
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petRequest.getId());
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "processCreationForm");
 
         final Optional<Owner> optionalOwner = ownerRepository.findById(ownerId);
         Owner owner = optionalOwner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));
@@ -97,6 +100,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "processDiagnose");
 
         log.info("bedrockAgentV1Service Getting knowledge base");
         bedrockAgentV1Service.getKnowledgeBase();
@@ -136,6 +140,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "processUpdateForm");
 
         Pet pet = findPetById(petId);
         kinesisService.getStreamRecords();
@@ -158,6 +163,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "findPet");
 
         PetDetails detail = new PetDetails(findPetById(petId));
 

@@ -5,6 +5,7 @@ package org.springframework.samples.petclinic.customers.aws;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.samples.petclinic.customers.Util;
 import org.springframework.stereotype.Component;
+import io.opentelemetry.api.trace.Span;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.bedrockagent.BedrockAgentClient;
@@ -32,6 +33,7 @@ public class BedrockAgentV2Service {
     }
 
     public String bedrockAgentGetKnowledgeBaseV2() {
+        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.aws.BedrockAgentV2Service", "bedrockAgentGetKnowledgeBaseV2");
         try {
             ListKnowledgeBasesRequest listRequest = ListKnowledgeBasesRequest.builder().build();
             ListKnowledgeBasesResponse listResponse = bedrockAgentV2Client.listKnowledgeBases(listRequest);
