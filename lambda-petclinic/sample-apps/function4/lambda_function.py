@@ -19,7 +19,7 @@ def lambda_handler(event, context):
     status_code = ''
     body = ''
     try:
-        for x in range(1):
+        for x in range(50):
             response = requests.get(url2)
             status_code = response.status_code
             body = response.text
@@ -29,12 +29,12 @@ def lambda_handler(event, context):
             url31 = url3.replace("dog", "111111111111")
             response = requests.get(url31)
             print(response.text)
-            time.sleep(1)
+            time.sleep(0.1)
 
             url37 = url3.replace("dog", "777777777777")
             response = requests.get(url37)
             print(response.text)
-            time.sleep(1)
+            time.sleep(0.1)
 
 
     except requests.exceptions.RequestException as e:
