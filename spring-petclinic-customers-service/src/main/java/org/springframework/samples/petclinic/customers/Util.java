@@ -13,34 +13,26 @@ public class Util {
     public static final String REGION_FROM_EC2 = EC2MetadataUtils.getEC2InstanceRegion() != null ? EC2MetadataUtils.getEC2InstanceRegion() : "us-west-2";
 
     /**
-     * Adds code location attributes to the current span
-     * @param className The class name where the span is created
-     * @param methodName The method name where the span is created
+     * Adds code location attributes to the current span following OpenTelemetry semantic conventions.
+     * Automatically determines the calling class and method from the stack trace.
      */
-    public static void addCodeLocationAttributes(String className, String methodName) {
+    public static void addCodeLocationAttributes() {
         Span currentSpan = Span.current();
         if (currentSpan != null) {
             // Get the current stack trace to find the calling location
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             
-            // Find the caller (skip getStackTrace, addCodeLocationAttributes, and the actual calling method)
-            StackTraceElement caller = null;
-            for (int i = 2; i < stackTrace.length; i++) {
-                if (stackTrace[i].getClassName().equals(className)) {
-                    caller = stackTrace[i];
-                    break;
-                }
-            }
-            
-            if (caller != null) {
-                currentSpan.setAttribute(WellKnownAttributes.CODE_FILENAME, caller.getFileName());
-                currentSpan.setAttribute(WellKnownAttributes.CODE_LINENO, caller.getLineNumber());
-                currentSpan.setAttribute(WellKnownAttributes.CODE_NAMESPACE, className);
-                currentSpan.setAttribute(WellKnownAttributes.CODE_FUNCTION, methodName);
-            } else {
-                // Fallback if we can't find the exact caller
-                currentSpan.setAttribute(WellKnownAttributes.CODE_NAMESPACE, className);
-                currentSpan.setAttribute(WellKnownAttributes.CODE_FUNCTION, methodName);
+            // Find the caller (skip getStackTrace and addCodeLocationAttributes)
+            // Index 2 is the method that called addCodeLocationAttributes()
+            if (stackTrace.length > 2) {
+                StackTraceElement caller = stackTrace[2];
+                
+                // Use OpenTelemetry semantic convention attribute names
+                currentSpan.setAttribute(WellKnownAttributes.CODE_FILE_PATH, caller.getFileName());
+                currentSpan.setAttribute(WellKnownAttributes.CODE_LINE_NUMBER, caller.getLineNumber());
+                // code.function.name should be fully qualified (className.methodName)
+                currentSpan.setAttribute(WellKnownAttributes.CODE_FUNCTION_NAME, 
+                    caller.getClassName() + "." + caller.getMethodName());
             }
         }
     }
@@ -50,10 +42,20 @@ public class Util {
         public static final String PET_ID = "pet.id";
         public static final String ORDER_ID = "order.id";
         
-        // Code location attributes
+        // Code location attributes following OpenTelemetry semantic conventions
+        // https://opentelemetry.io/docs/specs/semconv/registry/attributes/code/
+        public static final String CODE_FILE_PATH = "code.file.path";
+        public static final String CODE_LINE_NUMBER = "code.line.number";
+        public static final String CODE_FUNCTION_NAME = "code.function.name";
+        
+        // Deprecated attributes (kept for backward compatibility if needed)
+        @Deprecated
         public static final String CODE_FILENAME = "code.filename";
+        @Deprecated
         public static final String CODE_LINENO = "code.lineno";
+        @Deprecated
         public static final String CODE_NAMESPACE = "code.namespace";
+        @Deprecated
         public static final String CODE_FUNCTION = "code.function";
     }
 }

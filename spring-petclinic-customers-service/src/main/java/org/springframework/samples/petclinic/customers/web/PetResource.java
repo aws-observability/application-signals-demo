@@ -65,7 +65,7 @@ class PetResource {
 
     @GetMapping("/petTypes")
     public List<PetType> getPetTypes() {
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "getPetTypes");
+        Util.addCodeLocationAttributes();
         return petRepository.findPetTypes();
     }
 
@@ -78,7 +78,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petRequest.getId());
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petRequest.getId());
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "processCreationForm");
+        Util.addCodeLocationAttributes();
 
         final Optional<Owner> optionalOwner = ownerRepository.findById(ownerId);
         Owner owner = optionalOwner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));
@@ -100,7 +100,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "processDiagnose");
+        Util.addCodeLocationAttributes();
 
         log.info("bedrockAgentV1Service Getting knowledge base");
         bedrockAgentV1Service.getKnowledgeBase();
@@ -140,7 +140,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "processUpdateForm");
+        Util.addCodeLocationAttributes();
 
         Pet pet = findPetById(petId);
         kinesisService.getStreamRecords();
@@ -163,7 +163,7 @@ class PetResource {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.PetResource", "findPet");
+        Util.addCodeLocationAttributes();
 
         PetDetails detail = new PetDetails(findPetById(petId));
 

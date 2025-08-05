@@ -66,7 +66,7 @@ class OwnerResource {
     public Owner createOwner(@Valid @RequestBody Owner owner) throws Exception {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, UUID.randomUUID().toString());
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, UUID.randomUUID().toString());
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "createOwner");
+        Util.addCodeLocationAttributes();
 
         // don't save the owner for testing traffic
         if (owner.getFirstName().equals("random-traffic")) {
@@ -82,7 +82,7 @@ class OwnerResource {
     public Optional<Owner> findOwner(@PathVariable("ownerId") int ownerId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, ownerId);
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "findOwner");
+        Util.addCodeLocationAttributes();
 
         if (ownerId < 1) {
             log.error("Invalid owner id provided: {}", ownerId);
@@ -97,7 +97,7 @@ class OwnerResource {
      */
     @GetMapping
     public List<Owner> findAll() {
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "findAll");
+        Util.addCodeLocationAttributes();
         return ownerRepository.findAll();
     }
 
@@ -109,7 +109,7 @@ class OwnerResource {
     public void updateOwner(@PathVariable("ownerId") @Min(1) int ownerId, @Valid @RequestBody Owner ownerRequest) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, UUID.randomUUID().toString());
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.web.OwnerResource", "updateOwner");
+        Util.addCodeLocationAttributes();
 
         final Optional<Owner> owner = ownerRepository.findById(ownerId);
         final Owner ownerModel = owner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));

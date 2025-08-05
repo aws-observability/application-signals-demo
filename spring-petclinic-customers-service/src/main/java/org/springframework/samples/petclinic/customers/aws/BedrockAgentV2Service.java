@@ -33,7 +33,7 @@ public class BedrockAgentV2Service {
     }
 
     public String bedrockAgentGetKnowledgeBaseV2() {
-        Util.addCodeLocationAttributes("org.springframework.samples.petclinic.customers.aws.BedrockAgentV2Service", "bedrockAgentGetKnowledgeBaseV2");
+        Util.addCodeLocationAttributes();
         try {
             ListKnowledgeBasesRequest listRequest = ListKnowledgeBasesRequest.builder().build();
             ListKnowledgeBasesResponse listResponse = bedrockAgentV2Client.listKnowledgeBases(listRequest);
