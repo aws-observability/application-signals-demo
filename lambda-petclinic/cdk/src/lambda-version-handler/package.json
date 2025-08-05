@@ -1,0 +1,11 @@
+{
+  "name": "lambda-version-handler",
+  "version": "1.0.0",
+  "description": "Custom resource handler for Lambda versioning and routing",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.410.0",
+    "@aws-sdk/client-s3": "^3.410.0",
+    "cfn-response": "^1.0.1"
+  }
+}

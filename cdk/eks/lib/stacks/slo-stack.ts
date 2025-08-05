@@ -121,6 +121,11 @@ export class SloStack extends Stack {
         //exclusionWindows
         undefined
     ));
+    const appointmentServiceAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'appointmentServiceAvailabilitySLO', this.getAppointmentSloProp(
+        "appointment service availability",
+        "Availability for appointment-service-get/FunctionHandler operation",
+        awsApplicationTag
+    ));
 
     getOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
     getOwner99LatencySlo.node.addDependency(enableTopologyDiscovery);
@@ -128,6 +133,7 @@ export class SloStack extends Stack {
     postOwner99LatencySlo.node.addDependency(enableTopologyDiscovery);
     billingActivitiesLatencySlo.node.addDependency(enableTopologyDiscovery);
     getPaymentAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
+    appointmentServiceAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
   }
   
   getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, awsApplicationTag: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string, exclusionWindows?: ExclusionWindowProperty[]) {
@@ -171,6 +177,41 @@ export class SloStack extends Stack {
             new Tag("awsApplication", awsApplicationTag)
           ],
           exclusionWindows: exclusionWindows
+    }
+    return sloProp
+  }
+
+  getAppointmentSloProp(name: string, description: string, awsApplicationTag: string) {
+    const sloProp: applicationsignals.CfnServiceLevelObjectiveProps = {
+        name: name, 
+        description: description,
+        sli: {
+            sliMetric: {
+                keyAttributes: {
+                    "Name": "appointment-service-get",
+                    "Type": "Service",
+                    "Environment": "lambda:default"
+                },
+                operationName: "appointment-service-get/FunctionHandler",
+                metricType: "AVAILABILITY",
+                periodSeconds: 60
+            },
+            metricThreshold: 95.0,
+            comparisonOperator: "GreaterThan",
+          },
+          goal: {
+            interval: {
+                rollingInterval: {
+                    duration: 1,
+                    durationUnit: "DAY",
+                }
+            },
+            attainmentGoal: 95.0,
+            warningThreshold: 30.0,
+          },
+          tags: [
+            new Tag("awsApplication", awsApplicationTag)
+          ]
     }
     return sloProp
   }
