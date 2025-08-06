@@ -193,11 +193,11 @@ app.MapDelete("/clean-db", async ([FromServices] IPetClinicContext context) =>
     return Results.Ok();
 });
 
-InitializeDB();
+await InitializeDB();
 
 await app.RunAsync();
 
-async void InitializeDB()
+async Task InitializeDB()
 {
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<IPetClinicContext>();
