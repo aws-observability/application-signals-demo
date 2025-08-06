@@ -85,7 +85,7 @@ export class SloStack extends Stack {
         "p99"
     ));
     const billingActivitiesLatencySlo = new applicationsignals.CfnServiceLevelObjective(this, 'billingActivitiesLatencySLO', this.getSloProp(
-        "Latency for Billing Activities",
+        "Latency of billing activities",
         "Latency P99 less than 300 ms for GET Billing Activities operation",
         "GET",
         "LATENCY",

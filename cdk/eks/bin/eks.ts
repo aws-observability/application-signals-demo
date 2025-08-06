@@ -13,6 +13,7 @@ import { TransactionSearchStack } from "../lib/stacks/transaction-search-stack";
 import { ApplicationSignalsStack } from "../lib/stacks/application-signals-stack";
 import { KnowledgeBaseStack } from "../lib/stacks/knowledge-base-stack";
 import { GuardrailStack } from "../lib/stacks/guardrail-stack";
+import { ResourceExplorerStack } from "../lib/stacks/resource-explorer-stack";
 
 const app = new App();
 
@@ -48,6 +49,9 @@ const knowledgeBaseStack = new KnowledgeBaseStack(app, 'AppSignalsKnowledgeBaseS
 // Add Guardrail Stack for Application Signals
 const guardrailStack = new GuardrailStack(app, 'AppSignalsGuardrailStack')
 
+// Add Resource Explorer Stack to enable AWS Resource Explorer
+const resourceExplorerStack = new ResourceExplorerStack(app, 'AppSignalsResourceExplorerStack')
+
 const eksStack = new EksStack(app, 'AppSignalsEksClusterStack', {
   vpc: networkStack.vpc,
   eksClusterRoleProp: iamStack.eksClusterRoleProp,
@@ -71,6 +75,7 @@ eksStack.addDependency(transactionSearchStack); // Add dependency on Transaction
 eksStack.addDependency(applicationSignalsStack); // Add dependency on Application Signals Stack
 eksStack.addDependency(knowledgeBaseStack); // Add dependency on Knowledge Base Stack
 eksStack.addDependency(guardrailStack); // Add dependency on Guardrail Stack
+eksStack.addDependency(resourceExplorerStack); // Add dependency on resource explorer
 
 const syntheticCanaryStack = new SyntheticCanaryStack(app, 'AppSignalsSyntheticCanaryStack', {
   vpc: networkStack.vpc,
