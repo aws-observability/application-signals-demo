@@ -33,6 +33,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.visits.Util;
 import org.springframework.samples.petclinic.visits.Util.WellKnownAttributes;
 import org.springframework.samples.petclinic.visits.aws.DdbService;
 import org.springframework.samples.petclinic.visits.model.Visit;
@@ -75,6 +76,7 @@ class VisitResource {
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, UUID.randomUUID().toString());
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
 
         log.info("Reaching Post api: owners/*/pets/{petId}/visits for petId: {}", petId);
         validateDate(visit);
@@ -83,6 +85,7 @@ class VisitResource {
 
     @WithSpan("validateDate")
     private void validateDate(Visit visit) {
+        Util.addCodeLocationAttributes();
         Date currentDate = new Date();
         Date visitDate = visit.getDate();
         long durationInDays = (visitDate.getTime() - currentDate.getTime())/1000/3600/24;
@@ -102,6 +105,7 @@ class VisitResource {
 
     @WithSpan("saveVisit")
     private Visit saveVisit(Visit visit, int petId) {
+        Util.addCodeLocationAttributes();
         ddbService.putItems();
         visit.setPetId(petId);
         // petId 9 is used for testing high traffic
@@ -119,6 +123,7 @@ class VisitResource {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, petId);
+        Util.addCodeLocationAttributes();
 
 //        return visitRepository.findByPetId(petId);
         log.info("Reaching Get api: /owners/*/pets/{petId}/visits for petId: {}", petId);
@@ -132,6 +137,7 @@ class VisitResource {
 
     @GetMapping("pets/visits")
     public Visits visitsMultiGet(@RequestParam("petId") List<Integer> petIds) throws Exception {
+        Util.addCodeLocationAttributes();
         final List<Visit> byPetIdIn = visitRepository.findByPetIdIn(petIds);
         log.info("Reaching Get api: pets/visits for petIds: {}", petIds);
         return new Visits(byPetIdIn);

@@ -131,6 +131,13 @@
     <version>1.12.462</version>
   </dependency>
 
+  <!-- OpenTelemetry -->
+  <dependency>
+    <groupId>io.opentelemetry.instrumentation</groupId>
+    <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+    <version>1.22.1</version>
+  </dependency>
+
   <!-- Testing -->
   <dependency>
     <groupId>org.junit.jupiter</groupId>

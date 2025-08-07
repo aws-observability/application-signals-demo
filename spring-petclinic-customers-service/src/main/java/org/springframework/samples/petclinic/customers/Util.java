@@ -47,15 +47,5 @@ public class Util {
         public static final String CODE_FILE_PATH = "code.file.path";
         public static final String CODE_LINE_NUMBER = "code.line.number";
         public static final String CODE_FUNCTION_NAME = "code.function.name";
-        
-        // Deprecated attributes (kept for backward compatibility if needed)
-        @Deprecated
-        public static final String CODE_FILENAME = "code.filename";
-        @Deprecated
-        public static final String CODE_LINENO = "code.lineno";
-        @Deprecated
-        public static final String CODE_NAMESPACE = "code.namespace";
-        @Deprecated
-        public static final String CODE_FUNCTION = "code.function";
     }
 }

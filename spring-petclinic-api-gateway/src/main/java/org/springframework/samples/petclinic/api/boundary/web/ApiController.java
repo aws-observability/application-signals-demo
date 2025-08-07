@@ -4,6 +4,7 @@ package org.springframework.samples.petclinic.api.boundary.web;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.samples.petclinic.api.Util;
 import org.springframework.samples.petclinic.api.application.*;
 import org.springframework.samples.petclinic.api.dto.*;
 import org.springframework.samples.petclinic.api.utils.WellKnownAttributes;
@@ -38,28 +39,33 @@ public class ApiController {
 
     @GetMapping(value = "customer/owners")
     public Flux<OwnerDetails> getOwners() {
+        Util.addCodeLocationAttributes();
         return customersServiceClient.getOwners();
     }
 
     @GetMapping(value = "customer/owners/{ownerId}")
     public Mono<OwnerDetails> getOwner(final @PathVariable int ownerId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Util.addCodeLocationAttributes();
         return customersServiceClient.getOwner(ownerId);
     }
 
     @PutMapping(value = "customer/owners/{ownerId}")
     public Mono<Void> getOwner(final @PathVariable int ownerId, @RequestBody OwnerRequest ownerRequest) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Util.addCodeLocationAttributes();
         return customersServiceClient.updateOwner(ownerId, ownerRequest);
     }
 
     @PostMapping(value = "customer/owners")
     public Mono<Void> addOwner(@RequestBody OwnerRequest ownerRequest) {
+        Util.addCodeLocationAttributes();
         return customersServiceClient.addOwner(ownerRequest);
     }
 
     @GetMapping(value = "customer/petTypes")
     public Flux<PetType> getPetTypes() {
+        Util.addCodeLocationAttributes();
         return customersServiceClient.getPetTypes();
     }
 
@@ -67,6 +73,7 @@ public class ApiController {
     public Mono<PetFull> getPetTypes(final @PathVariable int ownerId, final @PathVariable int petId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return customersServiceClient.getPet(ownerId, petId);
     }
 
@@ -75,6 +82,7 @@ public class ApiController {
         log.info("DEBUG: Inside the diagnose API - diagnosePet");
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return customersServiceClient.diagnosePet(ownerId, petId);
     }
 
@@ -83,17 +91,20 @@ public class ApiController {
             @RequestBody PetRequest petRequest) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return customersServiceClient.updatePet(ownerId, petId, petRequest);
     }
 
     @PostMapping("customer/owners/{ownerId}/pets")
     public Mono<PetFull> addPet(final @PathVariable int ownerId, @RequestBody PetRequest petRequest) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Util.addCodeLocationAttributes();
         return customersServiceClient.addPet(ownerId, petRequest);
     }
 
     @GetMapping(value = "vet/vets")
     public Flux<VetDetails> getVets() {
+        Util.addCodeLocationAttributes();
         return vetsServiceClient.getVets();
     }
 
@@ -101,6 +112,7 @@ public class ApiController {
     public Mono<Visits> getVisits(final @PathVariable int ownerId, final @PathVariable int petId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return visitsServiceClient.getVisitsForOwnersPets(ownerId, petId);
     }
 
@@ -109,21 +121,25 @@ public class ApiController {
             final @RequestBody VisitDetails visitDetails) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return visitsServiceClient.addVisitForOwnersPets(ownerId, petId, visitDetails);
     }
 
     @GetMapping(value = "insurance/insurances")
     public Flux<InsuranceDetail> getInsurance() {
+        Util.addCodeLocationAttributes();
         return insuranceServiceClient.getInsurances();
     }
 
     @GetMapping(value = "billing/billings")
     public Flux<BillingDetail> getBillings() {
+        Util.addCodeLocationAttributes();
         return billingServiceClient.getBillings();
     }
 
     @PostMapping(value = "insurance/pet-insurances")
     public Mono<Void> addPetInsurance(final @RequestBody PetInsurance petInsurance) {
+        Util.addCodeLocationAttributes();
         System.out.println(petInsurance.toString());
         return insuranceServiceClient.addPetInsurance(petInsurance);
     }
@@ -132,12 +148,14 @@ public class ApiController {
     public Mono<PetInsurance> updatePetInsurance(final @PathVariable int petId,
             final @RequestBody PetInsurance petInsurance) {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return insuranceServiceClient.updatePetInsurance(petId, petInsurance);
     }
 
     @GetMapping(value = "insurance/pet-insurances/{petId}")
     public Mono<PetInsurance> getPetInsurance(final @PathVariable int petId) {
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return insuranceServiceClient.getPetInsurance(petId);
     }
 
@@ -145,6 +163,7 @@ public class ApiController {
     public Flux<PaymentDetail> getPayments(final @PathVariable int ownerId, final @PathVariable int petId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return paymentClient.getPayments(ownerId, petId);
     }
 
@@ -153,6 +172,7 @@ public class ApiController {
             final @PathVariable String paymentId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return paymentClient.getPaymentById(ownerId, petId, paymentId);
     }
 
@@ -161,16 +181,19 @@ public class ApiController {
             final @RequestBody PaymentAdd paymentAdd) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.PET_ID, petId);
+        Util.addCodeLocationAttributes();
         return paymentClient.addPayment(ownerId, petId, paymentAdd);
     }
 
     @DeleteMapping(value = "payments/clean-db")
     public Mono<PaymentDetail> cleanPaymentTable() {
+        Util.addCodeLocationAttributes();
         return paymentClient.cleanPaymentTable();
     }
 
     @GetMapping(value = "nutrition/facts/{petType}")
     public Mono<PetNutrition> getNutrition(final @PathVariable String petType) {
+        Util.addCodeLocationAttributes();
         return nutritionServiceClient.getPetNutrition(petType);
     }
 

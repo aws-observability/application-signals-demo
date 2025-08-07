@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-package org.springframework.samples.petclinic.visits;
+package org.springframework.samples.petclinic.vets;
 
 import com.amazonaws.util.EC2MetadataUtils;
 import io.opentelemetry.api.trace.Span;

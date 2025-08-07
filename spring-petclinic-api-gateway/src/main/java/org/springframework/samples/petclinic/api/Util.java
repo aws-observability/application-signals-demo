@@ -1,23 +1,20 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-package org.springframework.samples.petclinic.visits;
-
-import com.amazonaws.util.EC2MetadataUtils;
-import io.opentelemetry.api.trace.Span;
+package org.springframework.samples.petclinic.api;
 
 public class Util {
     public static final String REGION_FROM_EKS = System.getProperty("AWS_REGION") != null ? System.getProperty("AWS_REGION") 
         : System.getenv("AWS_REGION") != null ? System.getenv("AWS_REGION") 
         : "us-west-2";
 
-    public static final String REGION_FROM_EC2 = EC2MetadataUtils.getEC2InstanceRegion() != null ? EC2MetadataUtils.getEC2InstanceRegion() : "us-west-2";
+    public static final String REGION_FROM_EC2 = "us-west-2"; // Default region when EC2MetadataUtils not available
 
     /**
      * Adds code location attributes to the current span following OpenTelemetry semantic conventions.
      * Automatically determines the calling class and method from the stack trace.
      */
     public static void addCodeLocationAttributes() {
-        Span currentSpan = Span.current();
+        io.opentelemetry.api.trace.Span currentSpan = io.opentelemetry.api.trace.Span.current();
         if (currentSpan != null) {
             // Get the current stack trace to find the calling location
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -38,6 +35,9 @@ public class Util {
     }
 
     public static class WellKnownAttributes {
+        public static final String REMOTE_APPLICATION = "aws.remote.application";
+        public static final String REMOTE_OPERATION = "aws.remote.operation";
+        
         public static final String OWNER_ID = "owner.id";
         public static final String PET_ID = "pet.id";
         public static final String ORDER_ID = "order.id";

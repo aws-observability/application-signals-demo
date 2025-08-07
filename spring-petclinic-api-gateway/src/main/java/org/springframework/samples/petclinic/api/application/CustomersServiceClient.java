@@ -24,6 +24,7 @@ import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.samples.petclinic.api.Util;
 import org.springframework.samples.petclinic.api.dto.*;
 import org.springframework.samples.petclinic.api.utils.WellKnownAttributes;
 import org.springframework.stereotype.Component;
@@ -49,6 +50,7 @@ public class CustomersServiceClient {
 
     @WithSpan
     public Mono<OwnerDetails> getOwner(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId) {
+        Util.addCodeLocationAttributes();
         Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().get()
             .uri("http://customers-service/owners/{ownerId}", ownerId)
@@ -71,6 +73,7 @@ public class CustomersServiceClient {
 
     @WithSpan
     public Mono<Void> addOwner(@SpanAttribute(WellKnownAttributes.OWNER_ID) final OwnerRequest ownerRequest) {
+        Util.addCodeLocationAttributes();
         Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().post()
             .uri("http://customers-service/owners")
@@ -85,6 +88,7 @@ public class CustomersServiceClient {
 
     @WithSpan
     public Mono<PetFull> getPet(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId, @SpanAttribute(WellKnownAttributes.PET_ID) final int petId) {
+        Util.addCodeLocationAttributes();
         Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().get()
             .uri("http://customers-service/owners/{ownerId}/pets/{petId}", ownerId, petId)
@@ -94,6 +98,7 @@ public class CustomersServiceClient {
 
     @WithSpan
     public Mono<Void> diagnosePet(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId, @SpanAttribute(WellKnownAttributes.PET_ID) final int petId) {
+        Util.addCodeLocationAttributes();
         log.info("DEBUG: Inside the diagnose API");
         Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().get()
@@ -103,6 +108,7 @@ public class CustomersServiceClient {
     }
     @WithSpan
     public Mono<Void> updatePet(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId, @SpanAttribute(WellKnownAttributes.PET_ID) final int petId, final PetRequest petRequest) {
+        Util.addCodeLocationAttributes();
         Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().put()
             .uri("http://customers-service/owners/{ownerId}/pets/{petId}", ownerId, petId)
@@ -113,6 +119,7 @@ public class CustomersServiceClient {
 
     @WithSpan
     public Mono<PetFull> addPet(@SpanAttribute(WellKnownAttributes.OWNER_ID) final int ownerId, @SpanAttribute(WellKnownAttributes.PET_ID) final PetRequest petRequest) {
+        Util.addCodeLocationAttributes();
         Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().post()
             .uri("http://customers-service/owners/{ownerId}/pets", ownerId)
@@ -126,6 +133,7 @@ public class CustomersServiceClient {
                                   @SpanAttribute(WellKnownAttributes.REMOTE_APPLICATION) String host,
                                   @SpanAttribute(WellKnownAttributes.REMOTE_OPERATION) String path,
                                   Object... params) {
+        Util.addCodeLocationAttributes();
         Span.current().setAttribute("aws.local.service", "pet-clinic-frontend-java");
         return webClientBuilder.build().get().uri(String.format("http://%s%s", host, path), params).retrieve().bodyToFlux(clazz);
     }

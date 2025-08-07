@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.samples.petclinic.api.Util;
 import org.springframework.samples.petclinic.api.application.CustomersServiceClient;
 import org.springframework.samples.petclinic.api.utils.WellKnownAttributes;
 import org.springframework.samples.petclinic.api.application.VisitsServiceClient;
@@ -57,6 +58,7 @@ public class ApiGatewayController {
     @GetMapping(value = "owners/{ownerId}")
     public Mono<OwnerDetails> getOwnerDetails(final @PathVariable int ownerId) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
+        Util.addCodeLocationAttributes();
         return customersServiceClient.getOwner(ownerId)
             .onErrorResume(ex -> Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage())))
             .flatMap(owner ->

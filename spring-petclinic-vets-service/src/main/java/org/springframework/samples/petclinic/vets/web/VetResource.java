@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import org.springframework.samples.petclinic.vets.Util;
 import org.springframework.samples.petclinic.vets.aws.S3Service;
 import org.springframework.samples.petclinic.vets.model.Vet;
 import org.springframework.samples.petclinic.vets.model.VetRepository;
@@ -46,6 +47,7 @@ class VetResource {
 
     @GetMapping
     public List<Vet> showResourcesVetList() {
+        Util.addCodeLocationAttributes();
         s3Service.listBuckets();
         return vetRepository.findAll();
     }
