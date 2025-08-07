@@ -11,12 +11,31 @@ import os
 import json
 import random
 import time
+import inspect
 
 logger = logging.getLogger(__name__)
+
+# Utility function to add code location attributes to the current span
+def add_code_location_attributes():
+    span = trace.get_current_span()
+    if span:
+        # Get caller information from the stack
+        frame = inspect.currentframe()
+        if frame and frame.f_back:
+            caller_frame = frame.f_back
+            file_name = os.path.basename(caller_frame.f_code.co_filename)
+            line_number = caller_frame.f_lineno
+            function_name = f"{caller_frame.f_code.co_name}"
+            
+            span.set_attribute("code.file.path", file_name)
+            span.set_attribute("code.line.number", line_number)
+            span.set_attribute("code.function.name", function_name)
+
 # Create your views here.
 
 class BillingViewSet(viewsets.ViewSet):
     def list(self, request):
+        add_code_location_attributes()
         span = trace.get_current_span()
 
         # Read all three limits from environment (or use defaults)
@@ -61,6 +80,7 @@ class BillingViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None, owner_id=None, type=None, pet_id=None):
+        add_code_location_attributes()
         try:
             billing_obj = None
             if pk is not None:
@@ -73,6 +93,7 @@ class BillingViewSet(viewsets.ViewSet):
             return Response({'message': 'Billing object not found'}, status=404)
 
     def create(self, request):
+        add_code_location_attributes()
         serializer = BillingSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -81,6 +102,7 @@ class BillingViewSet(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
+        add_code_location_attributes()
         try:
             billing_obj = Billing.objects.get(id=pk)
             serializer = BillingSerializer(billing_obj, data=request.data)
@@ -117,4 +139,5 @@ class BillingViewSet(viewsets.ViewSet):
 
 class HealthViewSet(viewsets.ViewSet):
     def list(self, request):
+        add_code_location_attributes()
         return Response({'message':'ok'}, status=status.HTTP_200_OK)

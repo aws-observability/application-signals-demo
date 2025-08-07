@@ -9,6 +9,7 @@ using Steeltoe.Discovery.Client;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,18 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+// Utility method to add code location attributes to the current activity
+static void AddCodeLocationAttributes([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string memberName = "")
+{
+    Activity currentActivity = Activity.Current;
+    if (currentActivity != null)
+    {
+        // Use OpenTelemetry semantic convention attribute names
+        currentActivity.SetTag("code.file.path", Path.GetFileName(filePath));
+        currentActivity.SetTag("code.line.number", lineNumber);
+        currentActivity.SetTag("code.function.name", $"PetClinic.PaymentService.Program.{memberName}");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -51,6 +64,7 @@ app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments",
         int petId,
         [FromServices] IPetClinicContext context) =>
     {
+        AddCodeLocationAttributes();
         Activity currentActivity = Activity.Current;
         if (currentActivity != null)
         {
@@ -86,6 +100,7 @@ app.MapGet("/owners/{ownerId:int}/pets/{petId:int}/payments/{paymentId}",
         string paymentId,
         [FromServices] IPetClinicContext context) =>
     {
+        AddCodeLocationAttributes();
         Activity currentActivity = Activity.Current;
         if (currentActivity != null)
         {
@@ -114,6 +129,7 @@ app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
         Payment payment,
        [FromServices] IPetClinicContext context) =>
     {
+        AddCodeLocationAttributes();
         payment.Id ??= Random.Shared.Next(100000, 1000000).ToString();
 
         Activity currentActivity = Activity.Current;
@@ -188,6 +204,7 @@ app.MapPost("/owners/{ownerId:int}/pets/{petId:int}/payments/",
 
 app.MapDelete("/clean-db", async ([FromServices] IPetClinicContext context) =>
 {
+    AddCodeLocationAttributes();
     await context.CleanDB();
 
     return Results.Ok();
