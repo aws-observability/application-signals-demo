@@ -1,7 +1,7 @@
 import { RemovalPolicy, Fn, Duration, CfnOutput } from 'aws-cdk-lib';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { SubnetGroup, DatabaseCluster, DatabaseClusterEngine, AuroraPostgresEngineVersion, Credentials, PerformanceInsightRetention } from 'aws-cdk-lib/aws-rds';
+import { SubnetGroup, DatabaseCluster, DatabaseClusterEngine, AuroraPostgresEngineVersion, Credentials, PerformanceInsightRetention, ParameterGroup } from 'aws-cdk-lib/aws-rds';
 import { InstanceType, InstanceClass, InstanceSize} from 'aws-cdk-lib/aws-ec2';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Vpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
@@ -43,6 +43,19 @@ export class RdsStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
+    // Create parameter group for slow SQL logging
+    const parameterGroup = new ParameterGroup(this, 'EksSlowSQLParameterGroup', {
+      engine: DatabaseClusterEngine.auroraPostgres({
+        version: AuroraPostgresEngineVersion.VER_15_4,
+      }),
+      description: 'Parameter group for enabling slow SQL logging',
+      parameters: {
+        log_min_duration_statement: '1000',
+        log_statement: 'none',
+        log_destination: 'stderr'
+      },
+    });
+
     // Create an Aurora PostgreSQL cluster
     const dbCluster = new DatabaseCluster(this, 'EksRdsCluster', {
       engine: DatabaseClusterEngine.auroraPostgres({
@@ -57,10 +70,11 @@ export class RdsStack extends Stack {
         vpc,
       },
       subnetGroup: dbSubnetGroup,
+      parameterGroup: parameterGroup,
       backup: {
         retention: Duration.days(1),
       },
-      
+      cloudwatchLogsExports: ['postgresql'],
       performanceInsightRetention: PerformanceInsightRetention.MONTHS_15,
       enablePerformanceInsights: true,
       databaseInsightsMode: DatabaseInsightsMode.ADVANCED,
