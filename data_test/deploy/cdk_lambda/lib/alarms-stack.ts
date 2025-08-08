@@ -63,6 +63,11 @@ export class AlarmsStack extends Stack {
 
   private createLogsAlarms(testCases: any[]): void {
     testCases.forEach(testCase => {
+      // Skip disabled test cases
+      if (testCase.disabled === true) {
+        console.log(`Skipping alarm creation for disabled test: ${testCase.test_case_id}`);
+        return;
+      }
       const alarmName = `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}.${this.sanitizeName(testCase.test_case_id)}`;
       const alarmDescription = `Alarm for monitoring ${testCase.description}`;
 
@@ -107,6 +112,11 @@ export class AlarmsStack extends Stack {
 
   private createMetricsAlarms(testCases: any[]): void {
     testCases.forEach(testCase => {
+      // Skip disabled test cases
+      if (testCase.disabled === true) {
+        console.log(`Skipping alarm creation for disabled test: ${testCase.test_case_id}`);
+        return;
+      }
       const alarmName = `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}.${this.sanitizeName(testCase.test_case_id)}`;
       const alarmDescription = `Alarm for monitoring ${testCase.description}`;
 
@@ -151,6 +161,11 @@ export class AlarmsStack extends Stack {
 
   private createTracesAlarms(testCases: any[]): void {
     testCases.forEach(testCase => {
+      // Skip disabled test cases
+      if (testCase.disabled === true) {
+        console.log(`Skipping alarm creation for disabled test: ${testCase.test_case_id}`);
+        return;
+      }
       const alarmName = `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}.${this.sanitizeName(testCase.test_case_id)}`;
       const alarmDescription = `Alarm for monitoring ${testCase.description}`;
 
@@ -198,6 +213,12 @@ export class AlarmsStack extends Stack {
 
     // Create a composite alarm for each scenario
     Object.entries(this.scenarioAlarms).forEach(([scenario, scenarioData]) => {
+      // Skip scenarios with no child alarms (all tests disabled)
+      if (scenarioData.childAlarms.length === 0) {
+        console.log(`Skipping composite alarm creation for scenario ${scenario} - no active test cases`);
+        return;
+      }
+      
       const alarmName = `APMDemoTest.${this.sanitizeName(scenario)}`;
       const alarmDescription = `Composite alarm for monitoring all test cases in ${scenario}`;
       

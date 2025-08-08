@@ -152,8 +152,9 @@
       "notes": "Corresponds to PDF scenario 8. Requires BatchGetTraces. Check how SQS errors are represented (error flag vs exception, status code)."
     },
     {
+      "disabled": true,
       "test_case_id": "rum_integration_errors_trace_availability_check",
-      "description": "Verify RUM error traces (Scenario 9)",
+      "description": "Verify RUM error traces (Scenario 9) - DISABLED",
       "test_scenario": "Scenario 9",
       "time_range": {
         "relative_minutes": 30

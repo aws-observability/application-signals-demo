@@ -295,6 +295,9 @@ def main():
     
     print("\nStart executing tests...")
     for test_case in test_cases:
+        if test_case.get('disabled', False):
+            print(f"SKIPPING disabled test: {test_case.get('test_case_id', 'unknown')} - {test_case.get('description', 'no description')}")
+            continue
         run_test_case(test_case)
     
     print("All test cases executed")

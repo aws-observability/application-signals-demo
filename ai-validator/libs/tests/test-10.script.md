@@ -11,3 +11,6 @@ Click the hyperlink 'PetClinic_Application' in the 'Services' list in the main p
 ### 3. Check there is more than one resource
 
 In the 'Resources' section, make sure there is more than one resource
+
+**Constraints:**
+- You MUST ensure you are on the PetClinic_Application dashboard page before doing the check.

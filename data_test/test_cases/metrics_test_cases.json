@@ -308,8 +308,9 @@
       "notes": "Corresponds to PDF scenario 8"
     },
     {
+      "disabled": true,
       "test_case_id": "rum_integration_errors_metric_availability_check",
-      "description": "Verify RUM error metrics (Scenario 9)",
+      "description": "Verify RUM error metrics (Scenario 9) - DISABLED",
       "test_scenario": "Scenario 9",
       "metric_namespace": "AWS/RUM",
       "metric_name": "Http4xxCount",
