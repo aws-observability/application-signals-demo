@@ -24,6 +24,14 @@ axiosRetry.default(axios, {
  */
 
 module.exports = function (app, port) {
+  logger.info('attempting to register with eureka', {
+    url: `${URL}/apps/${app}/`,
+    instanceId: `${app}-${port}`,
+    app: app.toUpperCase(),
+    hostName: ip.address(),
+    port: port
+  });
+
   axios.post(`${URL}/apps/${app}/`, {
     instance: {
       hostName: ip.address(),
@@ -43,18 +51,38 @@ module.exports = function (app, port) {
     }
   })
   .then(function (res) {
-    logger.info('registered with eureka');
+    logger.info('successfully registered with eureka', {
+      statusCode: res.status,
+      statusText: res.statusText,
+      instanceId: `${app}-${port}`
+    });
     setInterval(() => {
       axios.put(`${URL}/apps/${app}/${app}-${port}`)
         .then(function (res) {
-          logger.info('eureka hearbeat');
+          logger.info('eureka hearbeat', {
+            statusCode: res.status,
+            instanceId: `${app}-${port}`
+          });
         })
         .catch(function (err) {
-          logger.error('failed to add heartbeat', err);
+          logger.error('failed to add heartbeat', {
+            error: err.message,
+            statusCode: err.response?.status,
+            statusText: err.response?.statusText,
+            responseData: err.response?.data,
+            url: `${URL}/apps/${app}/${app}-${port}`
+          });
         })
     }, 50 * 1000);
   })
   .catch(function (err) {
-    logger.error(err)
+    logger.error('failed to register with eureka', {
+      error: err.message,
+      statusCode: err.response?.status,
+      statusText: err.response?.statusText,
+      responseData: err.response?.data,
+      url: `${URL}/apps/${app}/`,
+      instanceId: `${app}-${port}`
+    });
   });
 };
