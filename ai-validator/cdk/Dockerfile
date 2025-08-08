@@ -22,20 +22,18 @@ RUN python3.11 -m pip install --upgrade pip && \
     python3.11 -m pip install playwright natsort && \
     python3.11 -m playwright install chromium
 
-# Clone repository
-ARG REBUILD_CACHE_BUSTER=unspecified
-RUN echo "Rebuild timestamp: $REBUILD_CACHE_BUSTER" && \
-    rm -rf /app && \
-    git clone https://github.com/aws-observability/application-signals-demo.git /app
+# Copy local ai-validator files  
+# Note: Build context should be the ai-validator directory
+COPY libs /app/ai-validator/libs
 
 # Set environment variables (UPDATE)
-ENV DEFAULT_ACCOUNT_AWS_REGION=<PASTE `DEFAULT_ACCOUNT_AWS_REGION` from .env>
-ENV DEFAULT_AWS_ACCOUNT_ID=<PASTE `DEFAULT_AWS_ACCOUNT_ID` from .env>
-ENV DEBUG_MODE=<PASTE `DEBUG_MODE` from .env>
-ENV S3_BUCKET_NAME_PREFIX=<PASTE `S3_BUCKET_NAME_PREFIX` from .env>
-ENV CLOUDWATCH_NAMESPACE=<PASTE `CLOUDWATCH_NAMESPACE` from .env>
-ENV DEMO_AWS_ACCOUNT_ID=<PASTE `DEMO_AWS_ACCOUNT_ID` from .env>
-ENV DEMO_ROLE_ID=<PASTE `DEMO_ROLE_ID` from .env>
+ENV DEFAULT_ACCOUNT_AWS_REGION=us-east-1
+ENV DEFAULT_AWS_ACCOUNT_ID=868155213681
+ENV DEBUG_MODE=False
+ENV S3_BUCKET_NAME_PREFIX=ai-test
+ENV CLOUDWATCH_NAMESPACE=ai-test
+ENV DEMO_AWS_ACCOUNT_ID=868155213681
+ENV DEMO_ROLE_ID=ai-test-role
 ENV HEADLESS_MODE=True
 ENV MANUAL_MODE=False
 

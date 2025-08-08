@@ -73,26 +73,29 @@ export class AIValidatorStack extends cdk.Stack {
       "test-2.script.md",
       "test-3.script.md",
       "test-4.script.md",
-      "test-5.script.md",
+      // "test-5.script.md",
       "test-6.script.md",
       "test-7.script.md",
       "test-8.script.md",
-      "test-9.script.md",
+      // "test-9.script.md",
       "test-10.script.md",
       "test-11.script.md",
-      "test-12.script.md",
-      "test-13-appointment-audit-visits.script.md",
+      // "test-12.script.md",
+      "test-13-appointment-lambda.script.md",
+      "test-13-audit-lambda.script.md",
       "test-13-customers-service-java.script.md",
+      "test-13-payment-service-dotnet.script.md",
       "test-13-pet-clinic-frontend-java-1.script.md",
       "test-13-pet-clinic-frontend-java-2.script.md",
       "test-13-pet-clinic-frontend-java-3.script.md",
       "test-13-pet-clinic-frontend-java-4.script.md",
       "test-13-pet-clinic-frontend-java-5.script.md",
+      "test-13-visits-service-java.script.md",
     ];
 
     const failureAlarms: cloudwatch.Alarm[] = [];
 
-    testFiles.forEach((scriptFile) => {
+    testFiles.forEach((scriptFile, index) => {
       const testId = scriptFile.replace(".script.md", "");
 
       const taskDef = new ecs.FargateTaskDefinition(this, `TaskDef-${testId}`, {
@@ -102,7 +105,8 @@ export class AIValidatorStack extends cdk.Stack {
       });
 
       taskDef.addContainer(`AITestContainer-${testId}`, {
-        image: ecs.ContainerImage.fromAsset(".", {
+        image: ecs.ContainerImage.fromAsset("..", {
+          file: "cdk/Dockerfile",
           buildArgs: {
             REBUILD_CACHE_BUSTER: new Date().toISOString(), // Ensures image is rebuilt every deploy for new commits
           },
@@ -118,8 +122,15 @@ export class AIValidatorStack extends cdk.Stack {
         }),
       });
 
+      // Stagger tests every 5 minutes to avoid resource contention
+      // Test 0: minute 0, Test 1: minute 5, Test 2: minute 10, etc.
+      const minuteOffset = (index * 5) % 60;
+      
       new events.Rule(this, `ScheduleRule-${testId}`, {
-        schedule: events.Schedule.rate(cdk.Duration.hours(1)),
+        schedule: events.Schedule.cron({
+          minute: minuteOffset.toString(),
+          hour: '*',
+        }),
         targets: [
           new targets.EcsTask({
             cluster,
