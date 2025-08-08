@@ -353,6 +353,12 @@ def lambda_handler(event, context):
         
         for test_case in test_list:
             test_id = test_case.get('test_case_id', 'unknown')
+            
+            # Skip disabled tests
+            if test_case.get('disabled', False):
+                print(f"SKIPPING disabled test: {test_id} - {test_case.get('description', 'no description')}")
+                continue
+                
             passed = test_runner(test_case)
             
             publish_test_result(test_case, test_type, passed)
