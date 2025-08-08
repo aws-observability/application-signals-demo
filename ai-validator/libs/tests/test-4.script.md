@@ -6,7 +6,7 @@ In the left panel, under Application Signals, click 'Transaction Search'.
 
 ### 2. Input values
 
-In the input with placeholder text 'Search spans by pasting, selecting from properties or using refiners, type the following and press ENTER after each: 'attributes.owner.id=6', 'attributes.http.response.status_code=400', 'attributes.aws.local.service=payment-service-dotnet', 'attributes.aws.local.environment=eks:demo/default', 'name=POST /owners'
+In the input with placeholder text 'Search spans by pasting, selecting from properties or using refiners, type the following and press ENTER after each: 'attributes.owner.id=6', 'attributes.http.response.status_code=400', 'attributes.aws.local.service=payment-service-dotnet', 'name=POST /owners'
 
 **Constraints:**
 - You MUST ensure that you press Enter after each input

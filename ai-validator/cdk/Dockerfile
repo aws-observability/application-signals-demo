@@ -22,12 +22,11 @@ RUN python3.11 -m pip install --upgrade pip && \
     python3.11 -m pip install playwright natsort && \
     python3.11 -m playwright install chromium
 
-# Clone repository
-ARG REBUILD_CACHE_BUSTER=unspecified
-RUN echo "Rebuild timestamp: $REBUILD_CACHE_BUSTER" && \
-    rm -rf /app && \
-    git clone https://github.com/aws-observability/application-signals-demo.git /app
+# Copy local ai-validator files  
+# Note: Build context should be the ai-validator directory
+COPY libs /app/ai-validator/libs
 
+# Set environment variables (UPDATE)
 # Set environment variables (UPDATE)
 ENV DEFAULT_ACCOUNT_AWS_REGION=<PASTE `DEFAULT_ACCOUNT_AWS_REGION` from .env>
 ENV DEFAULT_AWS_ACCOUNT_ID=<PASTE `DEFAULT_AWS_ACCOUNT_ID` from .env>

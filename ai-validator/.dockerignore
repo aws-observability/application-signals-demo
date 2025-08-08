@@ -1,0 +1,8 @@
+cdk/cdk.out/
+cdk/node_modules/
+cdk/*.log
+cdk/.env
+**/.git
+**/.DS_Store
+**/node_modules
+**/*.log
