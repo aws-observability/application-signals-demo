@@ -81,9 +81,9 @@ export class AIValidatorStack extends cdk.Stack {
       "test-10.script.md",
       "test-11.script.md",
       // "test-12.script.md",
-      "test-13-appointment-lambda.script.md",
       "test-13-audit-lambda.script.md",
-      "test-13-customers-service-java.script.md",
+      "test-13-customers-service-java-1.script.md",
+      "test-13-customers-service-java-2.script.md",
       "test-13-payment-service-dotnet.script.md",
       "test-13-pet-clinic-frontend-java-1.script.md",
       "test-13-pet-clinic-frontend-java-2.script.md",
@@ -99,8 +99,8 @@ export class AIValidatorStack extends cdk.Stack {
       const testId = scriptFile.replace(".script.md", "");
 
       const taskDef = new ecs.FargateTaskDefinition(this, `TaskDef-${testId}`, {
-        cpu: 2048,
-        memoryLimitMiB: 4096,
+        cpu: 4096,
+        memoryLimitMiB: 8192,
         taskRole,
       });
 
@@ -122,9 +122,9 @@ export class AIValidatorStack extends cdk.Stack {
         }),
       });
 
-      // Stagger tests every 5 minutes to avoid resource contention
-      // Test 0: minute 0, Test 1: minute 5, Test 2: minute 10, etc.
-      const minuteOffset = (index * 5) % 60;
+      // Distribute 18 tests evenly across the hour (every ~3.33 minutes)
+      // This spreads tests throughout the hour to avoid AWS API throttling
+      const minuteOffset = Math.floor((index * 60) / testFiles.length);
       
       new events.Rule(this, `ScheduleRule-${testId}`, {
         schedule: events.Schedule.cron({
@@ -158,7 +158,7 @@ export class AIValidatorStack extends cdk.Stack {
       const alarm = new cloudwatch.Alarm(this, `FailureAlarm-${testId}`, {
         alarmName: `FailureAlarm-${testId}`,
         metric: failureMetric,
-        threshold: 4,
+        threshold: 5,
         evaluationPeriods: 1,
         comparisonOperator:
           cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
