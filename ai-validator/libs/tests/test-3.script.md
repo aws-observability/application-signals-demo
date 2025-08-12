@@ -81,7 +81,10 @@ Input 'logs that also contain "What are the best preventive measures for common 
 
 ### 16. Click 'Update query'
 
-Click on the 'Update query' button. Wait a few seconds.
+Click on the 'Update query' button. Wait 10 seconds. 
+
+**Constraints:**
+- You MUST check the text field above the "Query generator' button is populated with an input containing the string: 'filter @message like "What are the best preventive measures for common cat diseases?"'
 
 ### 17. Click 'Run query'
 
