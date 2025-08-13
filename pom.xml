@@ -95,6 +95,24 @@
           </executions>
         </plugin>
 
+        <!-- Maven Compiler Plugin with Lombok Annotation Processor -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version>
+          <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.30</version>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
+
         <!-- Spring Boot Actuator displays build-related information if a META-INF/build-info.properties file is present -->
         <plugin>
           <groupId>pl.project13.maven</groupId>
@@ -157,6 +175,44 @@
           </plugin>
         </plugins>
       </pluginManagement>
+    </build>
+  </profile>
+
+  <profile>
+    <id>buildDockerAppleSilicon</id>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.1.0</version>
+          <executions>
+            <execution>
+              <phase>install</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <executable>docker</executable>
+            <arguments>
+              <argument>build</argument>
+              <argument>-f</argument>
+              <argument>docker/Dockerfile</argument>
+              <argument>--build-arg</argument>
+              <argument>ARTIFACT_NAME=${project.build.finalName}</argument>
+              <argument>--build-arg</argument>
+              <argument>EXPOSED_PORT=${docker.image.exposed.port}</argument>
+              <argument>--build-arg</argument>
+              <argument>DOCKERIZE_VERSION=${docker.image.dockerize.version}</argument>
+              <argument>-t</argument>
+              <argument>${docker.image.prefix}/${project.artifactId}:latest</argument>
+              <argument>.</argument>
+            </arguments>
+          </configuration>
+        </plugin>
+      </plugins>
     </build>
   </profile>
 </profiles>
