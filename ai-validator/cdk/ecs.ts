@@ -158,7 +158,7 @@ export class AIValidatorStack extends cdk.Stack {
       const alarm = new cloudwatch.Alarm(this, `FailureAlarm-${testId}`, {
         alarmName: `FailureAlarm-${testId}`,
         metric: failureMetric,
-        threshold: 5,
+        threshold: 6,
         evaluationPeriods: 1,
         comparisonOperator:
           cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,

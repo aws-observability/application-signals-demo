@@ -9,6 +9,8 @@
  * 5. Hover over the leaderboard datapoint to make all datapoints visible
  * 6. Loop through all datapoints to return the highest point in the metric graph
  * 7. Click the returned datapoint
+ * 8. Refresh the current web page
+ * 9. Wait until the whole page is ready
  *
  * @param {number} chartPosition - Index of the metric chart to be selected.
  * @param {number} checkboxPosition - Index of the legend checkbox to de-select to clearly display the correct line.
@@ -122,26 +124,35 @@ function clickMaxGraphPoint(chartPosition, checkboxPosition) {
     });
     leaderBoardDataPoint.dispatchEvent(leaderBoardDataPointEvent);
 
-    waitForLowestCyElement().then((element) => {
-      if (element) {
-        const elementRect = element.getBoundingClientRect();
-        const elementX = elementRect.left + elementRect.width / 2;
-        const elementY = elementRect.top + elementRect.height / 2;
+    waitForLowestCyElement()
+      .then((element) => {
+        if (element) {
+          const elementRect = element.getBoundingClientRect();
+          const elementX = elementRect.left + elementRect.width / 2;
+          const elementY = elementRect.top + elementRect.height / 2;
 
-        const hoverEvent = new MouseEvent("mousemove", {
-          clientX: elementX,
-          clientY: elementY,
-          bubbles: true,
-          cancelable: true,
-          view: window,
-        });
+          const hoverEvent = new MouseEvent("mousemove", {
+            clientX: elementX,
+            clientY: elementY,
+            bubbles: true,
+            cancelable: true,
+            view: window,
+          });
 
-        element.dispatchEvent(hoverEvent);
-        clickDataPoint(DATA_POINT_SELECTOR, chart);
-      } else {
-        console.warn("No element with a `cy` value found.");
-      }
-    });
+          element.dispatchEvent(hoverEvent);
+          return clickDataPoint(DATA_POINT_SELECTOR, chart);
+        } else {
+          console.warn("No element with a `cy` value found.");
+          return Promise.reject("No element with a `cy` value found.");
+        }
+      })
+      .then(() => refreshPageAndWait())
+      .then(() => {
+        console.log("Page refreshed and fully loaded");
+      })
+      .catch((error) => {
+        console.error("Error in clickMaxGraphPoint:", error);
+      });
   }, 1000);
 
   /**
@@ -262,5 +273,46 @@ function clickMaxGraphPoint(chartPosition, checkboxPosition) {
   function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  return "JavaScript injected successfully.";
+
+  /**
+   * Refreshes the current page and waits until it's fully loaded.
+   * @returns {Promise<void>}
+   */
+  async function refreshPageAndWait() {
+    // Refresh the page
+    window.location.reload();
+    
+    // Wait for the page to be completely loaded
+    return new Promise((resolve) => {
+      // If the page is already loaded, resolve immediately
+      if (document.readyState === 'complete') {
+        resolve();
+        return;
+      }
+
+      // Otherwise, set up an event listener for when loading completes
+      window.addEventListener('load', function onLoad() {
+        // Additional wait to ensure all dynamic content is loaded
+        setTimeout(() => {
+          // Make sure the iframe is accessible again
+          const iframe = document.querySelector(IFRAME_SELECTOR);
+          if (iframe && (iframe.contentDocument || iframe.contentWindow.document)) {
+            resolve();
+          } else {
+            // If iframe not available yet, wait a bit longer
+            setTimeout(resolve, 2000);
+          }
+        }, 2000);
+        
+        // Remove the event listener once triggered
+        window.removeEventListener('load', onLoad);
+      });
+    });
+  }
+
+  // After clicking the datapoint, refresh the page and wait for it to fully load
+  // Remove this duplicate call as it's already being called in the promise chain above
+
+  return "JavaScript injection started. Page will refresh after datapoint is clicked and wait until fully loaded.";
 }
+
