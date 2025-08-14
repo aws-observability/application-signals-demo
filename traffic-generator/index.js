@@ -212,8 +212,8 @@ const lowTrafficPaymentTask = cron.schedule('* * * * *', () => {
 
 lowTrafficPaymentTask.start();
 
-const clearPaymentTableTask = cron.schedule('0 */6 * * *', () => {
-    console.log('clear payment table every 6 hours');
+const clearPaymentTableTask = cron.schedule('0 * * * *', () => {
+    console.log('clear payment table every 1 hour');
     axios.delete(`${baseUrl}/api/payments/clean-db`, { timeout: 10000 })
         .catch(err => {
             console.error(`${baseUrl}/api/payments/clean-db, error: ` + (err.response ? err.response.data : err.toString()));

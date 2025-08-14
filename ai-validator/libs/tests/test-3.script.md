@@ -68,31 +68,13 @@ Scroll injection down, PASS in 'ApmXray', '#html' and 1 as PARAMETERS
 
 Click the 'View in CloudWatch Logs Insights' button in 'Logs'
 
-### 14. Click 'Query Generator'
+### 14. Wait for the new tab to load
 
-On the new tab, Click on the blue 'Query Generator' button
+On the new tab, wait until everything is loaded
 
 **Constraints:**
 - You MUST switch to the new tab
-
-### 15. Input 'logs that also contain "What are the best preventive measures for common cat diseases?"'
-
-Input 'logs that also contain "What are the best preventive measures for common cat diseases?"' into the 'Prompt'
-
-### 16. Click 'Update query'
-
-Click on the 'Update query' button. Wait 10 seconds. 
-
-**Constraints:**
-- You MUST check the text field above the "Query generator' button is populated with an input containing the string: 'filter @message like "What are the best preventive measures for common cat diseases?"'
-
-### 17. Click 'Run query'
-
-Click the 'Run query' button
-
-## 18. Make sure there is one or more logs
-
-Make sure there is one or more logs in the 'Logs' section
+- You MUST exit once you are on the new tab
 
 ## Troubleshooting
 
