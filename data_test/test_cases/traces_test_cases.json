@@ -95,7 +95,7 @@
       "time_range": {
         "relative_minutes": 180
       },
-      "filter_expression": "service(id(name: \"visits-service-java\")) AND (http.method = \"POST\") AND (Annotation[aws:span.kind] = \"SERVER\") AND (http.status = 500)",
+      "filter_expression": "service(id(name: \"visits-service-java\")) AND (http.method = \"POST\") AND (Annotation[span.kind] = \"SERVER\") AND (Annotation[aws.local.operation] = \"POST /owners/{ownerId}/pets/{petId}/visits\") AND (http.status = 500)",
       "validation_checks": [
         {
           "check_type": "count",
