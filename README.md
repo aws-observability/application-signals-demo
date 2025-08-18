@@ -10,13 +10,23 @@ In the following, we will focus on how customers can set up the current sample a
 This code for sample application is intended for demonstration purposes only. It should not be used in a production environment or in any setting where reliability/security is a concern.
 
 # Prerequisite
+
+## Option 1: Using AWS CodeBuild (Recommended - No Local Setup Required)
+* AWS CLI 2.x is installed. For more information about installing the AWS CLI, see [Install or update the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+* AWS CDK >= v2.1024.0 is installed - https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install
+* Node.js >= v18.0.0 is installed.
+
+## Option 2: Local Build Environment
 * A Linux machine with x86-64 (AMD64) architecture is required for building Docker images for the sample application.
 * Docker is installed and running on the machine.
 * AWS CLI 2.x is installed. For more information about installing the AWS CLI, see [Install or update the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+* Golang is installed.
+
+## Additional Prerequisites for Deployment
 * kubectl is installed - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 * eksctl is installed - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
 * jq is installed - https://jqlang.github.io/jq/download/
-* AWS CDK >= v2.208.0 is installed - https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install
+* AWS CDK >= v2.1024.0 is installed - https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install
 * Node.js >= v18.0.0 is installed.
 * Golang is installed.
 * [Optional] If you plan to install the infrastructure resources using Terraform, terraform cli is required. https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
@@ -30,10 +40,41 @@ Note that if you want to run the scripts in a shell inside an [AWS Cloud9](https
 
 ### Build the sample application images and push to ECR
 
+#### Option 1: Using AWS CodeBuild (Recommended - No Local Build Environment Required)
+
+AWS CodeBuild eliminates the need for local Docker and build tools. The build process runs entirely in AWS.
+
+1. Deploy the CodeBuild infrastructure. Replace `region-name` with your desired AWS region (e.g., `us-east-1`):
+
+``` shell
+cd cdk/codebuild
+npm install
+export AWS_REGION=region-name  # Set your desired region
+cdk bootstrap  # First time only - bootstraps CDK in the specified region
+cdk deploy     # Deploys the CodeBuild stack to the specified region
+```
+
+   To clean up the CodeBuild infrastructure when no longer needed:
+   ``` shell
+   cd cdk/codebuild
+   export AWS_REGION=region-name  # Use the same region where you deployed
+   cdk destroy
+   ```
+   This will remove the CodeBuild project, S3 bucket, IAM roles, and CloudWatch logs. Note: ECR repositories with Docker images are not deleted automatically.
+
+2. Trigger a build to create and push all images to ECR. Replace `region-name` with the region you choose (e.g. `us-east-1`)
+
+``` shell
+./scripts/trigger-build.sh --region=region-name 
+```
+
+For more details, see the [CodeBuild README](cdk/codebuild/README.md).
+
+#### Option 2: Local Build
+
 1. Build container images for each micro-service application
 
 ``` shell
-
 ./mvnw clean install -P buildDocker
 ```
 
