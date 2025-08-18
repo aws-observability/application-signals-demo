@@ -1,0 +1,48 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+      golang: 1.22
+    commands:
+      - |
+        echo "Installing prerequisites..."
+        apt-get update
+        apt-get install -y jq
+        # Verify Docker is installed and running (pre-installed in CodeBuild image)
+        docker --version
+        systemctl status docker || service docker status || echo "Docker service check"
+        # Verify Go version
+        go version
+        # Verify Java version
+        java -version
+        echo "Prerequisites installed successfully"
+
+  pre_build:
+    commands:
+      - |
+        echo "Setting up environment variables..."
+        export ACCOUNT=$AWS_ACCOUNT_ID
+        export REGION=$AWS_DEFAULT_REGION
+        echo "Account: $ACCOUNT, Region: $REGION"
+
+  build:
+    commands:
+      - |
+        echo "Building Spring Boot services with Maven..."
+        chmod +x ./mvnw
+        ./mvnw clean install -P buildDocker
+        echo "Building remaining services and pushing all images to ECR..."
+        chmod +x ./push-ecr.sh
+        ./push-ecr.sh
+
+  post_build:
+    commands:
+      - |
+        echo "Build completed on `date`"
+        echo "All images have been pushed to ECR successfully"
+
+cache:
+  paths:
+    - '/root/.m2/**/*'
