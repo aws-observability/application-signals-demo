@@ -1,0 +1,261 @@
+dogs:
+  calories_per_pound: 14-18
+  feeding_schedule:
+    puppy: "3-4 times daily"
+    adult: "2 times daily"
+    senior: "2 times daily"
+  dietary_restrictions:
+    diabetes: "High-fiber, controlled carbohydrate diet for steady blood sugar. Feed at consistent times."
+    kidney: "Low-protein, low-phosphorus, low-sodium diet to reduce kidney workload. Increase water intake."
+    allergies: "Limited ingredient diet. Common allergens: chicken, beef, dairy, wheat, soy."
+    obesity: "Reduce portions by 20%. High-protein, low-fat diet. Increase exercise."
+    digestive: "Easily digestible foods. Small frequent meals. Avoid fatty foods."
+    arthritis: "Diet enriched with glucosamine and omega-3 fatty acids to reduce inflammation and joint pain."
+  toxic_foods:
+    - garlic
+    - onions
+    - chocolate
+    - grapes
+    - raisins
+    - xylitol
+    - alcohol
+    - macadamia_nuts
+    - caffeine
+  supplements:
+    omega3: "Fish oil supplements for coat health and joint support"
+    glucosamine: "Glucosamine/chondroitin for joint health in senior pets"
+    probiotics: "Probiotic supplements for digestive health"
+  diet_type: "omnivore"
+
+cats:
+  calories_per_pound: 20
+  feeding_schedule:
+    kitten: "3-4 times daily"
+    adult: "2 times daily"
+    senior: "2 times daily"
+  dietary_restrictions:
+    diabetes: "High-protein, low-carbohydrate diet. Feed at consistent times."
+    kidney: "Low-protein, low-phosphorus diet. Increase water intake."
+    allergies: "Limited ingredient diet. Common allergens: chicken, beef, fish, dairy."
+    obesity: "Reduce portions by 15%. High-protein, low-fat diet."
+    digestive: "Easily digestible proteins. Small frequent meals."
+    arthritis: "Diet with omega-3 fatty acids and glucosamine for joint support."
+  toxic_foods:
+    - garlic
+    - onions
+    - chocolate
+    - grapes
+    - raisins
+    - xylitol
+    - alcohol
+    - caffeine
+    - tuna_in_large_amounts
+  supplements:
+    omega3: "Fish oil for coat and joint health"
+    taurine: "Essential amino acid for heart and eye health"
+    probiotics: "For digestive health"
+  diet_type: "obligate_carnivore"
+
+fish:
+  calories_per_pound: "varies_by_species"
+  feeding_schedule:
+    fry: "4-6 times daily, small amounts"
+    adult: "1-2 times daily"
+    senior: "1-2 times daily"
+  dietary_restrictions:
+    swim_bladder: "Soak pellets before feeding, avoid overfeeding"
+    constipation: "High-fiber foods like peas, reduce dry food"
+    bloat: "Small frequent meals, avoid overfeeding"
+  toxic_foods:
+    - bread
+    - chocolate
+    - garlic
+    - onions
+  supplements:
+    vitamin_c: "For immune system support"
+    spirulina: "For color enhancement and nutrition"
+  diet_type: "varies_by_species"
+
+horses:
+  calories_per_pound: 15-20
+  feeding_schedule:
+    foal: "Small frequent meals, 6-8 times daily"
+    adult: "2-3 times daily"
+    senior: "2-3 times daily, easily digestible"
+  dietary_restrictions:
+    laminitis: "Low-sugar, low-starch diet. Avoid rich pastures."
+    colic: "High-fiber, consistent feeding schedule. Adequate water."
+    insulin_resistance: "Low-sugar, low-starch diet with controlled carbohydrates."
+    kidney: "Moderate protein, increased water intake."
+  toxic_foods:
+    - chocolate
+    - onions
+    - garlic
+    - avocado
+    - tomatoes
+    - potatoes
+    - lawn_clippings
+  supplements:
+    electrolytes: "For working horses and hot weather"
+    joint_support: "Glucosamine and chondroitin for older horses"
+    probiotics: "For digestive health"
+  diet_type: "herbivore"
+
+birds:
+  calories_per_pound: 25-30
+  feeding_schedule:
+    chick: "Every 2-3 hours during daylight"
+    adult: "2 times daily"
+    senior: "2 times daily, softer foods"
+  dietary_restrictions:
+    egg_binding: "Calcium-rich diet, reduce high-fat seeds"
+    liver_disease: "Low-fat, high-quality protein diet"
+    kidney: "Low-protein diet with increased water"
+  toxic_foods:
+    - chocolate
+    - avocado
+    - caffeine
+    - alcohol
+    - onions
+    - garlic
+    - fruit_pits
+    - salt
+  supplements:
+    vitamin_a: "For respiratory and immune health"
+    calcium: "Especially for egg-laying females"
+    probiotics: "For digestive health"
+  diet_type: "varies_by_species"
+
+rabbits:
+  calories_per_pound: 25
+  feeding_schedule:
+    kit: "Unlimited pellets and hay"
+    adult: "1/4 cup pellets per 5 lbs body weight daily"
+    senior: "Adjust based on weight and health"
+  dietary_restrictions:
+    gi_stasis: "High-fiber hay, limit pellets, encourage movement"
+    dental: "Unlimited timothy hay for tooth wear"
+    kidney: "Increased water, moderate protein"
+  toxic_foods:
+    - chocolate
+    - onions
+    - garlic
+    - avocado
+    - iceberg_lettuce
+    - rhubarb
+    - beans
+  supplements:
+    vitamin_c: "Not needed, rabbits produce their own"
+    probiotics: "For digestive health during stress"
+  diet_type: "herbivore"
+
+ferrets:
+  calories_per_pound: 35-40
+  feeding_schedule:
+    kit: "Every 3-4 hours"
+    adult: "2-3 times daily"
+    senior: "2-3 times daily, easily digestible"
+  dietary_restrictions:
+    insulinoma: "High-protein, low-carb diet. Frequent small meals."
+    dental: "Soft foods if dental issues present"
+    kidney: "Moderate protein, increased water"
+  toxic_foods:
+    - chocolate
+    - onions
+    - garlic
+    - grapes
+    - dairy
+    - sugary_foods
+    - high_carb_foods
+  supplements:
+    omega3: "Fish oil for coat health"
+    probiotics: "For digestive health"
+  diet_type: "obligate_carnivore"
+
+hamsters:
+  calories_per_pound: 50-60
+  feeding_schedule:
+    pup: "Mother's milk, then soft foods"
+    adult: "Once daily in evening"
+    senior: "Once daily, softer foods"
+  dietary_restrictions:
+    diabetes: "Low-sugar diet, avoid fruits"
+    dental: "Hard foods for tooth wear"
+    kidney: "Increased water, moderate protein"
+  toxic_foods:
+    - chocolate
+    - onions
+    - garlic
+    - citrus
+    - almonds
+    - raw_beans
+    - potato_leaves
+  supplements:
+    vitamin_c: "For Syrian hamsters only"
+    probiotics: "For digestive health"
+  diet_type: "omnivore"
+
+guinea_pigs:
+  calories_per_pound: 30-35
+  feeding_schedule:
+    pup: "Mother's milk plus pellets"
+    adult: "Unlimited hay, 1/8 cup pellets per lb"
+    senior: "Softer foods, same portions"
+  dietary_restrictions:
+    scurvy: "High vitamin C diet, fresh vegetables"
+    dental: "Unlimited timothy hay for tooth wear"
+    kidney: "Increased water, moderate protein"
+  toxic_foods:
+    - chocolate
+    - onions
+    - garlic
+    - avocado
+    - iceberg_lettuce
+    - mushrooms
+    - nuts
+  supplements:
+    vitamin_c: "Essential, 30-50mg daily"
+    probiotics: "For digestive health"
+  diet_type: "herbivore"
+
+reptiles:
+  calories_per_pound: "varies_by_species"
+  feeding_schedule:
+    juvenile: "Daily feeding"
+    adult: "Every 2-3 days"
+    senior: "Every 3-4 days"
+  dietary_restrictions:
+    metabolic_bone: "High calcium, UVB lighting required"
+    kidney: "Increased hydration, moderate protein"
+    digestive: "Proper temperature for digestion"
+  toxic_foods:
+    - avocado
+    - chocolate
+    - onions
+    - garlic
+    - rhubarb
+    - wild_insects
+  supplements:
+    calcium: "Essential for bone health"
+    vitamin_d3: "Required with calcium"
+    multivitamin: "Weekly supplementation"
+  diet_type: "varies_by_species"
+
+amphibians:
+  calories_per_pound: "varies_by_species"
+  feeding_schedule:
+    tadpole: "Daily, small amounts"
+    juvenile: "Daily feeding"
+    adult: "Every 2-3 days"
+  dietary_restrictions:
+    skin_issues: "Clean water, proper humidity"
+    digestive: "Live or fresh foods only"
+  toxic_foods:
+    - salt
+    - chlorinated_water
+    - pesticides
+    - fertilizers
+  supplements:
+    calcium: "Dust insects with calcium powder"
+    vitamin_d3: "For species requiring it"
+  diet_type: "carnivore"
