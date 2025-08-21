@@ -65,7 +65,7 @@ cdk deploy     # Deploys the CodeBuild stack to the specified region
 2. Trigger a build to create and push all images to ECR. Replace `region-name` with the region you choose (e.g. `us-east-1`)
 
 ``` shell
-./scripts/trigger-build.sh --region=region-name 
+./scripts/trigger-build.sh --region region-name 
 ```
 
 For more details, see the [CodeBuild README](cdk/codebuild/README.md).

@@ -53,8 +53,9 @@ export class LambdaVersioning extends Construct {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
           command: [
             'bash', '-c',
-            'npm install && cp -r . /asset-output/'
+            'npm install --production --no-optional --no-audit && cp -r . /asset-output/'
           ],
+          user: 'root',
         }
       }),
       timeout: cdk.Duration.minutes(5),
