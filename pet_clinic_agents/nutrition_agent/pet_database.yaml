@@ -259,3 +259,136 @@ amphibians:
     calcium: "Dust insects with calcium powder"
     vitamin_d3: "For species requiring it"
   diet_type: "carnivore"
+
+chinchillas:
+  calories_per_pound: 20-25
+  feeding_schedule:
+    kit: "Mother's milk, then pellets"
+    adult: "1-2 tablespoons pellets daily"
+    senior: "Adjust based on weight"
+  dietary_restrictions:
+    gi_stasis: "High-fiber hay, limit treats"
+    dental: "Timothy hay for tooth wear"
+    diabetes: "Low-sugar diet, no fruits"
+  toxic_foods:
+    - chocolate
+    - nuts
+    - seeds
+    - dried_fruits
+    - vegetables
+    - dairy
+  supplements:
+    probiotics: "For digestive health"
+    vitamin_c: "Not required, they produce their own"
+  diet_type: "herbivore"
+
+hedgehogs:
+  calories_per_pound: 35-40
+  feeding_schedule:
+    hoglet: "Every 2-3 hours"
+    adult: "1-2 tablespoons daily"
+    senior: "Adjust portions as needed"
+  dietary_restrictions:
+    obesity: "Reduce portions, increase exercise"
+    dental: "Soft foods if dental issues"
+    kidney: "Increased water, moderate protein"
+  toxic_foods:
+    - chocolate
+    - grapes
+    - raisins
+    - nuts
+    - dairy
+    - raw_meat
+  supplements:
+    omega3: "For skin and quill health"
+    probiotics: "For digestive health"
+  diet_type: "insectivore"
+
+turtles:
+  calories_per_pound: "varies_by_species"
+  feeding_schedule:
+    hatchling: "Daily feeding"
+    juvenile: "Daily feeding"
+    adult: "Every other day"
+  dietary_restrictions:
+    shell_rot: "Balanced calcium/phosphorus ratio"
+    kidney: "Increased hydration"
+    metabolic_bone: "High calcium, UVB lighting"
+  toxic_foods:
+    - avocado
+    - chocolate
+    - onions
+    - garlic
+    - iceberg_lettuce
+    - spinach
+  supplements:
+    calcium: "Essential for shell health"
+    vitamin_d3: "Required with UVB lighting"
+    multivitamin: "Weekly supplementation"
+  diet_type: "varies_by_species"
+
+snakes:
+  calories_per_pound: "varies_by_species"
+  feeding_schedule:
+    juvenile: "Every 5-7 days"
+    adult: "Every 10-14 days"
+    senior: "Every 14-21 days"
+  dietary_restrictions:
+    regurgitation: "Proper temperature, don't handle after feeding"
+    obesity: "Reduce prey size or frequency"
+  toxic_foods:
+    - wild_prey
+    - sick_prey
+    - frozen_prey_too_long
+  supplements:
+    calcium: "Dust prey items occasionally"
+    multivitamin: "Monthly supplementation"
+  diet_type: "carnivore"
+
+parrots:
+  calories_per_pound: 20-25
+  feeding_schedule:
+    chick: "Hand-feeding formula every 2-4 hours"
+    adult: "2 times daily"
+    senior: "2 times daily, softer foods"
+  dietary_restrictions:
+    fatty_liver: "Low-fat diet, increase exercise"
+    kidney: "Low-protein, increased water"
+    egg_binding: "Calcium-rich diet"
+  toxic_foods:
+    - chocolate
+    - avocado
+    - caffeine
+    - alcohol
+    - fruit_pits
+    - mushrooms
+    - onions
+  supplements:
+    vitamin_a: "For immune and respiratory health"
+    calcium: "Especially for breeding females"
+    omega3: "For feather quality"
+  diet_type: "varies_by_species"
+
+goats:
+  calories_per_pound: 12-15
+  feeding_schedule:
+    kid: "Milk every 3-4 hours, then hay"
+    adult: "2-3 times daily"
+    pregnant: "Increase portions in last trimester"
+  dietary_restrictions:
+    bloat: "Avoid sudden diet changes, limit grain"
+    urinary_calculi: "Balanced calcium/phosphorus ratio"
+    pregnancy_toxemia: "High-energy diet in late pregnancy"
+  toxic_foods:
+    - chocolate
+    - onions
+    - garlic
+    - avocado
+    - azaleas
+    - rhododendrons
+    - wild_cherry
+  supplements:
+    minerals: "Copper, selenium, zinc supplementation"
+    probiotics: "For rumen health"
+    vitamin_e: "With selenium for muscle health"
+  diet_type: "herbivore"

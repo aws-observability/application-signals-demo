@@ -35,10 +35,10 @@ class NetworkException(Exception):
         self.details = kwargs
 
 try:
-    with open('nutrition.yaml', 'r') as f:
-        NUTRITION_DATA = yaml.safe_load(f)
+    with open('pet_database.yaml', 'r') as f:
+        ANIMAL_DATA = yaml.safe_load(f)
 except Exception:
-    NUTRITION_DATA = None
+    ANIMAL_DATA = None
 
 agent = None
 agent_app = BedrockAgentCoreApp()
@@ -46,48 +46,52 @@ agent_app = BedrockAgentCoreApp()
 @tool
 def get_feeding_guidelines(pet_type, age, weight):
     """Get feeding guidelines based on pet type, age, and weight"""
-    if NUTRITION_DATA is None:
-        return "Pet nutrition database is down, please consult your veterinarian for feeding guidelines."
+    if ANIMAL_DATA is None:
+        return "Animal database is down, please consult your veterinarian for feeding guidelines."
     
-    animal = NUTRITION_DATA.get(pet_type.lower() + 's')
+    animal = ANIMAL_DATA.get(pet_type.lower() + 's')
     if not animal:
-        return "Consult veterinarian for specific feeding guidelines"
+        return f"{pet_type.title()} not found in animal database. Consult veterinarian for specific feeding guidelines"
     
     calories_per_lb = animal.get('calories_per_pound', '15-20')
     schedule = animal.get('feeding_schedule', {}).get(age.lower(), '2 times daily')
     
-    if isinstance(calories_per_lb, str) and '-' in calories_per_lb:
-        calories = weight * float(calories_per_lb.split('-')[0])
-    else:
-        calories = weight * float(calories_per_lb)
+    try:
+        weight = float(weight)
+        if isinstance(calories_per_lb, str) and '-' in calories_per_lb:
+            calories = weight * float(calories_per_lb.split('-')[0])
+        else:
+            calories = weight * float(calories_per_lb)
+    except (ValueError, TypeError):
+        return f"Feed based on veterinary recommendations for {pet_type}, {schedule}"
     
     return f"Feed approximately {calories:.0f} calories daily, {schedule}"
 
 @tool
 def get_dietary_restrictions(pet_type, condition):
     """Get dietary recommendations for specific health conditions by animal type"""
-    if NUTRITION_DATA is None:
-        return "Pet nutrition database is down, please consult your veterinarian for dietary advice."
+    if ANIMAL_DATA is None:
+        return "Animal database is down, please consult your veterinarian for dietary advice."
     
-    animal = NUTRITION_DATA.get(pet_type.lower() + 's')
+    animal = ANIMAL_DATA.get(pet_type.lower() + 's')
     if not animal:
-        return "Consult veterinarian for condition-specific dietary advice"
+        return f"{pet_type.title()} not found in animal database. Consult veterinarian for condition-specific dietary advice"
     
     restrictions = animal.get('dietary_restrictions', {})
-    return restrictions.get(condition.lower(), "Consult veterinarian for condition-specific dietary advice")
+    return restrictions.get(condition.lower(), f"No dietary restrictions for {condition} found in animal database. Consult veterinarian for condition-specific dietary advice")
 
 @tool
 def get_nutritional_supplements(pet_type, supplement):
     """Get supplement recommendations by animal type"""
-    if NUTRITION_DATA is None:
-        return "Pet nutrition database is down, please consult your veterinarian before adding supplements."
+    if ANIMAL_DATA is None:
+        return "Animal database is down, please consult your veterinarian before adding supplements."
     
-    animal = NUTRITION_DATA.get(pet_type.lower() + 's')
+    animal = ANIMAL_DATA.get(pet_type.lower() + 's')
     if not animal:
-        return "Consult veterinarian before adding supplements"
+        return f"{pet_type.title()} not found in animal database. Consult veterinarian before adding supplements"
     
     supplements = animal.get('supplements', {})
-    return supplements.get(supplement.lower(), "Consult veterinarian before adding supplements")
+    return supplements.get(supplement.lower(), f"No information for {supplement} supplement found in animal database. Consult veterinarian before adding supplements")
 
 def create_nutrition_agent():
     model = BedrockModel(
