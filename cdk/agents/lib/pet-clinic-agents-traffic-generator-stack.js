@@ -4,17 +4,22 @@ const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
 const iam = require('aws-cdk-lib/aws-iam');
 
-class PetClinicAgentTrafficGeneratorStack extends Stack {
+/**
+ * Lambda traffic generator for AI agents to simulate user interactions.
+ * Triggered by EventBridge scheduler every 2 minutes to send queries to the primary agent.
+ */
+class PetClinicAgentsTrafficGeneratorStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
     const trafficGeneratorFunction = new lambda.Function(this, 'PetClinicAgentTrafficGenerator', {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'traffic_generator.lambda_handler',
-      code: lambda.Code.fromAsset('../../traffic-generator/agent/lambda'),
+      code: lambda.Code.fromAsset('lambda/traffic-generator'),
       timeout: Duration.minutes(5),
       environment: {
-        PRIMARY_AGENT_ARN: process.env.PRIMARY_AGENT_ARN || ''
+        PRIMARY_AGENT_ARN: props?.primaryAgentArn || '',
+        NUTRITION_AGENT_ARN: props?.nutritionAgentArn || ''
       }
     });
 
@@ -25,6 +30,8 @@ class PetClinicAgentTrafficGeneratorStack extends Stack {
       resources: ['*']
     }));
 
+    this.trafficGeneratorFunction = trafficGeneratorFunction;
+
     const rule = new events.Rule(this, 'PetClinicAgentTrafficGeneratorRule', {
       schedule: events.Schedule.rate(Duration.minutes(2))
     });
@@ -33,4 +40,4 @@ class PetClinicAgentTrafficGeneratorStack extends Stack {
   }
 }
 
-module.exports = { AgentTrafficGeneratorStack: PetClinicAgentTrafficGeneratorStack };
+module.exports = { PetClinicAgentsTrafficGeneratorStack };

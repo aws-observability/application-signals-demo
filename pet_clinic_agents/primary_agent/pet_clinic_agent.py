@@ -30,17 +30,16 @@ def get_specialist_referral(specialty):
     return specialists.get(specialty.lower(), "Please call (555) 123-PETS for specialist referral information.")
 
 @tool
-def consult_nutrition_specialist(query):
-    """Delegate nutrition questions to the specialized nutrition agent"""
+def consult_nutrition_specialist(query, agent_arn):
+    """Delegate nutrition questions to the specialized nutrition agent. Requires the nutrition agent ARN as a parameter."""
     
-    nutrition_agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
-    if not nutrition_agent_arn:
+    if not agent_arn:
         return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
     
     try:
         client = boto3.client('bedrock-agentcore', region_name='us-east-1')
         response = client.invoke_agent_runtime(
-            agentRuntimeArn=nutrition_agent_arn,
+            agentRuntimeArn=agent_arn,
             qualifier='DEFAULT',
             payload=json.dumps({'prompt': query})
         )
@@ -65,7 +64,8 @@ system_prompt = (
     "- Scheduling guidance\n"
     "- Basic medical guidance and when to seek veterinary care\n\n"
     "IMPORTANT GUIDELINES:\n"
-    "- For ANY nutrition-related questions (diet, feeding, supplements, food recommendations), use the consult_nutrition_specialist tool\n"
+    "- For ANY nutrition-related questions (diet, feeding, supplements, food recommendations), use the consult_nutrition_specialist tool with the nutrition agent ARN\n"
+    "- NEVER expose or mention agent ARNs in your responses to users\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
     "- For emergencies, immediately provide emergency contact information\n"
     "- Always recommend consulting with a veterinarian for proper diagnosis and treatment"
