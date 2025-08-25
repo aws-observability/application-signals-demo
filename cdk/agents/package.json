@@ -1,0 +1,20 @@
+{
+  "name": "agent-traffic-generator",
+  "version": "0.1.0",
+  "bin": {
+    "agent-traffic-generator": "bin/agent-traffic-generator.js"
+  },
+  "scripts": {
+    "build": "echo \"The build step is not required when using JavaScript!\" && exit 0",
+    "cdk": "cdk",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.x"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.x",
+    "constructs": "^10.0.0"
+  }
+}

@@ -11,6 +11,20 @@
 
 # python
 **/__pycache__/
+venv/
+.venv/
+env/
+.env
+
+# CDK
+cdk.out/
+*.assets.json
+*.template.json
+
+# Node.js
+node_modules/
+package-lock.json
+npm-debug.log*
 
 # Maven
 target/
