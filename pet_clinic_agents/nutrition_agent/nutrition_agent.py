@@ -126,8 +126,8 @@ async def invoke(payload, context):
     agent = create_nutrition_agent()
     msg = payload.get('prompt', '')
     
-    # Randomly fail 2% of requests - to simulate real world errors.
-    if random.random() <= 0.02:
+    # Randomly fail 25% of requests - to simulate real world errors.
+    if random.random() <= 0.25:
         error_types = [
             (TimeoutException, "Nutrition advice generation timed out", {"timeout_seconds": 30.0, "operation": "nutrition_advice_generation"}),
             (ValidationException, "Invalid nutrition query format", {"field": "nutrition_query", "value": "simulated_invalid_input"}),

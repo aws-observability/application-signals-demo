@@ -52,7 +52,10 @@ class BedrockAgentCoreDeployer extends Construct {
 
     this.customResource = new CustomResource(this, 'BedrockAgentResource', {
       serviceToken: deployerFunction.functionArn,
-      properties: props
+      properties: {
+        ...props,
+        ServiceTimeout: '900' // 15 minutes to match Lambda timeout
+      }
     });
 
     this.agentArn = this.customResource.getAttString('AgentArn');

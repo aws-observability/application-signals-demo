@@ -1,8 +1,9 @@
 import json
 import boto3
+from botocore.config import Config
 from urllib.request import urlopen, Request
 
-client = boto3.client('bedrock-agentcore-control')
+client = boto3.client('bedrock-agentcore-control', config=Config(retries={'max_attempts': 5, 'mode': 'standard'}))
 
 def handler(event, context):
     print(f"Event: {json.dumps(event)}")
