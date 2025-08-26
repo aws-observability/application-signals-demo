@@ -14,7 +14,8 @@ def load_prompts():
 def lambda_handler(event, context):
     primary_agent_arn = os.environ.get('PRIMARY_AGENT_ARN')
     nutrition_agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
-    
+    num_requests = int(os.environ.get('REQUESTS_PER_INVOKE', '20'))
+
     if not primary_agent_arn:
         return {
             'statusCode': 500,
@@ -22,42 +23,50 @@ def lambda_handler(event, context):
         }
     
     prompts = load_prompts()
+    results = []
     
-    query = event.get('query') or event.get('prompt') or random.choice(prompts)
-    agent_arn = primary_agent_arn
-    
-    if nutrition_agent_arn:
-        enhanced_query = f"{query}\n\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}"
-    else:
-        enhanced_query = query
+    for _ in range(num_requests):
+        is_nutrition_query = random.random() <= 0.75
+        
+        if is_nutrition_query:
+            query = random.choice(prompts['nutrition-queries'])
+            enhanced_query = f"{query}\n\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}" if nutrition_agent_arn else query
+        else:
+            query = random.choice(prompts['non-nutrition-queries'])
+            enhanced_query = query
 
-    try:
-        encoded_arn = urlparse.quote(agent_arn, safe='')
-        region = os.environ.get('AWS_REGION', 'us-east-1')
-        url = f'https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT'
-        
-        payload = json.dumps({'prompt': enhanced_query})
-        request = AWSRequest(method='POST', url=url, data=payload, headers={'Content-Type': 'application/json'})
-        session = boto3.Session()
-        credentials = session.get_credentials()
-        
-        SigV4Auth(credentials, 'bedrock-agentcore', region).add_auth(request)
-        
-        req = Request(url, data=payload.encode('utf-8'), headers=dict(request.headers))
-        with urlopen(req) as response:
-            body = response.read().decode('utf-8')
-        
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
+        try:
+            encoded_arn = urlparse.quote(primary_agent_arn, safe='')
+            region = os.environ.get('AWS_REGION', 'us-east-1')
+            url = f'https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT'
+            
+            payload = json.dumps({'prompt': enhanced_query})
+            request = AWSRequest(method='POST', url=url, data=payload, headers={'Content-Type': 'application/json'})
+            session = boto3.Session()
+            credentials = session.get_credentials()
+            
+            SigV4Auth(credentials, 'bedrock-agentcore', region).add_auth(request)
+            
+            req = Request(url, data=payload.encode('utf-8'), headers=dict(request.headers))
+            with urlopen(req) as response:
+                body = response.read().decode('utf-8')
+            
+            results.append({
                 'query': query,
                 'response': body,
                 'agent_used': 'primary'
             })
-        }
-        
-    except Exception as error:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(error)})
-        }
+            
+        except Exception as error:
+            results.append({
+                'query': query,
+                'error': str(error)
+            })
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps({
+            'total_requests': len(results),
+            'results': results
+        })
+    }

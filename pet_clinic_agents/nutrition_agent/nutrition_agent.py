@@ -1,4 +1,3 @@
-import os
 from strands import Agent, tool
 import uvicorn
 import yaml
@@ -45,7 +44,7 @@ agent_app = BedrockAgentCoreApp()
 
 @tool
 def get_feeding_guidelines(pet_type, age, weight):
-    """Get feeding guidelines based on pet type, age, and weight"""
+    """Get feeding guidelines based on pet type, age, and weight"""    
     if ANIMAL_DATA is None:
         return "Animal database is down, please consult your veterinarian for feeding guidelines."
     
@@ -69,7 +68,7 @@ def get_feeding_guidelines(pet_type, age, weight):
 
 @tool
 def get_dietary_restrictions(pet_type, condition):
-    """Get dietary recommendations for specific health conditions by animal type"""
+    """Get dietary recommendations for specific health conditions by animal type"""    
     if ANIMAL_DATA is None:
         return "Animal database is down, please consult your veterinarian for dietary advice."
     
@@ -82,7 +81,7 @@ def get_dietary_restrictions(pet_type, condition):
 
 @tool
 def get_nutritional_supplements(pet_type, supplement):
-    """Get supplement recommendations by animal type"""
+    """Get supplement recommendations by animal type"""    
     if ANIMAL_DATA is None:
         return "Animal database is down, please consult your veterinarian before adding supplements."
     
@@ -117,29 +116,32 @@ def create_nutrition_agent():
     )
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
-
+    
 @agent_app.entrypoint
 async def invoke(payload, context):
     """
     Invoke the nutrition agent with a payload
     """
+    def maybe_throw_error(threshold: float=1):
+        """Randomly throw an error based on threshold probability"""
+        if random.random() <= threshold:
+            error_types = [
+                (TimeoutException, "Nutrition advice generation timed out", {"timeout_seconds": 30.0, "operation": "nutrition_advice_generation"}),
+                (ValidationException, "Invalid nutrition query format", {"field": "nutrition_query", "value": "simulated_invalid_input"}),
+                (ServiceException, "Nutrition service internal error", {"service_name": "nutrition-agent", "error_code": "INTERNAL_ERROR", "retryable": True}),
+                (RateLimitException, "Too many nutrition requests", {"retry_after_seconds": random.randint(30, 120), "limit_type": "requests_per_minute"}),
+                (NetworkException, "Network error connecting to nutrition service", {"endpoint": "nutrition-service", "error_code": "CONNECTION_FAILED", "retryable": True})
+            ]
+            
+            exception_class, message, kwargs = random.choice(error_types)
+            raise exception_class(message, **kwargs)
+    
+    maybe_throw_error(threshold=0.4)
     agent = create_nutrition_agent()
     msg = payload.get('prompt', '')
-    
-    # Randomly fail 25% of requests - to simulate real world errors.
-    if random.random() <= 0.25:
-        error_types = [
-            (TimeoutException, "Nutrition advice generation timed out", {"timeout_seconds": 30.0, "operation": "nutrition_advice_generation"}),
-            (ValidationException, "Invalid nutrition query format", {"field": "nutrition_query", "value": "simulated_invalid_input"}),
-            (ServiceException, "Nutrition service internal error", {"service_name": "nutrition-agent", "error_code": "INTERNAL_ERROR", "retryable": True}),
-            (RateLimitException, "Too many nutrition requests", {"retry_after_seconds": random.randint(30, 120), "limit_type": "requests_per_minute"}),
-            (NetworkException, "Network error connecting to nutrition service", {"endpoint": "nutrition-service", "error_code": "CONNECTION_FAILED", "retryable": True})
-        ]
-        
-        exception_class, message, kwargs = random.choice(error_types)
-        raise exception_class(message, **kwargs)
 
     async for event in agent.stream_async(msg):
+
         if 'data' in event:
             yield event['data']
 

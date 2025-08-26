@@ -16,10 +16,11 @@ class PetClinicAgentsTrafficGeneratorStack extends Stack {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'traffic_generator.lambda_handler',
       code: lambda.Code.fromAsset('lambda/traffic-generator'),
-      timeout: Duration.minutes(5),
+      timeout: Duration.minutes(15),
       environment: {
         PRIMARY_AGENT_ARN: props?.primaryAgentArn || '',
-        NUTRITION_AGENT_ARN: props?.nutritionAgentArn || ''
+        NUTRITION_AGENT_ARN: props?.nutritionAgentArn || '',
+        REQUESTS_PER_INVOKE: '20'
       }
     });
 
@@ -33,7 +34,7 @@ class PetClinicAgentsTrafficGeneratorStack extends Stack {
     this.trafficGeneratorFunction = trafficGeneratorFunction;
 
     const rule = new events.Rule(this, 'PetClinicAgentTrafficGeneratorRule', {
-      schedule: events.Schedule.rate(Duration.minutes(2))
+      schedule: events.Schedule.rate(Duration.minutes(1))
     });
 
     rule.addTarget(new targets.LambdaFunction(trafficGeneratorFunction));
