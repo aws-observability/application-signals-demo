@@ -58,6 +58,16 @@ fi
 
 # Deploy or destroy all stacks in the app
 if [[ "$ACTION" == "deploy" ]]; then
+  # The SLO stack requires metrics from lambda pet clinic.
+  cd ../../lambda-petclinic/cdk
+  if ./deploy.sh; then
+    echo "Lambda pet clinic was deployed successfully"
+  else
+    echo "Lambda pet clinic deployment failed"
+    ./destroy.sh
+    exit 1
+  fi
+  cd ../../cdk/eks
 
   # update vets service config to use the otlp collector when use-otlp is true
   MANIFEST_FILE="./lib/manifests/sample-app/vets-service-deployment.yaml"
@@ -104,9 +114,13 @@ if [[ "$ACTION" == "deploy" ]]; then
     exit 1
   fi
 elif [[ "$ACTION" == "destroy" ]]; then
-  echo "Starting CDK destroy for all stacks in the app"
+  echo "Starting CDK destroy for all stacks in the eks app"
   cdk destroy  --context enableSlo=True --all --force --verbose
-  echo "Destroy complete for all stacks in the app"
+  echo "Destroy complete for all stacks in the eks app"
+  echo "Starting CDK destroy for all stacks in the lambda app"
+  cd ../../lambda-petclinic/cdk
+  ./destroy.sh
+  echo "Destroy complete for all stacks in the lambda app"
 else
   echo "Invalid action: $ACTION. Please use 'synth', 'deploy', or 'destroy'."
   exit 1
