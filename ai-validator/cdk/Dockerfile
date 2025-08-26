@@ -1,5 +1,5 @@
 # Base image
-FROM --platform=linux/amd64 amazonlinux:2023
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
 # Install dependencies
 RUN yum update -y && \
