@@ -117,33 +117,36 @@ def create_nutrition_agent():
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
     
+def maybe_throw_error(threshold: float=1):
+    """Randomly throw an error based on threshold probability"""
+    if random.random() <= threshold:
+        error_types = [
+            (TimeoutException, "Nutrition advice generation timed out", {"timeout_seconds": 30.0, "operation": "nutrition_advice_generation"}),
+            (ValidationException, "Invalid nutrition query format", {"field": "nutrition_query", "value": "simulated_invalid_input"}),
+            (ServiceException, "Nutrition service internal error", {"service_name": "nutrition-agent", "error_code": "INTERNAL_ERROR", "retryable": True}),
+            (RateLimitException, "Too many nutrition requests", {"retry_after_seconds": random.randint(30, 120), "limit_type": "requests_per_minute"}),
+            (NetworkException, "Network error connecting to nutrition service", {"endpoint": "nutrition-service", "error_code": "CONNECTION_FAILED", "retryable": True})
+        ]
+        
+        exception_class, message, kwargs = random.choice(error_types)
+        raise exception_class(message, **kwargs)
+
 @agent_app.entrypoint
 async def invoke(payload, context):
     """
     Invoke the nutrition agent with a payload
     """
-    def maybe_throw_error(threshold: float=1):
-        """Randomly throw an error based on threshold probability"""
-        if random.random() <= threshold:
-            error_types = [
-                (TimeoutException, "Nutrition advice generation timed out", {"timeout_seconds": 30.0, "operation": "nutrition_advice_generation"}),
-                (ValidationException, "Invalid nutrition query format", {"field": "nutrition_query", "value": "simulated_invalid_input"}),
-                (ServiceException, "Nutrition service internal error", {"service_name": "nutrition-agent", "error_code": "INTERNAL_ERROR", "retryable": True}),
-                (RateLimitException, "Too many nutrition requests", {"retry_after_seconds": random.randint(30, 120), "limit_type": "requests_per_minute"}),
-                (NetworkException, "Network error connecting to nutrition service", {"endpoint": "nutrition-service", "error_code": "CONNECTION_FAILED", "retryable": True})
-            ]
-            
-            exception_class, message, kwargs = random.choice(error_types)
-            raise exception_class(message, **kwargs)
+    maybe_throw_error(threshold=0.35)
     
-    maybe_throw_error(threshold=0.4)
     agent = create_nutrition_agent()
     msg = payload.get('prompt', '')
 
+    response_data = []
     async for event in agent.stream_async(msg):
-
         if 'data' in event:
-            yield event['data']
+            response_data.append(event['data'])
+    
+    return ''.join(response_data)
 
 if __name__ == "__main__":    
     uvicorn.run(agent_app, host='0.0.0.0', port=8080)

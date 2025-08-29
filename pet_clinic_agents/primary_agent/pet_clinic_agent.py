@@ -85,17 +85,16 @@ def create_clinic_agent():
 async def invoke(payload, context):
     """
     Invoke the clinic agent with a payload
-    """    
+    """ 
     agent = create_clinic_agent()
     
     msg = payload.get('prompt', '')
-    
-    full_response = ""
+    response_data = []
     async for event in agent.stream_async(msg):
         if 'data' in event:
-            full_response += event['data']
+            response_data.append(event['data'])
     
-    yield full_response
+    return ''.join(response_data)
 
 if __name__ == "__main__":    
     uvicorn.run(agent_app, host='0.0.0.0', port=8080)
