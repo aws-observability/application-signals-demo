@@ -102,6 +102,7 @@ export class AIValidatorStack extends cdk.Stack {
         cpu: 4096,
         memoryLimitMiB: 8192,
         taskRole,
+        ephemeralStorageGiB: 40,
       });
 
       taskDef.addContainer(`AITestContainer-${testId}`, {
@@ -162,7 +163,7 @@ export class AIValidatorStack extends cdk.Stack {
         evaluationPeriods: 1,
         comparisonOperator:
           cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        treatMissingData: cloudwatch.TreatMissingData.BREACHING,
       });
 
       failureAlarms.push(alarm);
