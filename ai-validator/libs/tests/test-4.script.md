@@ -11,46 +11,50 @@ In the input with placeholder text 'Search spans by pasting, selecting from prop
 **Constraints:**
 - You MUST ensure that you press Enter after each input
 
-### 3. Click 'Run query'
+### 3. Click '12h'
+
+In the right corner, click the 'Custom' button then click '1' next to the 'Days' row
+
+### 4. Click 'Run query'
 
 Click the 'Run query' button
 
-### 4. Click the arrow in the first row
+### 5. Click the arrow in the first row
 
 Click the arrow in the first row under 'Spans'
 
-### 5. Find 'attributes.order.id'
+### 6. Find 'attributes.order.id'
 
 Find the 'attributes.order.id' in this span and store the value of this.
 
-### 6. Click 'Clear filters'
+### 7. Click 'Clear filters'
 
 Click the 'Clear filters' button
 
-### 7. Type the saved value
+### 8. Type the saved value
 
 In the input with placeholder text 'Search spans by pasting, selecting from properties or using refiners', type "attributes.order.id=<SAVED VALUE>" and press ENTER. Note that the index you were using before may have updated
 
 **Constraints:**
 - You MUST ensure that you press Enter
 
-### 8. Click '12h'
-
-In the right corner, click '12h'
-
-### 9. Click 'Run query'
+### 10. Click 'Run query'
 
 Click the 'Run query' button. Note that the index you were using before may have updated
 
-### 10. Click the first traceId
+### 11. Click the first traceId
 
 Click the first traceId in the 'Spans' section
 
-### 11. Switch tabs
+### 12. Wait 10 seconds
+
+Wait 10 seconds then proceed to the next step
+
+### 13. Switch tabs
 
 Switch to the new tab that was just opened.
 
-### 12. Scroll injection down
+### 14. Scroll injection down
 
 Scroll injection down, PASS in 'ApmXray', '#html' and 1 as PARAMETERS
 
@@ -58,41 +62,41 @@ Scroll injection down, PASS in 'ApmXray', '#html' and 1 as PARAMETERS
 - You MUST pass in parameters 'ApmXray', '#html' and 1
 - You MUST use the scrolling() function 
 
-### 13. Click 'View exception'.
+### 15. Click 'View exception'.
 
 Click the 'View exception' blue button in the customers-service-java' row
 
 **Constraints:**
 - You MUST ensure that this 'View exception' button is in the 'customers-service-java' row
 
-### 14. Look for nutrition fact not found for the given pet_type'.
+### 16. Look for nutrition fact not found for the given pet_type'.
 
 Look for the message 'nutrition fact not found for the given pet_type'.
 
-### 15. Close this tab
+### 17. Close this tab
 
 Close this tab and wait a few seconds.
 
-### 16. Click 'payment-service-dotnet
+### 18. Click 'payment-service-dotnet
 
 In the 'Spans' section, click the blue 'payment-service-dotnet' hyperlink under the 'service' column
 
-### 17. Switch tabs
+### 19. Switch tabs
 
 Switch to the new tab that was just opened
 
-### 18. Click 'Service operations'
+### 20. Click 'Service operations'
 
 Click the 'Service operations' button.
 
-### 19. Access a random graph point.
+### 21. Access a random graph point.
 
 Access a random graph point, PASS in 0 and 1 as a PARAMETERS. Then wait a few seconds.
 
 **Constraints:**
 - You MUST pass in parameters 0 and 1
 
-### 20. Type 'attributes.owner.id'
+### 22. Type 'attributes.owner.id'
 
 In the right panel, in the search field with placeholder text 'Choose an attribute', type 'attributes.owner.id' and press ENTER. Then wait a few seconds.
 
@@ -101,18 +105,18 @@ In the right panel, in the search field with placeholder text 'Choose an attribu
 - You MUST ensure that this is under the text 'Group spans by'
 - You MUST ensure that you press Enter
 
-### 21. Check there is more than one row displayed.
+### 23. Check there is more than one row displayed.
 
 Check that there is more than one row displayed in the right panel.
 
 **Constraints:**
 - You MUST ensure the rows contain columns 'Owner id' and 'Spans'. If it does not, you need to type 'attributes.owner.id' again.
 
-### 22. Search for 'Name = GET /owners/{ownerId:int}/pets/{petId:int}/payments'
+### 24. Search for 'Name = GET /owners/{ownerId:int}/pets/{petId:int}/payments'
 
 In the search field under 'Service operations' type 'Name = GET /owners/{ownerId:int}/pets/{petId:int}/payments' and PRESS Enter.
 
-### 23. Access the graph and open the popup.
+### 25. Access the graph and open the popup.
 
 Access the graph and open the popup, PASS in 2 and 5 as a PARAMETERS. Then wait a few seconds.
 
@@ -120,7 +124,7 @@ Access the graph and open the popup, PASS in 2 and 5 as a PARAMETERS. Then wait 
 - You MUST pass in parameters 2 and 5
 - You MUST not forget to conduct these steps even though they are similar to the previous
 
-### 24. Type 'attributes.owner.id' again
+### 26. Type 'attributes.owner.id' again
 
 In the right panel, in the search field with placeholder text 'Choose an attribute', type 'attributes.owner.id' and press ENTER. Then wait a few seconds.
 
@@ -129,7 +133,7 @@ In the right panel, in the search field with placeholder text 'Choose an attribu
 - You MUST ensure that this is under the text 'Group spans by'
 - You MUST ensure that you press Enter
 
-### 25. Check there is a row with 'Owner id' = 6
+### 27. Check there is a row with 'Owner id' = 6
 
 Check that there is a row displayed in the right panel and this has 'Owner id' = 6.
 

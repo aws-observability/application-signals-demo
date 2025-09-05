@@ -56,7 +56,7 @@ Look for the message 'Fail to parse the request. Cause: NullPointerException'.
 
 ### 13. Go back
 
-Go back a page in the browser.
+Go back a page in the browser. Then wait a few seconds.
 
 **Constraints:**
 - You MUST ensure that you go back in the browser. This is a step.
@@ -82,7 +82,7 @@ In the right panel, in the search field with placeholder text 'Choose an attribu
 Check that there is more than one row displayed in the right panel.
 
 **Constraints:**
-- You MUST ensure the rows contain columns 'Owner id' and 'Spans'. If it does not, you need to type 'attributes.owner.id' again.
+- You MUST ensure the rows contain columns 'Owner id' and 'Spans'. If it does not, wait a few seconds then type 'attributes.owner.id' again.
 
 ### 17. Click 'Clear filters'
 
@@ -114,4 +114,4 @@ In the right panel, in the search field with placeholder text 'Choose an attribu
 Check that there is more than one row displayed in the right panel.
 
 **Constraints:**
-- You MUST ensure the rows contain columns 'Owner id' and 'Spans'. If it does not, you need to type 'attributes.owner.id' again.
+- You MUST ensure the rows contain columns 'Owner id' and 'Spans'. If it does not, wait a few seconds then type 'attributes.owner.id' again.
