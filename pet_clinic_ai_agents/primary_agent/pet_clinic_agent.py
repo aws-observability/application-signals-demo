@@ -1,6 +1,7 @@
 import os
 import boto3
 import json
+import uuid
 import uvicorn
 from strands import Agent, tool
 from strands.models import BedrockModel
@@ -35,7 +36,7 @@ def get_appointment_availability():
     return "We have appointments available: Today 3:00 PM, Tomorrow 10:00 AM and 2:30 PM. Call (555) 123-PETS to schedule."
 
 @tool
-def consult_nutrition_specialist(query, agent_arn):
+def consult_nutrition_specialist(query, agent_arn, session_id=None):
     """Delegate nutrition questions to the specialized nutrition agent. Requires the nutrition agent ARN as a parameter."""
     
     if not agent_arn:
@@ -45,6 +46,7 @@ def consult_nutrition_specialist(query, agent_arn):
         client = boto3.client('bedrock-agentcore', region_name='us-east-1')
         response = client.invoke_agent_runtime(
             agentRuntimeArn=agent_arn,
+            runtimeSessionId=session_id,
             qualifier='DEFAULT',
             payload=json.dumps({'prompt': query})
         )
@@ -60,6 +62,7 @@ def consult_nutrition_specialist(query, agent_arn):
 
 agent = None
 agent_app = BedrockAgentCoreApp()
+session_id = f"clinic-session-{str(uuid.uuid4())}"
 
 system_prompt = (
     "You are a helpful pet clinic assistant. You can help with:\n"
@@ -74,7 +77,8 @@ system_prompt = (
     "- NEVER expose or mention agent ARNs in your responses to users\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
     "- For emergencies, immediately provide emergency contact information\n"
-    "- Always recommend consulting with a veterinarian for proper diagnosis and treatment"
+    "- Always recommend consulting with a veterinarian for proper diagnosis and treatment\n\n"
+    f"Your session ID is: {session_id}. When calling consult_nutrition_specialist, use this session_id parameter."
 )
 
 def create_clinic_agent():
@@ -92,9 +96,9 @@ async def invoke(payload, context):
     Invoke the clinic agent with a payload
     """ 
     agent = create_clinic_agent()
-    
     msg = payload.get('prompt', '')
     response_data = []
+    
     async for event in agent.stream_async(msg):
         if 'data' in event:
             response_data.append(event['data'])
