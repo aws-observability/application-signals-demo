@@ -56,10 +56,45 @@ def create_agent(properties, event, context):
         raise e
 
 def update_agent(properties, event, context):
-    return send_response(event, context, 'SUCCESS', {
-        'AgentArn': event.get('PhysicalResourceId', ''),
-        'AgentName': properties['AgentName']
-    })
+    try:
+        physical_resource_id = event.get('PhysicalResourceId')
+        
+        if not physical_resource_id or physical_resource_id == event['LogicalResourceId']:
+            return send_response(event, context, 'FAILED', {'Error': 'No agent to update'})
+        
+        agent_runtime_id = physical_resource_id.split('/')[-1] if '/' in physical_resource_id else physical_resource_id.split(':')[-1]
+        
+        agent_name = properties['AgentName']
+        image_uri = properties['ImageUri']
+        execution_role = properties['ExecutionRole']
+        
+        response = client.update_agent_runtime(
+            agentRuntimeId=agent_runtime_id,
+            description=f'{agent_name} agent for Application Signals demo',
+            agentRuntimeArtifact={
+                'containerConfiguration': {
+                    'containerUri': image_uri
+                }
+            },
+            roleArn=execution_role,
+            networkConfiguration={
+                'networkMode': 'PUBLIC'
+            },
+            protocolConfiguration={
+                'serverProtocol': 'HTTP'
+            }
+        )
+        
+        agent_arn = response['agentRuntimeArn']
+        
+        return send_response(event, context, 'SUCCESS', {
+            'AgentArn': agent_arn,
+            'AgentName': agent_name
+        }, agent_arn)
+        
+    except Exception as e:
+        print(f"Agent update failed: {str(e)}")
+        return send_response(event, context, 'FAILED', {'Error': str(e)})
 
 def delete_agent(properties, event, context):
     try:

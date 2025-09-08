@@ -72,11 +72,11 @@ class PetClinicAgentsStack extends Stack {
     });
     
     const nutritionAgentImage = new ecrAssets.DockerImageAsset(this, 'NutritionAgentImage', {
-      directory: '../../pet_clinic_agents/nutrition_agent'
+      directory: '../../pet_clinic_ai_agents/nutrition_agent'
     });
 
     const primaryAgentImage = new ecrAssets.DockerImageAsset(this, 'PrimaryAgentImage', {
-      directory: '../../pet_clinic_agents/primary_agent'
+      directory: '../../pet_clinic_ai_agents/primary_agent'
     });
 
     // Deploy nutrition agent

@@ -30,6 +30,11 @@ def get_specialist_referral(specialty):
     return specialists.get(specialty.lower(), "Please call (555) 123-PETS for specialist referral information.")
 
 @tool
+def get_appointment_availability():
+    """Check current appointment availability"""
+    return "We have appointments available: Today 3:00 PM, Tomorrow 10:00 AM and 2:30 PM. Call (555) 123-PETS to schedule."
+
+@tool
 def consult_nutrition_specialist(query, agent_arn):
     """Delegate nutrition questions to the specialized nutrition agent. Requires the nutrition agent ARN as a parameter."""
     
@@ -77,7 +82,7 @@ def create_clinic_agent():
         model_id=BEDROCK_MODEL_ID,
     )
     
-    tools = [get_clinic_hours, get_emergency_contact, get_specialist_referral, consult_nutrition_specialist]
+    tools = [get_clinic_hours, get_emergency_contact, get_specialist_referral, consult_nutrition_specialist, get_appointment_availability]
     
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
 

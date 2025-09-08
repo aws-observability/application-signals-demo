@@ -46,8 +46,8 @@ case $OPERATION in
     echo "✅ Pet Clinic Agents deployed successfully!"
     echo ""
     echo "Agent ARNs:"
-    aws cloudformation describe-stacks --stack-name PetClinicAgentsStack --region $REGION --query 'Stacks[0].Outputs[?OutputKey==`ExportsOutputFnGetAttPrimaryAgentBedrockAgentResourceB3BCAB6AAgentArn02242574`].OutputValue' --output text | sed 's/^/  Primary Agent: /'
-    aws cloudformation describe-stacks --stack-name PetClinicAgentsStack --region $REGION --query 'Stacks[0].Outputs[?OutputKey==`ExportsOutputFnGetAttNutritionAgentBedrockAgentResource57A63FB1AgentArnF59A36DC`].OutputValue' --output text | sed 's/^/  Nutrition Agent: /'
+    echo "  Check CloudFormation stack outputs in AWS Console for agent ARNs"
+    echo "  Stack name: PetClinicAgentsStack"
     ;;
   delete)
     echo "Destroying Pet Clinic Agents..."
