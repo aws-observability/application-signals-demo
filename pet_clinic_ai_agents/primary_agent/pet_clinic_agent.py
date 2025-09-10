@@ -43,7 +43,7 @@ def consult_nutrition_specialist(query, agent_arn, session_id=None):
         return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
     
     try:
-        client = boto3.client('bedrock-agentcore', region_name='us-east-1')
+        client = boto3.client('bedrock-agentcore')
         response = client.invoke_agent_runtime(
             agentRuntimeArn=agent_arn,
             runtimeSessionId=session_id,

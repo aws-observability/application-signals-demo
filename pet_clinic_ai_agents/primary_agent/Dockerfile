@@ -5,8 +5,6 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
-ENV AWS_REGION=us-east-1
-ENV AWS_DEFAULT_REGION=us-east-1
 ENV DOCKER_CONTAINER=1
 
 # Create non-root user
