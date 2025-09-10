@@ -180,7 +180,7 @@ The setup includes:
 
 - **Primary Agent**: A general pet clinic assistant that handles appointment scheduling, clinic information, and emergency contacts. Any nutrition related queries will be delegated to the Nutrition Agent.
 - **Nutrition Agent**: A specialized agent focused on pet nutrition, diet recommendations, and feeding guidelines
-- **Traffic Generator**: A Lambda function scheduled via AWS EventBridge that sends queries to the Primary Agent every 2 minutes.
+- **Traffic Generator**: A Lambda function scheduled via AWS EventBridge that sends queries to the Primary Agent every 1 minute.
 
 **Prerequisites:**
 - AWS CLI 2.x configured with appropriate permissions
