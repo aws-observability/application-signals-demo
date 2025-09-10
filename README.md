@@ -168,3 +168,34 @@ The following instructions set up an ECS cluster with all services running in Fa
    ```
    cd scripts/ecs/appsignals/ && ./setup-ecs-demo.sh --operation=delete --region=region-name
    ```
+
+# Bedrock AgentCore Runtime Demo
+
+The following instructions set up AI agents deployed to Bedrock AgentCore Runtime. You can run these steps in your personal AWS account to follow along (Not recommended for production usage). 
+
+The setup includes:
+
+- **Primary Agent**: A general pet clinic assistant that handles appointment scheduling, clinic information, and emergency contacts. Any nutrition related queries will be delegated to the Nutrition Agent.
+- **Nutrition Agent**: A specialized agent focused on pet nutrition, diet recommendations, and feeding guidelines
+- **Traffic Generator**: A Lambda function scheduled via AWS EventBridge that sends queries to the Primary Agent every 1 minute.
+
+**Prerequisites:**
+- AWS CLI 2.x configured with appropriate permissions
+- AWS CDK >= v2.1024.0 installed
+- Node.js >= v18.0.0 installed
+- Docker installed and running (for building agent container images)
+- Access to Amazon Bedrock foundation models (Claude 3.5 Haiku recommended)
+
+## Setup Instructions
+
+1. **Deploy the agents and traffic generator**. Replace `region-name` with your desired AWS region (e.g., `us-east-1`):
+
+   ```shell
+   cd scripts/agents && ./setup-agents-demo.sh --region=region-name
+   ```
+
+2. **Clean up resources** when finished:
+
+   ```shell
+   cd scripts/agents && ./setup-agents-demo.sh --operation=delete --region=region-name
+   ```
