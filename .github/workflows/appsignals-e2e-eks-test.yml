@@ -30,14 +30,14 @@ jobs:
   appsignals-e2e-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
         with:
           fetch-depth: 0
 
       # This step avoids code duplication for terraform templates and the validator
       # To simplify, we get the entire repo and put it into a separate folder
       - name: Get testing resources from aws-application-signals-test-framework
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #5.0.0
         with:
           repository: aws-observability/aws-application-signals-test-framework
           ref: main
@@ -47,7 +47,7 @@ jobs:
         run: echo TESTING_ID="${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 #v5.0.0
         with:
           role-to-assume: arn:aws:iam::${{ env.TEST_ACCOUNT }}:role/${{ secrets.APP_SIGNALS_E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
@@ -82,7 +82,7 @@ jobs:
           --approve
 
       - name: Set up terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #3.1.2
         with:
           terraform_wrapper: false
 
