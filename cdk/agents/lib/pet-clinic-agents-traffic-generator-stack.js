@@ -3,6 +3,7 @@ const lambda = require('aws-cdk-lib/aws-lambda');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
 const iam = require('aws-cdk-lib/aws-iam');
+const crypto = require('crypto');
 
 /**
  * Lambda traffic generator for AI agents to simulate user interactions.
@@ -20,7 +21,8 @@ class PetClinicAgentsTrafficGeneratorStack extends Stack {
       environment: {
         PRIMARY_AGENT_ARN: props?.primaryAgentArn || '',
         NUTRITION_AGENT_ARN: props?.nutritionAgentArn || '',
-        REQUESTS_PER_INVOKE: '20'
+        REQUESTS_PER_INVOKE: '20',
+        SESSION_ID: `pet-clinic-traffic-generator-${crypto.randomUUID()}`
       }
     });
 

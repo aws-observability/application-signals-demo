@@ -43,12 +43,13 @@ def consult_nutrition_specialist(query, agent_arn, session_id=None):
         return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
     
     try:
-        client = boto3.client('bedrock-agentcore')
+        region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        client = boto3.client('bedrock-agentcore', region_name=region)
         response = client.invoke_agent_runtime(
             agentRuntimeArn=agent_arn,
             runtimeSessionId=session_id,
             qualifier='DEFAULT',
-            payload=json.dumps({'prompt': query})
+            payload=json.dumps({'prompt': query}).encode('utf-8')
         )
         # Read the streaming response
         if 'response' in response:
@@ -62,7 +63,7 @@ def consult_nutrition_specialist(query, agent_arn, session_id=None):
 
 agent = None
 agent_app = BedrockAgentCoreApp()
-session_id = f"clinic-session-{str(uuid.uuid4())}"
+session_id = f"pet-clinic-primary-agent-session-{str(uuid.uuid4())}"
 
 system_prompt = (
     "You are a helpful pet clinic assistant. You can help with:\n"
@@ -75,10 +76,12 @@ system_prompt = (
     "- ONLY use the consult_nutrition_specialist tool for EXPLICIT nutrition-related questions (diet, feeding, supplements, food recommendations, what to feed, can pets eat X, nutrition advice)\n"
     "- DO NOT use the nutrition agent for general clinic questions, appointments, hours, emergencies, or non-nutrition medical issues\n"
     "- NEVER expose or mention agent ARNs in your responses to users\n"
+    "- If the user query contains 'session id', extract and use that session ID when calling consult_nutrition_specialist\n"
+    "- If no session ID is provided in the query, use the default session ID\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
     "- For emergencies, immediately provide emergency contact information\n"
     "- Always recommend consulting with a veterinarian for proper diagnosis and treatment\n\n"
-    f"Your session ID is: {session_id}. When calling consult_nutrition_specialist, use this session_id parameter."
+    f"Your default session ID is: {session_id}. When calling consult_nutrition_specialist, use the session ID from the query if provided, otherwise use this default session_id parameter."
 )
 
 def create_clinic_agent():

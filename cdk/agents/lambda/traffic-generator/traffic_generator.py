@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import uuid
 import urllib.parse as urlparse
 from urllib.request import Request, urlopen
 import boto3
@@ -15,6 +16,9 @@ def lambda_handler(event, context):
     primary_agent_arn = os.environ.get('PRIMARY_AGENT_ARN')
     nutrition_agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
     num_requests = int(os.environ.get('REQUESTS_PER_INVOKE', '20'))
+    
+    # Use environment variable session ID or generate one
+    session_id = os.environ.get('SESSION_ID', f"pet-clinic-session-{str(uuid.uuid4())}")
 
     if not primary_agent_arn:
         return {
@@ -30,10 +34,10 @@ def lambda_handler(event, context):
         
         if is_nutrition_query:
             query = random.choice(prompts['nutrition-queries'])
-            enhanced_query = f"{query}\n\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}" if nutrition_agent_arn else query
+            enhanced_query = f"{query}\n\nSession ID: {session_id}\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}" if nutrition_agent_arn else f"{query}\n\nSession ID: {session_id}"
         else:
             query = random.choice(prompts['non-nutrition-queries'])
-            enhanced_query = query
+            enhanced_query = f"{query}\n\nSession ID: {session_id}"
 
         try:
             encoded_arn = urlparse.quote(primary_agent_arn, safe='')
