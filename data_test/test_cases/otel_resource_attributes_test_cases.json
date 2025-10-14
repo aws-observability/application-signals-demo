@@ -1,0 +1,40 @@
+{
+  "otel_resource_attributes_test_cases": [
+    {
+      "test_case_id": "customers_service_java_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for customers-service-java",
+      "service_name": "customers-service-java",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER",
+      "expected_resource_attributes": {
+        "Application": "PetClinicApplication",
+        "Team": "PlatformTeam", 
+        "Tier": "Tier 1"
+      },
+      "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "visits_service_java_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for visits-service-java",
+      "service_name": "visits-service-java",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER",
+      "expected_resource_attributes": {
+        "Application": "PetClinicApplication",
+        "Team": "WorkflowTeam",
+        "Tier": "Tier 2"
+      },
+      "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "billing_service_python_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for billing-service-python",
+      "service_name": "billing-service-python",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
+      "expected_resource_attributes": {
+        "Application": "PaymentApplication",
+        "Team": "RevenueTeam",
+        "Tier": "Tier 1"
+      },
+      "time_range_minutes": 60
+    }
+  ]
+}
