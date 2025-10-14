@@ -43,6 +43,7 @@ class BedrockAgentCoreDeployer extends Construct {
         'ecr:*',
         'iam:PassRole',
         'iam:GetRole',
+        'iam:CreateServiceLinkedRole',
         'codebuild:*',
         's3:*',
         'logs:*'
