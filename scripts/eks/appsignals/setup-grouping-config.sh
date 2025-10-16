@@ -29,18 +29,15 @@ if [ "$OPERATION" = "create" ]; then
     --grouping-attribute-definitions '[
       {
         "GroupingName": "Application",
-        "GroupingSourceKeys": ["Application"],
-        "DefaultGroupingValue": "Application"
+        "GroupingSourceKeys": ["Application"]
       },
       {
         "GroupingName": "Tier",
-        "GroupingSourceKeys": ["Tier"],
-        "DefaultGroupingValue": "Tier"
+        "GroupingSourceKeys": ["Tier"]
       },
       {
         "GroupingName": "Team",
-        "GroupingSourceKeys": ["Team"],
-        "DefaultGroupingValue": "Team"
+        "GroupingSourceKeys": ["Team"]
       }
     ]'
   check_if_step_failed_and_exit "Failed to create grouping configuration"
