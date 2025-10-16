@@ -220,7 +220,7 @@ export class AuditServiceStack extends cdk.Stack {
 
     new scheduler.CfnSchedule(this, 'DeploymentSchedule', {
       flexibleTimeWindow: { mode: 'OFF' },
-      scheduleExpression: 'rate(1 hour)',
+      scheduleExpression: 'rate(90 minutes)',
       target: {
         arn: auditServiceDeploymentLambda.functionArn,
         roleArn: schedulerRole.roleArn,

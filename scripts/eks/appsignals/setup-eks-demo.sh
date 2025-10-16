@@ -5,7 +5,7 @@ set -ex
 DEFAULT_REGION="us-east-1"
 OPERATION="create"
 USE_OTLP="false"  # Default value for OTLP
-DESTROY_ON_FAIL="true"  # Default value for destroying stacks on failure
+DESTROY_ON_FAIL="false"  # Default value for destroying stacks on failure
 
 # Read command line arguments
 for i in "$@"; do
@@ -72,6 +72,8 @@ function delete_resources() {
 # Execute based on operation
 if [ "$OPERATION" == "delete" ]; then
   delete_resources
+  ./setup-grouping-config.sh $REGION delete
 else
   run_cdk deploy
+  ./setup-grouping-config.sh $REGION create
 fi

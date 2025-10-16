@@ -121,21 +121,6 @@ export class SloStack extends Stack {
         //exclusionWindows
         undefined
     ));
-
-    const getFrontendPetPaymentAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'getFrontendPetPaymentAvailabilitySlo', this.getSloProp(
-        "Availability for Retrieving Pet Payment Details",
-        "Availability larger than 99 for Get Payment operation",
-        "GET",
-        "AVAILABILITY",
-        99.0,
-        "GreaterThan",
-        awsApplicationTag,
-        undefined,
-        "/owners/{ownerId:int}/pets/{petId:int}/payments",
-        "payment-service-dotnet",
-        undefined,
-        undefined
-    ));
     
     const appointmentServiceAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'appointmentServiceAvailabilitySLO', this.getLambdaServiceSloProp(
         "appointment service availability",

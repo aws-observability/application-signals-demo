@@ -35,6 +35,66 @@
         "Tier": "Tier 1"
       },
       "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "vets-service-java_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for vets-service-java",
+      "service_name": "vets-service-java",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
+      "expected_resource_attributes": {
+        "Application": "PetClinicApplication",
+        "Team": "WorkflowTeam",
+        "Tier": "Tier 1"
+      },
+      "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "pet-clinic-frontend-java_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for pet-clinic-frontend-java",
+      "service_name": "pet-clinic-frontend-java",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
+      "expected_resource_attributes": {
+        "Application": "PetClinicApplication",
+        "Team": "PlatformTeam",
+        "Tier": "Tier 1"
+      },
+      "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "payment-service-dotnet_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for payment-service-dotnet",
+      "service_name": "payment-service-dotnet",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
+      "expected_resource_attributes": {
+        "Application": "PaymentApplication",
+        "Team": "RevenueTeam",
+        "Tier": "Tier 1"
+      },
+      "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "insurance-service-python_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for insurance-service-python",
+      "service_name": "insurance-service-python",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
+      "expected_resource_attributes": {
+        "Application": "PaymentApplication",
+        "Team": "RevenueTeam",
+        "Tier": "Tier 1"
+      },
+      "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "nutrition-service-nodejs_otel_attributes_validation",
+      "description": "Validate OTEL resource attributes for nutrition-service-nodejs",
+      "service_name": "nutrition-service-nodejs",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
+      "expected_resource_attributes": {
+        "Application": "PaymentApplication",
+        "Team": "RevenueTeam",
+        "Tier": "Tier 1"
+      },
+      "time_range_minutes": 60
     }
   ]
 }
