@@ -103,7 +103,7 @@ export class LambdaPetClinicStack extends cdk.Stack {
     // Add tags to Lambda function
     cdk.Tags.of(createLambda).add('Team', 'WorkflowTeam');
     cdk.Tags.of(createLambda).add('Application', 'Appointment');
-    cdk.Tags.of(createLambda).add('Tier', 'Tier 3');
+    cdk.Tags.of(createLambda).add('Tier', 'Tier-3');
 
     // Lambda Function 2: List Appointments
     const listLambda = new lambda.Function(this, 'ListAppointmentsFunction', {
@@ -124,7 +124,7 @@ export class LambdaPetClinicStack extends cdk.Stack {
     // Add tags to Lambda function
     cdk.Tags.of(listLambda).add('Team', 'WorkflowTeam');
     cdk.Tags.of(listLambda).add('Application', 'Appointment');
-    cdk.Tags.of(listLambda).add('Tier', 'Tier 3');
+    cdk.Tags.of(listLambda).add('Tier', 'Tier-3');
 
     // Lambda Function 3: Get Appointment
     const getLambda = new lambda.Function(this, 'GetAppointmentFunction', {
@@ -146,7 +146,7 @@ export class LambdaPetClinicStack extends cdk.Stack {
     // Add tags to Lambda function
     cdk.Tags.of(getLambda).add('Team', 'WorkflowTeam');
     cdk.Tags.of(getLambda).add('Application', 'Appointment');
-    cdk.Tags.of(getLambda).add('Tier', 'Tier 3');
+    cdk.Tags.of(getLambda).add('Tier', 'Tier-3');
     
     // Create the alternate version code as a ZIP asset
     const alternateCodeAsset = new s3assets.Asset(this, 'AlternateCodeAsset', {
@@ -177,7 +177,7 @@ export class LambdaPetClinicStack extends cdk.Stack {
     // Add tags to API Gateway
     cdk.Tags.of(api).add('Team', 'WorkflowTeam');
     cdk.Tags.of(api).add('Application', 'Appointment');
-    cdk.Tags.of(api).add('Tier', 'Tier 3');
+    cdk.Tags.of(api).add('Tier', 'Tier-3');
     // API Gateway Resource for /add
     const addResource = api.root.addResource('add');
     addResource.addMethod('GET', new apigateway.LambdaIntegration(createLambda));

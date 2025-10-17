@@ -8,7 +8,7 @@
       "expected_tags": {
         "Team": "WorkflowTeam",
         "Application": "Appointment", 
-        "Tier": "Tier 3"
+        "Tier": "Tier-3"
       }
     },
     {
@@ -19,7 +19,7 @@
       "expected_tags": {
         "Team": "WorkflowTeam",
         "Application": "Appointment",
-        "Tier": "Tier 3"
+        "Tier": "Tier-3"
       }
     },
     {
@@ -30,7 +30,7 @@
       "expected_tags": {
         "Team": "WorkflowTeam",
         "Application": "Appointment",
-        "Tier": "Tier 3"
+        "Tier": "Tier-3"
       }
     },
     {
@@ -41,7 +41,7 @@
       "expected_tags": {
         "Team": "WorkflowTeam", 
         "Application": "Appointment",
-        "Tier": "Tier 3"
+        "Tier": "Tier-3"
       }
     },
     {
@@ -52,7 +52,7 @@
       "expected_tags": {
         "Team": "AnalyticsTeam", 
         "Application": "Audit",
-        "Tier": "Tier 4"
+        "Tier": "Tier-4"
       }
     }
   ]

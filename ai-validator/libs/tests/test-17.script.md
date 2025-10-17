@@ -16,13 +16,13 @@ From the dropdown list, select_dropdown option 'Tier'
 
 ### 4. Look 'Tier' in the container
 
-Look for 'Tier 1', 'Tier 2','Tier 3' and 'Tier 4' these are Tier tiles REMEMBER it.
+Look for 'Tier-1 ', 'Tier-2','Tier-3' and 'Tier-4' these are Tier tiles REMEMBER it.
 
 ### 5. Click on breaching Tier with Priority
 Click on Tier tile which has 'SLI breach' or is 'Red in color' 
 
 **Constraints:**
-- You MUST ensure to keep the Priority in mind ie. Tier 1 >Tier 2 >Tier 3 >Tier 4
+- You MUST ensure to keep the Priority in mind ie. Tier-1  >Tier-2 >Tier-3 >Tier-4
 - You MUST ensure to Click on the hyperlink of Tier
 
 

@@ -16,4 +16,4 @@ From the dropdown list, select_dropdown option 'Tier'
 
 ### 4. Look 'Tier' in the container
 
-Look for 'Tier 1', 'Tier 2','Tier 3' and 'Tier 4'
+Look for 'Tier-1 ', 'Tier-2','Tier-3' and 'Tier-4'

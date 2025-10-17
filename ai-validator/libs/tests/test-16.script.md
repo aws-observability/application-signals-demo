@@ -4,9 +4,9 @@
 
 In the left panel, under Application Signals, click 'Services'.
 
-### 2. Search for 'Tier 1' services
+### 2. Search for 'Tier-1 ' services
 
-In the search field with placeholder text 'Search and filter', type 'Tier = Tier 1' and press Enter.
+In the search field with placeholder text 'Search and filter', type 'Tier = Tier-1 ' and press Enter.
 
 **Constraints:**
 - You MUST press Enter after entering this text

@@ -1,14 +1,14 @@
 import * as cdk from 'aws-cdk-lib';
-import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
-import { Construct } from 'constructs';
-import * as path from 'path';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3assets from 'aws-cdk-lib/aws-s3-assets';
-import * as cr from 'aws-cdk-lib/custom-resources';
 import * as scheduler from 'aws-cdk-lib/aws-scheduler';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as cr from 'aws-cdk-lib/custom-resources';
+import { Construct } from 'constructs';
+import * as path from 'path';
 
 export class AuditServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -229,7 +229,7 @@ export class AuditServiceStack extends cdk.Stack {
 
     cdk.Tags.of(auditServiceLambda).add('Team', 'AnalyticsTeam');
     cdk.Tags.of(auditServiceLambda).add('Application', 'Audit');
-    cdk.Tags.of(auditServiceLambda).add('Tier', 'Tier 4');
+    cdk.Tags.of(auditServiceLambda).add('Tier', 'Tier-4');
 
     if (otelLayerArn) {
       auditServiceLambda.addLayers(

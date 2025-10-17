@@ -53,6 +53,6 @@ spec:
             - name: APP_MONITOR_ID
               value: "${APP_MONITOR_ID}"
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: Application=PetClinic,Team=PlatformTeam,Tier=Tier 1,aws.application_signals.metric_resource_keys=Application&Team&Tier
+              value: Application=PetClinic,Team=PlatformTeam,Tier=Tier-1 ,aws.application_signals.metric_resource_keys=Application&Team&Tier
       restartPolicy: Always
 status: {}

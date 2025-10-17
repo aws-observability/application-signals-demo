@@ -25,7 +25,7 @@ spec:
             - name: MONGO_URI
               value: mongodb://admin:admin@mongodb:27017/
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: Application=PetClinic,Team=AnalyticsTeam,Tier=Tier 1,aws.application_signals.metric_resource_keys=Application&Team&Tier
+              value: Application=PetClinic,Team=AnalyticsTeam,Tier=Tier-1 ,aws.application_signals.metric_resource_keys=Application&Team&Tier
           ports:
             - containerPort: 3000
           imagePullPolicy: Always
