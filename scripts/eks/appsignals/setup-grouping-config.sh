@@ -29,7 +29,8 @@ if [ "$OPERATION" = "create" ]; then
     --grouping-attribute-definitions '[
       {
         "GroupingName": "Application",
-        "GroupingSourceKeys": ["Application"]
+        "GroupingSourceKeys": ["Application"],
+        "Default": "PetAI"
       },
       {
         "GroupingName": "Tier",

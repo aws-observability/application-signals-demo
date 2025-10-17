@@ -7,7 +7,7 @@
       "resource_name": "appointment-service-create",
       "expected_tags": {
         "Team": "WorkflowTeam",
-        "Application": "AppointmentMgmntApplication", 
+        "Application": "Appointment", 
         "Tier": "Tier 3"
       }
     },
@@ -18,7 +18,7 @@
       "resource_name": "appointment-service-list",
       "expected_tags": {
         "Team": "WorkflowTeam",
-        "Application": "AppointmentMgmntApplication",
+        "Application": "Appointment",
         "Tier": "Tier 3"
       }
     },
@@ -29,7 +29,7 @@
       "resource_name": "appointment-service-get",
       "expected_tags": {
         "Team": "WorkflowTeam",
-        "Application": "AppointmentMgmntApplication",
+        "Application": "Appointment",
         "Tier": "Tier 3"
       }
     },
@@ -40,7 +40,7 @@
       "resource_name": "appointment-service-gateway",
       "expected_tags": {
         "Team": "WorkflowTeam", 
-        "Application": "AppointmentMgmntApplication",
+        "Application": "Appointment",
         "Tier": "Tier 3"
       }
     },
@@ -51,7 +51,7 @@
       "resource_name": "audit-service",
       "expected_tags": {
         "Team": "AnalyticsTeam", 
-        "Application": "AuditApplication",
+        "Application": "Audit",
         "Tier": "Tier 4"
       }
     }

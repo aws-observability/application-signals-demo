@@ -228,7 +228,7 @@ export class AuditServiceStack extends cdk.Stack {
     });
 
     cdk.Tags.of(auditServiceLambda).add('Team', 'AnalyticsTeam');
-    cdk.Tags.of(auditServiceLambda).add('Application', 'AuditApplication');
+    cdk.Tags.of(auditServiceLambda).add('Application', 'Audit');
     cdk.Tags.of(auditServiceLambda).add('Tier', 'Tier 4');
 
     if (otelLayerArn) {

@@ -74,7 +74,7 @@ python3 run_trace_tests.py <path_to_test_cases.json>
 python3 run_tag_tests.py <path_to_test_cases.json>
 
 ## For Cloudtrail Events Testing
-python3 run_cloudtrail_tests.py <path_to_test_cases.json>
+python3 run_cloudtrail_test.py <path_to_test_cases.json>
 
 ## For OTEL Resource Attribute Testing
 python3 run_otel_resource_attributes_tests.py <path_to_test_cases.json>

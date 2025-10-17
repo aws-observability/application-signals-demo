@@ -42,6 +42,6 @@ spec:
             - containerPort: 8083
           env:
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: Application=PetClinicApplication,Team=WorkflowTeam,Tier=Tier 1,aws.application_signals.metric_resource_keys=Application&Team&Tier  
+              value: Application=PetClinic,Team=WorkflowTeam,Tier=Tier 1,aws.application_signals.metric_resource_keys=Application&Team&Tier  
       restartPolicy: Always
 status: {}
