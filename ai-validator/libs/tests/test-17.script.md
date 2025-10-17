@@ -36,8 +36,3 @@ Click on the 'Breaching SLI' checkbox from the panel
 
 ### 8. Check the Operational Audit for more information
 Look for section 'Operational Audit' in the drawer
-
-### 9. Check whether 'Dependency Availability Issue' is present in the Operation Audit
-- Look whether if there is any 'Dependency Availability Issue' present in 'Operational Audit'
-- Also check whether it matches 'nutrition fact not found for the given pet_type' if it's not present then also it's fine. 
-- If not present try another tile with 'SLI Breach'
