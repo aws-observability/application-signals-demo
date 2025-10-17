@@ -30,7 +30,7 @@ if [ "$OPERATION" = "create" ]; then
       {
         "GroupingName": "Application",
         "GroupingSourceKeys": ["Application"],
-        "Default": "PetAI"
+        "DefaultGroupingValue": "PetAI"
       },
       {
         "GroupingName": "Tier",
