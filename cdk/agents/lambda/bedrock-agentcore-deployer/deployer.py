@@ -27,22 +27,27 @@ def create_agent(properties, event, context):
     execution_role = properties['ExecutionRole']
     
     try:
-        response = client.create_agent_runtime(
-            agentRuntimeName=agent_name,
-            description=f'{agent_name} agent for Application Signals demo',
-            agentRuntimeArtifact={
+        create_params = {
+            'agentRuntimeName': agent_name,
+            'description': f'{agent_name} agent for Application Signals demo',
+            'agentRuntimeArtifact': {
                 'containerConfiguration': {
                     'containerUri': image_uri
                 }
             },
-            roleArn=execution_role,
-            networkConfiguration={
+            'roleArn': execution_role,
+            'networkConfiguration': {
                 'networkMode': 'PUBLIC'
             },
-            protocolConfiguration={
+            'protocolConfiguration': {
                 'serverProtocol': 'HTTP'
             }
-        )
+        }
+        
+        if 'EnvironmentVariables' in properties:
+            create_params['environmentVariables'] = properties['EnvironmentVariables']
+        
+        response = client.create_agent_runtime(**create_params)
         
         agent_arn = response['agentRuntimeArn']
         
@@ -68,22 +73,27 @@ def update_agent(properties, event, context):
         image_uri = properties['ImageUri']
         execution_role = properties['ExecutionRole']
         
-        response = client.update_agent_runtime(
-            agentRuntimeId=agent_runtime_id,
-            description=f'{agent_name} agent for Application Signals demo',
-            agentRuntimeArtifact={
+        update_params = {
+            'agentRuntimeId': agent_runtime_id,
+            'description': f'{agent_name} agent for Application Signals demo',
+            'agentRuntimeArtifact': {
                 'containerConfiguration': {
                     'containerUri': image_uri
                 }
             },
-            roleArn=execution_role,
-            networkConfiguration={
+            'roleArn': execution_role,
+            'networkConfiguration': {
                 'networkMode': 'PUBLIC'
             },
-            protocolConfiguration={
+            'protocolConfiguration': {
                 'serverProtocol': 'HTTP'
             }
-        )
+        }
+        
+        if 'EnvironmentVariables' in properties:
+            update_params['environmentVariables'] = properties['EnvironmentVariables']
+        
+        response = client.update_agent_runtime(**update_params)
         
         agent_arn = response['agentRuntimeArn']
         

@@ -5,6 +5,7 @@ set -e
 # Default values
 REGION="us-east-1"
 OPERATION="deploy"
+NUTRITION_SERVICE_URL=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -15,6 +16,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --operation=*)
       OPERATION="${1#*=}"
+      shift
+      ;;
+    --nutrition-service-url=*)
+      NUTRITION_SERVICE_URL="${1#*=}"
       shift
       ;;
     *)
@@ -40,6 +45,10 @@ unset DOCKER_HOST
 case $OPERATION in
   deploy)
     echo "Deploying Pet Clinic Agents..."
+    if [[ -n "$NUTRITION_SERVICE_URL" ]]; then
+      echo "Using nutrition service URL: $NUTRITION_SERVICE_URL"
+      export NUTRITION_SERVICE_URL
+    fi
     npm install
     cdk bootstrap --region $REGION
     cdk deploy --all --require-approval never

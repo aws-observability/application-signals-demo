@@ -15,7 +15,7 @@ def load_prompts():
 def lambda_handler(event, context):
     primary_agent_arn = os.environ.get('PRIMARY_AGENT_ARN')
     nutrition_agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
-    num_requests = int(os.environ.get('REQUESTS_PER_INVOKE', '20'))
+    num_requests = int(os.environ.get('REQUESTS_PER_INVOKE', '1'))
     
     # Use environment variable session ID or generate one
     session_id = os.environ.get('SESSION_ID', f"pet-clinic-session-{str(uuid.uuid4())}")
@@ -34,26 +34,27 @@ def lambda_handler(event, context):
         
         if is_nutrition_query:
             query = random.choice(prompts['nutrition-queries'])
-            enhanced_query = f"{query}\n\nSession ID: {session_id}\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}" if nutrition_agent_arn else f"{query}\n\nSession ID: {session_id}"
+            enhanced_query = f"{query}\n\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}" if nutrition_agent_arn else query
         else:
             query = random.choice(prompts['non-nutrition-queries'])
-            enhanced_query = f"{query}\n\nSession ID: {session_id}"
+            enhanced_query = query
 
         try:
-            encoded_arn = urlparse.quote(primary_agent_arn, safe='')
-            region = os.environ.get('AWS_REGION', 'us-east-1')
-            url = f'https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT'
+            client = boto3.client('bedrock-agentcore')
             
-            payload = json.dumps({'prompt': enhanced_query})
-            request = AWSRequest(method='POST', url=url, data=payload, headers={'Content-Type': 'application/json'})
-            session = boto3.Session()
-            credentials = session.get_credentials()
+            response = client.invoke_agent_runtime(
+                agentRuntimeArn=primary_agent_arn,
+                runtimeSessionId=session_id,
+                payload=json.dumps({'prompt': enhanced_query}).encode('utf-8')
+            )
             
-            SigV4Auth(credentials, 'bedrock-agentcore', region).add_auth(request)
-            
-            req = Request(url, data=payload.encode('utf-8'), headers=dict(request.headers))
-            with urlopen(req) as response:
-                body = response.read().decode('utf-8')
+            # Read the StreamingBody from the response
+            if 'response' in response:
+                body = response['response'].read().decode('utf-8')
+            elif 'body' in response:
+                body = response['body'].read().decode('utf-8')
+            else:
+                body = str(response)
             
             results.append({
                 'query': query,

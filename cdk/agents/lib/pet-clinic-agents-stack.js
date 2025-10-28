@@ -79,13 +79,26 @@ class PetClinicAgentsStack extends Stack {
       directory: '../../pet_clinic_ai_agents/primary_agent'
     });
 
-    // Deploy nutrition agent
-    const nutritionAgent = new BedrockAgentCoreDeployer(this, 'NutritionAgent', {
+    // Deploy nutrition agent with optional environment variable
+    const nutritionAgentProps = {
       AgentName: 'nutrition_agent',
       ImageUri: nutritionAgentImage.imageUri,
       ExecutionRole: agentCoreRole.roleArn,
       Entrypoint: 'nutrition_agent.py'
-    });
+    };
+    
+    if (props?.nutritionServiceUrl) {
+      nutritionAgentProps.EnvironmentVariables = {
+        NUTRITION_SERVICE_URL: props.nutritionServiceUrl,
+        OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: 'sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,system_metrics,google-genai'
+      };
+    } else {
+      nutritionAgentProps.EnvironmentVariables = {
+        OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: 'sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,system_metrics,google-genai'
+      };
+    }
+    
+    const nutritionAgent = new BedrockAgentCoreDeployer(this, 'NutritionAgent', nutritionAgentProps);
 
     // Deploy primary agent
     const primaryAgent = new BedrockAgentCoreDeployer(this, 'PrimaryAgent', {
