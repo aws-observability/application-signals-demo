@@ -4,5 +4,5 @@ uv
 boto3
 bedrock-agentcore
 bedrock-agentcore-starter-toolkit
-aws-opentelemetry-distro>=0.12.1
+aws-opentelemetry-distro>=0.12.2
 requests

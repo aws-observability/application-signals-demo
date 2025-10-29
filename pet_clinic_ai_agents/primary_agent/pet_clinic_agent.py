@@ -97,7 +97,7 @@ async def invoke(payload, context):
     """
     Invoke the clinic agent with a payload
     """
-    if context and hasattr(context, 'session_id'):
+    if context and hasattr(context, 'session_id') and context.session_id:
         os.environ['CURRENT_SESSION_ID'] = context.session_id
     
     agent = create_clinic_agent()

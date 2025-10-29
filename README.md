@@ -176,8 +176,8 @@ The following instructions set up AI agents deployed to Bedrock AgentCore Runtim
 The setup includes:
 
 - **Primary Agent**: A general pet clinic assistant that handles appointment scheduling, clinic information, and emergency contacts. Any nutrition related queries will be delegated to the Nutrition Agent.
-- **Nutrition Agent**: A specialized agent focused on pet nutrition, diet recommendations, and feeding guidelines
-- **Traffic Generator**: A Lambda function scheduled via AWS EventBridge that sends queries to the Primary Agent every 1 minute.
+- **Nutrition Agent**: A specialized agent focused on pet nutrition, diet recommendations, and feeding guidelines. When deployed with the Pet Clinic EKS demo, it utilizes the nutrition service API at `http://<ingress-host>/nutrition` to base its answers on data from the service
+- **Traffic Generator**: A Lambda function scheduled via AWS EventBridge that sends queries to the Primary Agent on set a cadence.
 
 **Prerequisites:**
 - AWS CLI 2.x configured with appropriate permissions
@@ -192,6 +192,18 @@ The setup includes:
 
    ```shell
    cd scripts/agents && ./setup-agents-demo.sh --region=region-name
+   ```
+
+   To enable the Nutrition Agent to use the Pet Clinic nutrition service (requires [EKS demo](#eks-demo) to be set up first), get the ingress URL from your Pet Clinic EKS cluster:
+
+   ```shell
+   kubectl get ingress -n pet-clinic -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}'
+   ```
+
+   Then provide the service URL when deploying. For example:
+
+   ```shell
+   cd scripts/agents && ./setup-agents-demo.sh --region=us-east-1 --nutrition-service-url=http://my-load-balancer.us-east-1.elb.amazonaws.com/nutrition
    ```
 
 2. **Clean up resources** when finished:
