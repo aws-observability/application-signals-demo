@@ -24,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.samples.petclinic.customers.Util.WellKnownAttributes;
 import org.springframework.samples.petclinic.customers.model.Owner;
@@ -31,6 +33,7 @@ import org.springframework.samples.petclinic.customers.model.OwnerRepository;
 import org.springframework.samples.petclinic.customers.model.Pet;
 import org.springframework.samples.petclinic.customers.model.PetRepository;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -70,7 +73,13 @@ class OwnerResource {
         if (owner.getFirstName().equals("random-traffic")) {
             return owner;
         }
-        return ownerRepository.save(owner);
+        
+        try {
+            return ownerRepository.save(owner);
+        } catch (Exception e) {
+            log.error("Failed to create owner: {}", owner, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create owner", e);
+        }
     }
 
     /**
@@ -86,7 +95,13 @@ class OwnerResource {
             String reason = "Invalid user identifier " + ownerId + ": must be a positive number.";
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, reason);
         }
-        return ownerRepository.findById(ownerId);
+        
+        try {
+            return ownerRepository.findById(ownerId);
+        } catch (Exception e) {
+            log.error("Failed to find owner with id: {}", ownerId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve owner", e);
+        }
     }
 
     /**
@@ -94,7 +109,12 @@ class OwnerResource {
      */
     @GetMapping
     public List<Owner> findAll() {
-        return ownerRepository.findAll();
+        try {
+            return ownerRepository.findAll();
+        } catch (Exception e) {
+            log.error("Failed to retrieve all owners", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve owners", e);
+        }
     }
 
     /**
@@ -102,57 +122,124 @@ class OwnerResource {
      */
     @PutMapping(value = "/{ownerId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
     public void updateOwner(@PathVariable("ownerId") @Min(1) int ownerId, @Valid @RequestBody Owner ownerRequest) {
         Span.current().setAttribute(WellKnownAttributes.OWNER_ID, ownerId);
         Span.current().setAttribute(WellKnownAttributes.ORDER_ID, UUID.randomUUID().toString());
 
-        final Optional<Owner> owner = ownerRepository.findById(ownerId);
-        final Owner ownerModel = owner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));
+        try {
+            final Optional<Owner> owner = ownerRepository.findById(ownerId);
+            final Owner ownerModel = owner.orElseThrow(() -> new ResourceNotFoundException("Owner "+ownerId+" not found"));
 
-        // This is done by hand for simplicity purpose. In a real life use-case we should consider using MapStruct.
-        ownerModel.setFirstName(ownerRequest.getFirstName());
-        ownerModel.setLastName(ownerRequest.getLastName());
-        ownerModel.setCity(ownerRequest.getCity());
-        ownerModel.setAddress(ownerRequest.getAddress());
-        ownerModel.setTelephone(ownerRequest.getTelephone());
-        log.info("Saving owner {}", ownerModel);
-        ownerRepository.save(ownerModel);
+            // This is done by hand for simplicity purpose. In a real life use-case we should consider using MapStruct.
+            ownerModel.setFirstName(ownerRequest.getFirstName());
+            ownerModel.setLastName(ownerRequest.getLastName());
+            ownerModel.setCity(ownerRequest.getCity());
+            ownerModel.setAddress(ownerRequest.getAddress());
+            ownerModel.setTelephone(ownerRequest.getTelephone());
+            log.info("Saving owner {}", ownerModel);
+            ownerRepository.save(ownerModel);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to update owner with id: {}", ownerId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update owner", e);
+        }
     }
 
     @Scheduled(cron = "0 0 8 * * ?") // every PST midnight
+    @Transactional
     public void ageOldData() {
-        log.info("ageOldData() get called and purge all data!");
+        log.info("ageOldData() called - starting data purge process");
 
-        /* Purge pets. */
-        Pet pet = new Pet();
-        pet.setName("lastName");
+        try {
+            // FIXED: Use safer deletion approach to prevent StackOverflowError
+            // Process in smaller batches to avoid memory issues and recursive problems
+            
+            /* Purge pets in batches to prevent StackOverflowError */
+            Pet petExample = new Pet();
+            petExample.setName("lastName");
 
-        Example<Pet> petExample = Example.of(
-                pet,
-                ExampleMatcher
-                        .matchingAll()
-                        .withStringMatcher(ExampleMatcher.StringMatcher.STARTING));
+            Example<Pet> petExampleQuery = Example.of(
+                    petExample,
+                    ExampleMatcher
+                            .matchingAll()
+                            .withStringMatcher(ExampleMatcher.StringMatcher.STARTING));
 
-        List<Pet> pets = petRepository.findAll(petExample);
-        log.info("Found {} pets to purge", pets.size());
-        petRepository.deleteAllInBatch(pets);
+            // Process in smaller batches to prevent memory issues
+            Pageable petPageable = PageRequest.of(0, 100); // Process 100 at a time
+            List<Pet> pets = petRepository.findAll(petExampleQuery, petPageable).getContent();
+            
+            int totalPetsPurged = 0;
+            while (!pets.isEmpty()) {
+                log.info("Found {} pets to purge in this batch", pets.size());
+                
+                // Use individual delete operations instead of deleteAllInBatch to prevent StackOverflowError
+                for (Pet pet : pets) {
+                    try {
+                        petRepository.delete(pet);
+                        totalPetsPurged++;
+                    } catch (Exception e) {
+                        log.warn("Failed to delete pet with id: {}", pet.getId(), e);
+                    }
+                }
+                
+                // Get next batch
+                pets = petRepository.findAll(petExampleQuery, petPageable).getContent();
+                
+                // Safety check to prevent infinite loops
+                if (totalPetsPurged > 10000) {
+                    log.warn("Stopping pet purge after {} deletions to prevent excessive processing", totalPetsPurged);
+                    break;
+                }
+            }
 
-        log.info("Successfully purged {} pets", pets.size());
+            log.info("Successfully purged {} pets", totalPetsPurged);
 
-        /* Purge owners. */
-        Owner owner = new Owner();
-        owner.setFirstName("firstName");
+            /* Purge owners in batches to prevent StackOverflowError */
+            Owner ownerExample = new Owner();
+            ownerExample.setFirstName("firstName");
 
-        Example<Owner> ownerExample = Example.of(
-                owner,
-                ExampleMatcher
-                        .matchingAll()
-                        .withStringMatcher(ExampleMatcher.StringMatcher.STARTING));
+            Example<Owner> ownerExampleQuery = Example.of(
+                    ownerExample,
+                    ExampleMatcher
+                            .matchingAll()
+                            .withStringMatcher(ExampleMatcher.StringMatcher.STARTING));
 
-        List<Owner> owners = ownerRepository.findAll(ownerExample);
-        log.info("Found {} owners to purge", owners.size());
-        ownerRepository.deleteAllInBatch(owners);
+            // Process in smaller batches to prevent memory issues
+            Pageable ownerPageable = PageRequest.of(0, 100); // Process 100 at a time
+            List<Owner> owners = ownerRepository.findAll(ownerExampleQuery, ownerPageable).getContent();
+            
+            int totalOwnersPurged = 0;
+            while (!owners.isEmpty()) {
+                log.info("Found {} owners to purge in this batch", owners.size());
+                
+                // Use individual delete operations instead of deleteAllInBatch to prevent StackOverflowError
+                for (Owner owner : owners) {
+                    try {
+                        ownerRepository.delete(owner);
+                        totalOwnersPurged++;
+                    } catch (Exception e) {
+                        log.warn("Failed to delete owner with id: {}", owner.getId(), e);
+                    }
+                }
+                
+                // Get next batch
+                owners = ownerRepository.findAll(ownerExampleQuery, ownerPageable).getContent();
+                
+                // Safety check to prevent infinite loops
+                if (totalOwnersPurged > 10000) {
+                    log.warn("Stopping owner purge after {} deletions to prevent excessive processing", totalOwnersPurged);
+                    break;
+                }
+            }
 
-        log.info("Successfully purged {} owners", owners.size());
+            log.info("Successfully purged {} owners", totalOwnersPurged);
+            log.info("Data purge process completed successfully");
+            
+        } catch (Exception e) {
+            log.error("Error during data purge process", e);
+            // Don't rethrow to prevent scheduled job from failing completely
+        }
     }
 }
