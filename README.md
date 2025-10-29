@@ -194,16 +194,12 @@ The setup includes:
    cd scripts/agents && ./setup-agents-demo.sh --region=region-name
    ```
 
-   To enable the Nutrition Agent to use the Pet Clinic nutrition service (requires [EKS demo](#eks-demo) to be set up first), get the ingress URL from your Pet Clinic EKS cluster:
+   The Nutrition Agent relies on the nutrition service to retrieve pet nutrition information and provide accurate dietary recommendations. To enable this feature, the [EKS demo](#eks-demo) must be set up first. The deployment script will attempt to auto-discover the nutrition service endpoint from your EKS cluster. If auto-discovery fails or you want to specify a custom endpoint, you can manually provide the nutrition service URL using the `--nutrition-service-url` parameter:
 
    ```shell
-   kubectl get ingress -n pet-clinic -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}'
-   ```
+   export MY_NUTRITION_ENDPOINT=my-load-balancer.us-east-1.elb.amazonaws.com
 
-   Then provide the service URL when deploying. For example:
-
-   ```shell
-   cd scripts/agents && ./setup-agents-demo.sh --region=us-east-1 --nutrition-service-url=http://my-load-balancer.us-east-1.elb.amazonaws.com/nutrition
+   cd scripts/agents && ./setup-agents-demo.sh --region=us-east-1 --nutrition-service-url=http://${MY_NUTRITION_ENDPOINT}/nutrition
    ```
 
 2. **Clean up resources** when finished:
