@@ -2,6 +2,7 @@ from strands import Agent, tool
 import uvicorn
 import requests
 import os
+import boto3
 from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
@@ -15,8 +16,10 @@ def get_nutrition_data(pet_type):
     """Helper function to get nutrition data from the API"""
     if not NUTRITION_SERVICE_URL:
         return {"facts": "Error: Nutrition service not found", "products": ""}
+    
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
+        
         if response.status_code == 200:
             data = response.json()
             return {"facts": data.get('facts', ''), "products": data.get('products', '')}
