@@ -1,4 +1,4 @@
-strands-agents
+strands-agents>=1.14.0
 strands-agents-tools
 uv
 boto3

@@ -69,6 +69,7 @@ case $OPERATION in
     fi
     npm install
     cdk bootstrap --region $REGION
+    cdk synth
     cdk deploy --all --require-approval never
     echo "✅ Pet Clinic Agents deployed successfully!"
     echo ""
