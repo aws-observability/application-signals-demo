@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 public.ecr.aws/amazoncorretto/amazoncorretto:11 as builder
+FROM public.ecr.aws/amazoncorretto/amazoncorretto:11 as builder
 WORKDIR /application
 ARG ARTIFACT_NAME
 COPY ${ARTIFACT_NAME}.jar application.jar
@@ -9,7 +9,12 @@ RUN yum install -y wget tar gzip && yum clean all
 
 # Download dockerize and cache that layer
 ARG DOCKERIZE_VERSION
-RUN wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-${DOCKERIZE_VERSION}.tar.gz
+ARG TARGETPLATFORM
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-arm64-${DOCKERIZE_VERSION}.tar.gz; \
+    else \
+        wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-${DOCKERIZE_VERSION}.tar.gz; \
+    fi
 RUN tar xzf dockerize.tar.gz
 RUN chmod +x dockerize
 
