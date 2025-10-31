@@ -121,10 +121,18 @@ export class SloStack extends Stack {
         //exclusionWindows
         undefined
     ));
-    const appointmentServiceAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'appointmentServiceAvailabilitySLO', this.getAppointmentSloProp(
+    
+    const appointmentServiceAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'appointmentServiceAvailabilitySLO', this.getLambdaServiceSloProp(
         "appointment service availability",
         "Availability for appointment-service-get/FunctionHandler operation",
         awsApplicationTag
+    ));
+
+    const auditServiceAvailabilitySlo = new applicationsignals.CfnServiceLevelObjective(this, 'auditServiceAvailabilitySLO', this.getLambdaServiceSloProp(
+        "audit service availability",
+        "Availability for audit-service/FunctionHandler operation",
+        awsApplicationTag,
+        "audit-service"
     ));
 
     getOwner99AvailabilitySlo.node.addDependency(enableTopologyDiscovery);
@@ -134,6 +142,7 @@ export class SloStack extends Stack {
     billingActivitiesLatencySlo.node.addDependency(enableTopologyDiscovery);
     getPaymentAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
     appointmentServiceAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
+    auditServiceAvailabilitySlo.node.addDependency(enableTopologyDiscovery);
   }
   
   getSloProp(name: string, description: string, requestType: string, metricType: string, metricThreshold: number, comparisonOperator: string, awsApplicationTag: string, statistic?: string, operationPath?: string, serviceName?: string, serviceType?: string, exclusionWindows?: ExclusionWindowProperty[]) {
@@ -181,18 +190,18 @@ export class SloStack extends Stack {
     return sloProp
   }
 
-  getAppointmentSloProp(name: string, description: string, awsApplicationTag: string) {
+  getLambdaServiceSloProp(name: string, description: string, awsApplicationTag: string, serviceName: string = "appointment-service-get") {
     const sloProp: applicationsignals.CfnServiceLevelObjectiveProps = {
         name: name, 
         description: description,
         sli: {
             sliMetric: {
                 keyAttributes: {
-                    "Name": "appointment-service-get",
+                    "Name": serviceName,
                     "Type": "Service",
                     "Environment": "lambda:default"
                 },
-                operationName: "appointment-service-get/FunctionHandler",
+                operationName: `${serviceName}/FunctionHandler`,
                 metricType: "AVAILABILITY",
                 periodSeconds: 60
             },
@@ -215,4 +224,6 @@ export class SloStack extends Stack {
     }
     return sloProp
   }
+
+
 }

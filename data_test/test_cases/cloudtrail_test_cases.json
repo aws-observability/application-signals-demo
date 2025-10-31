@@ -1,0 +1,37 @@
+{
+  "cloudtrail_test_cases": [
+    {
+      "test_case_id": "audit_service_update_function_code_cloudtrail_check",
+      "description": "Verify CloudTrail logs UpdateFunctionCode20150331v2 events for audit-service",
+      "test_scenario": "Audit Service Function Update",
+      "time_range": {
+        "relative_minutes": 300
+      },
+      "lookup_attributes": [
+        {
+          "AttributeKey": "EventName",
+          "AttributeValue": "UpdateFunctionCode20150331v2"
+        },
+        {
+          "AttributeKey": "ResourceName", 
+          "AttributeValue": "audit-service"
+        }
+      ],
+      "validation_checks": [
+        {
+          "check_type": "count",
+          "expected_count": 1,
+          "comparison_operator": "GreaterThanOrEqualToThreshold"
+        },
+        {
+          "check_type": "event_name_match",
+          "expected_value": "UpdateFunctionCode20150331v2"
+        },
+        {
+          "check_type": "resource_name_contains",
+          "expected_value": "audit-service"
+        }
+      ]
+    }
+  ]
+}
