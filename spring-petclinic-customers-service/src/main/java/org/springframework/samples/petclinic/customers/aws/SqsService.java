@@ -17,6 +17,8 @@ import software.amazon.awssdk.services.sqs.model.SqsException;
 @Component
 public class SqsService {
     private static final String QUEUE_NAME = "apm_test";
+    private static final long PURGE_INTERVAL_MS = 60000; // 60 seconds
+    private volatile long lastPurgeTime = 0;
     final SqsClient sqs;
 
     public SqsService() {
@@ -58,12 +60,17 @@ public class SqsService {
             .build();
         sqs.sendMessage(sendMsgRequest);
 
-        PurgeQueueRequest purgeReq = PurgeQueueRequest.builder().queueUrl(queueUrl).build();
-        try {
-            sqs.purgeQueue(purgeReq);
-        } catch (SqsException e) {
-            System.out.println(e.awsErrorDetails().errorMessage());
-            throw e;
+        // Only purge if 60+ seconds have passed since last purge
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastPurgeTime >= PURGE_INTERVAL_MS) {
+            PurgeQueueRequest purgeReq = PurgeQueueRequest.builder().queueUrl(queueUrl).build();
+            try {
+                sqs.purgeQueue(purgeReq);
+                lastPurgeTime = currentTime;
+            } catch (SqsException e) {
+                System.out.println("Purge failed: " + e.awsErrorDetails().errorMessage());
+                // Don't rethrow - continue operation even if purge fails
+            }
         }
     }
 
