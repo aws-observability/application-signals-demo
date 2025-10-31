@@ -3,6 +3,7 @@ import uvicorn
 import requests
 import os
 import boto3
+import uuid
 from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
@@ -54,12 +55,21 @@ def get_nutritional_supplements(pet_type):
         result += f" Recommended products available at our clinic: {data['products']}"
     return result
 
+@tool
+def create_order(product_name, pet_type, quantity=1):
+    """Create an order for a recommended product. Requires pet_type and quantity."""
+    data = get_nutrition_data(pet_type)
+    if data['products'] and product_name.lower() in data['products'].lower():
+        order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+        return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days."
+    return f"Sorry, can't make the order. {product_name} is not available in our inventory for {pet_type}."
+
 def create_nutrition_agent():
     model = BedrockModel(
         model_id=BEDROCK_MODEL_ID,
     )
 
-    tools = [get_feeding_guidelines, get_dietary_restrictions, get_nutritional_supplements]
+    tools = [get_feeding_guidelines, get_dietary_restrictions, get_nutritional_supplements, create_order]
 
     system_prompt = (
         "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
@@ -71,7 +81,8 @@ def create_nutrition_agent():
         "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
         "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
         "- Expand on basic nutrition facts with comprehensive guidance for age, weight, and health conditions\n"
-        "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance"
+        "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance\n"
+        "- If asked to order or purchase a product, use the create_order tool to place the order"
     )
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
