@@ -17,7 +17,12 @@ module.exports = function(){
     { pet_type: 'lizard', facts: 'Insects, leafy greens, and calcium supplements', products: 'ScaleStrong Calcium Boost, CricketCrunch Live Supply, ReptileVitality D3 Formula' },
     { pet_type: 'snake', facts: 'Whole prey (mice/rats) based on size', products: 'SlitherSnack Frozen Mice, CoilCuisine Feeder Rats, SerpentSupreme Multivitamin' },
     { pet_type: 'bird', facts: 'High-quality seeds, pellets, and fresh fruits/veggies', products: 'FeatherFeast Premium Pellets, WingWellness Seed Mix, BeakBoost Cuttlebone Calcium' },
-    { pet_type: 'hamster', facts: 'Pellets, grains, fresh vegetables, and occasional fruits', products: 'HamsterHaven Complete Pellets, CheekPouch Gourmet Mix, WhiskerWonder Vitamin Drops' }
+    { pet_type: 'hamster', facts: 'Pellets, grains, fresh vegetables, and occasional fruits', products: 'HamsterHaven Complete Pellets, CheekPouch Gourmet Mix, WhiskerWonder Vitamin Drops' },
+    { pet_type: 'rabbit', facts: 'High-fiber pellets, unlimited timothy hay, and fresh leafy greens', products: 'BunnyBest Timothy Pellets, HopHappy Hay Premium, CarrotCrunch Vitamin C Tablets' },
+    { pet_type: 'guinea pig', facts: 'Vitamin C-rich pellets, timothy hay, and fresh vegetables', products: 'PiggyPerfect Vitamin C Pellets, GuineaGold Timothy Hay, WheekyWell Veggie Treats' },
+    { pet_type: 'ferret', facts: 'High-protein, low-carb specialized ferret food with frequent meals', products: 'FerretFeast High-Protein Kibble, MustelaMunch Premium Treats, FuzzFuel Energy Bites' },
+    { pet_type: 'turtle', facts: 'Species-specific pellets, leafy greens, and calcium supplements', products: 'ShellStrong Turtle Pellets, AquaVeggies Calcium Boost, TurtleTreat Dried Shrimp' },
+    { pet_type: 'fish', facts: 'Species-appropriate flakes or pellets with proper feeding schedule', products: 'AquaChoice Tropical Flakes, FinFeast Goldfish Pellets, BubbleBite Betta Formula' }
   ])
     .then(() => logger.info('collection populated'))
     .catch(err => logger.error('error populating collection:', err));

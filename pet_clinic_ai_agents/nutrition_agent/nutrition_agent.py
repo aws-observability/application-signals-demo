@@ -9,13 +9,30 @@ from bedrock_agentcore.runtime import BedrockAgentCoreApp
 BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
 NUTRITION_SERVICE_URL = os.environ.get('NUTRITION_SERVICE_URL')
 
+# Supported pet types in our clinic catalog
+SUPPORTED_PET_TYPES = {
+    'cat', 'dog', 'lizard', 'snake', 'bird', 'hamster', 
+    'rabbit', 'guinea pig', 'ferret', 'turtle', 'fish'
+}
+
 agent = None
 agent_app = BedrockAgentCoreApp()
+
+def validate_pet_type(pet_type):
+    """Validate if pet type is supported in our clinic catalog"""
+    return pet_type.lower() in SUPPORTED_PET_TYPES
 
 def get_nutrition_data(pet_type):
     """Helper function to get nutrition data from the API"""
     if not NUTRITION_SERVICE_URL:
         return {"facts": "Error: Nutrition service not found", "products": ""}
+    
+    # Validate pet type before making API call
+    if not validate_pet_type(pet_type):
+        return {
+            "facts": f"We don't currently carry nutrition products for {pet_type} in our clinic catalog. Please contact our clinic directly at (555) 123-4567 for specialized nutrition guidance for {pet_type}.",
+            "products": ""
+        }
     
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
@@ -23,6 +40,11 @@ def get_nutrition_data(pet_type):
         if response.status_code == 200:
             data = response.json()
             return {"facts": data.get('facts', ''), "products": data.get('products', '')}
+        elif response.status_code == 404:
+            return {
+                "facts": f"We don't currently carry nutrition products for {pet_type} in our clinic catalog. Please contact our clinic directly at (555) 123-4567 for specialized nutrition guidance for {pet_type}.",
+                "products": ""
+            }
         return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
     except requests.RequestException:
         return {"facts": "Error: Nutrition service down", "products": ""}
@@ -71,7 +93,9 @@ def create_nutrition_agent():
         "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
         "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
         "- Expand on basic nutrition facts with comprehensive guidance for age, weight, and health conditions\n"
-        "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance"
+        "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance\n"
+        "- If a pet type is not in our clinic catalog, clearly state this and direct customers to contact our clinic directly for specialized guidance\n"
+        "- Never provide generic nutrition advice for pets not in our catalog - always direct them to contact the clinic"
     )
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
