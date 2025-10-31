@@ -10,6 +10,9 @@ from bedrock_agentcore.runtime import BedrockAgentCoreApp
 BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
 NUTRITION_SERVICE_URL = os.environ.get('NUTRITION_SERVICE_URL')
 
+# Available pet types in nutrition catalog
+AVAILABLE_PET_TYPES = ["cat", "dog", "bird", "lizard", "snake", "hamster"]
+
 agent = None
 agent_app = BedrockAgentCoreApp()
 
@@ -17,6 +20,13 @@ def get_nutrition_data(pet_type):
     """Helper function to get nutrition data from the API"""
     if not NUTRITION_SERVICE_URL:
         return {"facts": "Error: Nutrition service not found", "products": ""}
+    
+    # Validate pet type before making API call
+    if pet_type.lower() not in [pt.lower() for pt in AVAILABLE_PET_TYPES]:
+        return {
+            "facts": f"We don't currently carry nutrition products for {pet_type}. Our nutrition catalog includes: {', '.join(AVAILABLE_PET_TYPES)}. Please contact our general veterinary team at (555) 123-PETS for specialized care recommendations.",
+            "products": ""
+        }
     
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
@@ -58,6 +68,10 @@ def get_nutritional_supplements(pet_type):
 @tool
 def create_order(product_name, pet_type, quantity=1):
     """Create an order for a recommended product. Requires pet_type and quantity."""
+    # Validate pet type before processing order
+    if pet_type.lower() not in [pt.lower() for pt in AVAILABLE_PET_TYPES]:
+        return f"Sorry, we don't currently carry nutrition products for {pet_type}. Our nutrition catalog includes: {', '.join(AVAILABLE_PET_TYPES)}. Please contact our general veterinary team at (555) 123-PETS for specialized care recommendations."
+    
     data = get_nutrition_data(pet_type)
     if data['products'] and product_name.lower() in data['products'].lower():
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
@@ -74,6 +88,10 @@ def create_nutrition_agent():
     system_prompt = (
         "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
+        f"IMPORTANT PET TYPE CONSTRAINTS:\n"
+        f"- Our nutrition catalog ONLY includes these pet types: {', '.join(AVAILABLE_PET_TYPES)}\n"
+        f"- For any pet types not in this list (puppy, llama, rabbit, toucan, flying squirrel, etc.), politely explain that we don't currently carry nutrition products for that specific pet type\n"
+        f"- Always suggest contacting our general veterinary team at (555) 123-PETS for specialized care recommendations for unsupported pet types\n\n"
         "When providing nutrition guidance:\n"
         "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
         "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
