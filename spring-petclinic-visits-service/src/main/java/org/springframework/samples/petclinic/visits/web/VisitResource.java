@@ -87,8 +87,8 @@ class VisitResource {
         Date visitDate = visit.getDate();
         long durationInDays = (visitDate.getTime() - currentDate.getTime())/1000/3600/24;
         log.info("New visit date is {} days from today", durationInDays);
-        if (durationInDays > 30) {
-            String message = "Visit cannot be scheduled for a date more than 30 days in the future.";
+        if (durationInDays > 90) {
+            String message = "Visit cannot be scheduled for a date more than 90 days in the future.";
             InvalidDateException exception = new InvalidDateException(message);
 
             // Record the exception in the current span
