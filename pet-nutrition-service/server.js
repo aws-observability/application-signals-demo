@@ -20,7 +20,15 @@ async function main () {
       const { pet_type } = req.params;
       const fact = await NutritionFact.findOne({ pet_type });
       if (!fact) {
-        return res.status(404).json({ message: 'nutrition fact not found for the given pet_type' });
+        // Get list of supported pet types for better error response
+        const supportedPets = await NutritionFact.distinct('pet_type');
+        return res.status(404).json({ 
+          error: 'Pet type not supported',
+          message: `Nutrition information not available for '${pet_type}'`,
+          pet_type: pet_type,
+          supported_pets: supportedPets,
+          suggestion: `Try one of these supported pets: ${supportedPets.join(', ')}`
+        });
       }
       res.status(200).json(fact);
     } catch (error) {
