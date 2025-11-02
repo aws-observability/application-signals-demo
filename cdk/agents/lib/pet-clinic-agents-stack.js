@@ -105,7 +105,10 @@ class PetClinicAgentsStack extends Stack {
       AgentName: 'pet_clinic_agent',
       ImageUri: primaryAgentImage.imageUri,
       ExecutionRole: agentCoreRole.roleArn,
-      Entrypoint: 'pet_clinic_agent.py'
+      Entrypoint: 'pet_clinic_agent.py',
+      EnvironmentVariables: {
+        NUTRITION_AGENT_ARN: nutritionAgent.agentArn
+      }
     });
 
     this.nutritionAgentImageUri = nutritionAgentImage.imageUri;

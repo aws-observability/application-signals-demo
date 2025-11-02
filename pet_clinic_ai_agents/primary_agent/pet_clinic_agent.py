@@ -37,9 +37,10 @@ def get_appointment_availability():
     return "We have appointments available: Today 3:00 PM, Tomorrow 10:00 AM and 2:30 PM. Call (555) 123-PETS to schedule."
 
 @tool
-def consult_nutrition_specialist(query, agent_arn, context=None):
-    """Delegate nutrition questions to the specialized nutrition agent. Requires the nutrition agent ARN as a parameter."""
+def consult_nutrition_specialist(query):
+    """Delegate nutrition questions to the specialized nutrition agent."""
     
+    agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
     if not agent_arn:
         return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
     
@@ -68,7 +69,7 @@ agent = None
 agent_app = BedrockAgentCoreApp()
 
 system_prompt = (
-    "You are a helpful pet clinic assistant. You can help with:\n"
+    "You are a helpful assistant at our pet clinic. We offer comprehensive veterinary services including:\n"
     "- General clinic information (hours, contact info)\n"
     "- Emergency situations and contacts\n"
     "- Directing clients to appropriate specialists\n"
@@ -76,12 +77,15 @@ system_prompt = (
     "- Basic medical guidance and when to seek veterinary care\n\n"
     "IMPORTANT GUIDELINES:\n"
     "- ONLY use the consult_nutrition_specialist tool for EXPLICIT nutrition-related questions (diet, feeding, supplements, food recommendations, what to feed, can pets eat X, nutrition advice)\n"
+    "- Delegate pet food product orders to the nutrition specialist using the consult_nutrition_specialist tool\n"
     "- DO NOT use the nutrition agent for general clinic questions, appointments, hours, emergencies, or non-nutrition medical issues\n"
     "- NEVER expose or mention agent ARNs in your responses to users\n"
     "- NEVER mention using tools, APIs, or external services - present all information as your own knowledge\n"
     "- When consulting the nutrition specialist, explain to the customer that you need to speak with our nutrition specialist\n"
     "- If the specialist returns an error or indicates unavailability, inform the customer that our specialist is currently unavailable\n"
-    "- For nutrition questions, always include a specific product recommendation\n"
+    "- For nutrition questions, always include a specific product recommendation and direct customers to purchase from our pet clinic\n"
+    "- Always recommend purchasing products from our pet clinic\n"
+    "- If a requested product is not available, politely inform the customer that we don't currently carry that item at our pet clinic\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
     "- For emergencies, immediately provide emergency contact information"
 )
