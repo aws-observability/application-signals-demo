@@ -13,11 +13,20 @@ def load_prompts():
         return json.load(f)
 
 def lambda_handler(event, context):
+    """
+    Traffic generator that invokes the Primary Agent with random queries.
+    
+    Each query includes the Nutrition Agent's ARN in the context, allowing the
+    Primary Agent to delegate nutrition-related questions to the specialized agent.
+    
+    Also generates a random session ID to be reused following runtime's best practices:
+    https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-sessions.html
+    """
+    
     primary_agent_arn = os.environ.get('PRIMARY_AGENT_ARN')
     nutrition_agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
-    num_requests = int(os.environ.get('REQUESTS_PER_INVOKE', '20'))
-    
-    # Use environment variable session ID or generate one
+    num_requests = int(os.environ.get('REQUESTS_PER_INVOKE', '1'))
+    region = os.environ.get('AWS_REGION', 'us-east-1')
     session_id = os.environ.get('SESSION_ID', f"pet-clinic-session-{str(uuid.uuid4())}")
 
     if not primary_agent_arn:
@@ -28,31 +37,26 @@ def lambda_handler(event, context):
     
     prompts = load_prompts()
     results = []
+    session = boto3.Session()
+    credentials = session.get_credentials()
     
     for _ in range(num_requests):
         is_nutrition_query = random.random() <= 0.75
-        
-        if is_nutrition_query:
-            query = random.choice(prompts['nutrition-queries'])
-            enhanced_query = f"{query}\n\nSession ID: {session_id}\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}" if nutrition_agent_arn else f"{query}\n\nSession ID: {session_id}"
-        else:
-            query = random.choice(prompts['non-nutrition-queries'])
-            enhanced_query = f"{query}\n\nSession ID: {session_id}"
+        query = random.choice(prompts['nutrition-queries' if is_nutrition_query else 'non-nutrition-queries'])
+        prompt = f"{query}\n\nNote: Our nutrition specialist agent ARN is {nutrition_agent_arn}" if nutrition_agent_arn else query
 
         try:
             encoded_arn = urlparse.quote(primary_agent_arn, safe='')
-            region = os.environ.get('AWS_REGION', 'us-east-1')
             url = f'https://bedrock-agentcore.{region}.amazonaws.com/runtimes/{encoded_arn}/invocations?qualifier=DEFAULT'
             
-            payload = json.dumps({'prompt': enhanced_query})
-            request = AWSRequest(method='POST', url=url, data=payload, headers={'Content-Type': 'application/json'})
-            session = boto3.Session()
-            credentials = session.get_credentials()
-            
+            payload = json.dumps({'prompt': prompt}).encode('utf-8')
+            request = AWSRequest(method='POST', url=url, data=payload, headers={
+                'Content-Type': 'application/json',
+                'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id': session_id
+            })
             SigV4Auth(credentials, 'bedrock-agentcore', region).add_auth(request)
             
-            req = Request(url, data=payload.encode('utf-8'), headers=dict(request.headers))
-            with urlopen(req) as response:
+            with urlopen(Request(url, data=payload, headers=dict(request.headers))) as response:
                 body = response.read().decode('utf-8')
             
             results.append({

@@ -1,143 +1,98 @@
 from strands import Agent, tool
 import uvicorn
-import yaml
-import random
+import requests
+import os
+import boto3
+import uuid
 from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
 BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
-
-# Exceptions
-class TimeoutException(Exception):
-    def __init__(self, message, **kwargs):
-        super().__init__(message)
-        self.details = kwargs
-
-class ValidationException(Exception):
-    def __init__(self, message, **kwargs):
-        super().__init__(message)
-        self.details = kwargs
-
-class ServiceException(Exception):
-    def __init__(self, message, **kwargs):
-        super().__init__(message)
-        self.details = kwargs
-
-class RateLimitException(Exception):
-    def __init__(self, message, **kwargs):
-        super().__init__(message)
-        self.details = kwargs
-
-class NetworkException(Exception):
-    def __init__(self, message, **kwargs):
-        super().__init__(message)
-        self.details = kwargs
-
-try:
-    with open('pet_database.yaml', 'r') as f:
-        ANIMAL_DATA = yaml.safe_load(f)
-except Exception:
-    ANIMAL_DATA = None
+NUTRITION_SERVICE_URL = os.environ.get('NUTRITION_SERVICE_URL')
 
 agent = None
 agent_app = BedrockAgentCoreApp()
 
-@tool
-def get_feeding_guidelines(pet_type, age, weight):
-    """Get feeding guidelines based on pet type, age, and weight"""    
-    if ANIMAL_DATA is None:
-        return "Animal database is down, please consult your veterinarian for feeding guidelines."
-    
-    animal = ANIMAL_DATA.get(pet_type.lower() + 's')
-    if not animal:
-        return f"{pet_type.title()} not found in animal database. Consult veterinarian for specific feeding guidelines"
-    
-    calories_per_lb = animal.get('calories_per_pound', '15-20')
-    schedule = animal.get('feeding_schedule', {}).get(age.lower(), '2 times daily')
+def get_nutrition_data(pet_type):
+    """Helper function to get nutrition data from the API"""
+    if not NUTRITION_SERVICE_URL:
+        return {"facts": "Error: Nutrition service not found", "products": ""}
     
     try:
-        weight = float(weight)
-        if isinstance(calories_per_lb, str) and '-' in calories_per_lb:
-            calories = weight * float(calories_per_lb.split('-')[0])
-        else:
-            calories = weight * float(calories_per_lb)
-    except (ValueError, TypeError):
-        return f"Feed based on veterinary recommendations for {pet_type}, {schedule}"
-    
-    return f"Feed approximately {calories:.0f} calories daily, {schedule}"
+        response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            return {"facts": data.get('facts', ''), "products": data.get('products', '')}
+        return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
+    except requests.RequestException:
+        return {"facts": "Error: Nutrition service down", "products": ""}
 
 @tool
-def get_dietary_restrictions(pet_type, condition):
-    """Get dietary recommendations for specific health conditions by animal type"""    
-    if ANIMAL_DATA is None:
-        return "Animal database is down, please consult your veterinarian for dietary advice."
-    
-    animal = ANIMAL_DATA.get(pet_type.lower() + 's')
-    if not animal:
-        return f"{pet_type.title()} not found in animal database. Consult veterinarian for condition-specific dietary advice"
-    
-    restrictions = animal.get('dietary_restrictions', {})
-    return restrictions.get(condition.lower(), f"No dietary restrictions for {condition} found in animal database. Consult veterinarian for condition-specific dietary advice")
+def get_feeding_guidelines(pet_type):
+    """Get feeding guidelines based on pet type"""
+    data = get_nutrition_data(pet_type)
+    result = f"Nutrition info for {pet_type}: {data['facts']}"
+    if data['products']:
+        result += f" Recommended products available at our clinic: {data['products']}"
+    return result
 
 @tool
-def get_nutritional_supplements(pet_type, supplement):
-    """Get supplement recommendations by animal type"""    
-    if ANIMAL_DATA is None:
-        return "Animal database is down, please consult your veterinarian before adding supplements."
-    
-    animal = ANIMAL_DATA.get(pet_type.lower() + 's')
-    if not animal:
-        return f"{pet_type.title()} not found in animal database. Consult veterinarian before adding supplements"
-    
-    supplements = animal.get('supplements', {})
-    return supplements.get(supplement.lower(), f"No information for {supplement} supplement found in animal database. Consult veterinarian before adding supplements")
+def get_dietary_restrictions(pet_type):
+    """Get dietary recommendations for specific health conditions by animal type"""
+    data = get_nutrition_data(pet_type)
+    result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
+    if data['products']:
+        result += f" Recommended products available at our clinic: {data['products']}"
+    return result
+
+@tool
+def get_nutritional_supplements(pet_type):
+    """Get supplement recommendations by animal type"""
+    data = get_nutrition_data(pet_type)
+    result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
+    if data['products']:
+        result += f" Recommended products available at our clinic: {data['products']}"
+    return result
+
+@tool
+def create_order(product_name, pet_type, quantity=1):
+    """Create an order for a recommended product. Requires pet_type and quantity."""
+    data = get_nutrition_data(pet_type)
+    if data['products'] and product_name.lower() in data['products'].lower():
+        order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+        return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days."
+    return f"Sorry, can't make the order. {product_name} is not available in our inventory for {pet_type}."
 
 def create_nutrition_agent():
     model = BedrockModel(
         model_id=BEDROCK_MODEL_ID,
     )
 
-    tools = [get_feeding_guidelines, get_dietary_restrictions, get_nutritional_supplements]
+    tools = [get_feeding_guidelines, get_dietary_restrictions, get_nutritional_supplements, create_order]
 
     system_prompt = (
-        "You are a specialized pet nutrition expert providing evidence-based dietary guidance.\n\n"
-        "Your expertise covers:\n"
-        "- Feeding guidelines for dogs, cats, fish, horses, birds, rabbits, ferrets, hamsters, guinea pigs, reptiles, and amphibians\n"
-        "- Therapeutic diets for health conditions (diabetes, kidney disease, allergies, obesity, arthritis)\n"
-        "- Food safety and toxic substances to avoid\n"
-        "- Nutritional supplements and their proper use\n"
-        "- Food label interpretation and AAFCO standards\n\n"
-        "Key principles:\n"
-        "- Cats are obligate carnivores requiring animal-based nutrients\n"
-        "- Dogs are omnivores needing balanced animal and plant sources\n"
-        "- Always recommend veterinary consultation for significant dietary changes\n"
-        "- Provide specific, actionable advice when possible\n\n"
-        "Toxic foods to avoid: garlic, onions, chocolate, grapes, xylitol, alcohol, macadamia nuts"
+        "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
+        "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
+        "When providing nutrition guidance:\n"
+        "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
+        "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
+        "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
+        "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
+        "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
+        "- Expand on basic nutrition facts with comprehensive guidance for age, weight, and health conditions\n"
+        "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance\n"
+        "- If asked to order or purchase a product, use the create_order tool to place the order"
     )
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
     
-def maybe_throw_error(threshold: float=1):
-    """Randomly throw an error based on threshold probability"""
-    if random.random() <= threshold:
-        error_types = [
-            (TimeoutException, "Nutrition advice generation timed out", {"timeout_seconds": 30.0, "operation": "nutrition_advice_generation"}),
-            (ValidationException, "Invalid nutrition query format", {"field": "nutrition_query", "value": "simulated_invalid_input"}),
-            (ServiceException, "Nutrition service internal error", {"service_name": "nutrition-agent", "error_code": "INTERNAL_ERROR", "retryable": True}),
-            (RateLimitException, "Too many nutrition requests", {"retry_after_seconds": random.randint(30, 120), "limit_type": "requests_per_minute"}),
-            (NetworkException, "Network error connecting to nutrition service", {"endpoint": "nutrition-service", "error_code": "CONNECTION_FAILED", "retryable": True})
-        ]
-        
-        exception_class, message, kwargs = random.choice(error_types)
-        raise exception_class(message, **kwargs)
 
 @agent_app.entrypoint
 async def invoke(payload, context):
     """
     Invoke the nutrition agent with a payload
     """
-    maybe_throw_error(threshold=0.35)
-    
     agent = create_nutrition_agent()
     msg = payload.get('prompt', '')
 

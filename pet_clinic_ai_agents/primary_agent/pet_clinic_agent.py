@@ -1,11 +1,12 @@
 import os
 import boto3
 import json
-import uuid
 import uvicorn
+import uuid
 from strands import Agent, tool
 from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from botocore.exceptions import ClientError
 
 BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
 
@@ -36,14 +37,16 @@ def get_appointment_availability():
     return "We have appointments available: Today 3:00 PM, Tomorrow 10:00 AM and 2:30 PM. Call (555) 123-PETS to schedule."
 
 @tool
-def consult_nutrition_specialist(query, agent_arn, session_id=None):
-    """Delegate nutrition questions to the specialized nutrition agent. Requires the nutrition agent ARN as a parameter."""
+def consult_nutrition_specialist(query):
+    """Delegate nutrition questions to the specialized nutrition agent."""
     
+    agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
     if not agent_arn:
         return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
     
     try:
         region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        session_id = os.environ.get('CURRENT_SESSION_ID') or str(uuid.uuid4())
         client = boto3.client('bedrock-agentcore', region_name=region)
         response = client.invoke_agent_runtime(
             agentRuntimeArn=agent_arn,
@@ -57,16 +60,16 @@ def consult_nutrition_specialist(query, agent_arn, session_id=None):
             return body
         else:
             return "Our nutrition specialist is experiencing high demand. Please try again in a few moments or call (555) 123-PETS ext. 201."
+    except ClientError as e:
+        return str(e)
     except Exception as e:
-        print(f"Error calling nutrition specialist: {e}")
         return "Unable to reach our nutrition specialist. Please call (555) 123-PETS ext. 201."
 
 agent = None
 agent_app = BedrockAgentCoreApp()
-session_id = f"pet-clinic-primary-agent-session-{str(uuid.uuid4())}"
 
 system_prompt = (
-    "You are a helpful pet clinic assistant. You can help with:\n"
+    "You are a helpful assistant at our pet clinic. We offer comprehensive veterinary services including:\n"
     "- General clinic information (hours, contact info)\n"
     "- Emergency situations and contacts\n"
     "- Directing clients to appropriate specialists\n"
@@ -74,14 +77,17 @@ system_prompt = (
     "- Basic medical guidance and when to seek veterinary care\n\n"
     "IMPORTANT GUIDELINES:\n"
     "- ONLY use the consult_nutrition_specialist tool for EXPLICIT nutrition-related questions (diet, feeding, supplements, food recommendations, what to feed, can pets eat X, nutrition advice)\n"
+    "- Delegate pet food product orders to the nutrition specialist using the consult_nutrition_specialist tool\n"
     "- DO NOT use the nutrition agent for general clinic questions, appointments, hours, emergencies, or non-nutrition medical issues\n"
     "- NEVER expose or mention agent ARNs in your responses to users\n"
-    "- If the user query contains 'session id', extract and use that session ID when calling consult_nutrition_specialist\n"
-    "- If no session ID is provided in the query, use the default session ID\n"
+    "- NEVER mention using tools, APIs, or external services - present all information as your own knowledge\n"
+    "- When consulting the nutrition specialist, explain to the customer that you need to speak with our nutrition specialist\n"
+    "- If the specialist returns an error or indicates unavailability, inform the customer that our specialist is currently unavailable\n"
+    "- For nutrition questions, always include a specific product recommendation and direct customers to purchase from our pet clinic\n"
+    "- Always recommend purchasing products from our pet clinic\n"
+    "- If a requested product is not available, politely inform the customer that we don't currently carry that item at our pet clinic\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
-    "- For emergencies, immediately provide emergency contact information\n"
-    "- Always recommend consulting with a veterinarian for proper diagnosis and treatment\n\n"
-    f"Your default session ID is: {session_id}. When calling consult_nutrition_specialist, use the session ID from the query if provided, otherwise use this default session_id parameter."
+    "- For emergencies, immediately provide emergency contact information"
 )
 
 def create_clinic_agent():
@@ -97,12 +103,15 @@ def create_clinic_agent():
 async def invoke(payload, context):
     """
     Invoke the clinic agent with a payload
-    """ 
+    """
+    if context and hasattr(context, 'session_id') and context.session_id:
+        os.environ['CURRENT_SESSION_ID'] = context.session_id
+    
     agent = create_clinic_agent()
     msg = payload.get('prompt', '')
     response_data = []
     
-    async for event in agent.stream_async(msg):
+    async for event in agent.stream_async(msg, context=context):
         if 'data' in event:
             response_data.append(event['data'])
     

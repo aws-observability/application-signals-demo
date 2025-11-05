@@ -7,6 +7,7 @@ const app = new cdk.App();
 
 // Deploy Pet Clinic agents
 const agentsStack = new PetClinicAgentsStack(app, 'PetClinicAgentsStack', {
+  nutritionServiceUrl: process.env.NUTRITION_SERVICE_URL,
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,
