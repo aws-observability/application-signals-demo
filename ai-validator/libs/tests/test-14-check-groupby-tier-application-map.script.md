@@ -14,6 +14,6 @@ Click to the dropdown box in the 'Group By' section and click on it with lable '
 
 From the dropdown list, select_dropdown option 'Tier'
 
-### 4. Look 'Tier' in the container
+### 4. Verify 'Tier' in the container
 
-Look for 'Tier-1 ', 'Tier-2','Tier-3' and 'Tier-4'
+Verify boxes with names 'Tier-1 ', 'Tier-2','Tier-3' and 'Tier-4' are present 

@@ -5,7 +5,7 @@ set -ex
 DEFAULT_REGION="us-east-1"
 OPERATION="create"
 USE_OTLP="false"  # Default value for OTLP
-DESTROY_ON_FAIL="false"  # Default value for destroying stacks on failure
+DESTROY_ON_FAIL="true"  # Default value for destroying stacks on failure
 
 # Read command line arguments
 for i in "$@"; do

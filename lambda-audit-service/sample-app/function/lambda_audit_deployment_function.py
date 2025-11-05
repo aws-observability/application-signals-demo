@@ -4,14 +4,12 @@ import zipfile
 import io
 
 lambda_client = boto3.client('lambda')
+sts_client = boto3.client('sts')
 
 def create_sample_lambda_code():
     """
-    Creates a sample Lambda function code as a ZIP file in memory.
-    This is the code that will be deployed to the target function.
+    Creates a sample Lambda function code which simulates failure as a ZIP file in memory.
     """
-    
-    # Sample Lambda function code
     sample_code = '''import json
 
 def lambda_handler(event, context):
@@ -35,7 +33,6 @@ def lambda_handler(event, context):
     # Create ZIP file in memory
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        # Add the lambda function code as lambda_function.py
         zip_file.writestr('lambda_function.py', sample_code)
     
     zip_buffer.seek(0)
@@ -43,19 +40,9 @@ def lambda_handler(event, context):
 
 
 def lambda_handler(event, context):
-    """
-    Lambda function that creates sample code and updates another Lambda function.
-    
-    Expected event structure:
-    {
-        "target_function_name": "my-target-function",
-        "create_sample": true  # Optional: defaults to true
-    }
-    """
-    
     try:
         target_function = 'audit-service'
-        create_sample = True
+        simulate_deployment_with_error_and_fix = True
         
         if not target_function:
             return {
@@ -63,9 +50,7 @@ def lambda_handler(event, context):
                 'body': json.dumps('target_function_name is required')
             }
         
-        # Create the sample code
-        if create_sample:
-            print(f"Creating sample code for {target_function}")
+        if simulate_deployment_with_error_and_fix:
             zip_bytes = create_sample_lambda_code()
             
             # Update the target Lambda function
@@ -76,9 +61,11 @@ def lambda_handler(event, context):
             )
             import time 
             time.sleep(120)
+            account_id = sts_client.get_caller_identity()['Account']
+            region = boto3.Session().region_name
             response = lambda_client.update_function_code(
                 FunctionName=target_function,
-                S3Bucket=f"audit-service-functions-866945988983-us-east-1",
+                S3Bucket=f"audit-service-functions-{account_id}-{region}",
                 S3Key='lambda-functions/good_function.zip',
             )
             return {

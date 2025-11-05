@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# change the directory to the script location so that the relative path can work
 cd "$(dirname "$0")"
 
 REGION=$1
@@ -20,7 +19,7 @@ if [ -z "$ACCOUNT_ID" ]; then
   exit 8
 fi
 
-# Add model to aws cli for new aws cloudwatch commands. It is not required after SDK is released
+# TODO: update the package to do the setup via CDK once cdk construct is supported owner @cnwinn
 check_if_step_failed_and_exit "There was an error adding the model to aws cli, exiting"
 
 if [ "$OPERATION" = "create" ]; then
@@ -29,8 +28,7 @@ if [ "$OPERATION" = "create" ]; then
     --grouping-attribute-definitions '[
       {
         "GroupingName": "Application",
-        "GroupingSourceKeys": ["Application"],
-        "DefaultGroupingValue": "PetAI"
+        "GroupingSourceKeys": ["Application"]
       },
       {
         "GroupingName": "Tier",

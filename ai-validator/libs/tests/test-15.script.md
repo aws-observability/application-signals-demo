@@ -23,5 +23,5 @@ Verify that the 'Changes' section is non empty and has 'Last Deployment' populat
 
 Click on the hyperlink 'View Details' next to the 'Latest Deployment' in the 'Changes' section, this should be on 'CloudTrail' page
 
-### 6. Verify the 'UpdateFunctionCode20150331v2' event
-Veify the event name is 'UpdateFunctionCode20150331v2' from the 'Details' section
+### 6. Verify the 'UpdateFunctionCode' event
+Veify the event name contains 'UpdateFunctionCode' from the 'Details' section

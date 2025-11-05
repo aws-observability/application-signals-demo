@@ -1,5 +1,5 @@
 {
-  "otel_resource_attributes_test_cases": [
+  "otel_resource_attribute_test_cases": [
     {
       "test_case_id": "customers_service_java_otel_attributes_validation",
       "description": "Validate OTEL resource attributes for customers-service-java",
@@ -20,7 +20,6 @@
       "expected_resource_attributes": {
         "Application": "PetClinic",
         "Team": "WorkflowTeam",
-        "Tier": "Tier-2"
         "Tier": "Tier-2"
       },
       "time_range_minutes": 60
