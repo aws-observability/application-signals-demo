@@ -141,6 +141,7 @@ export class AuditServiceStack extends cdk.Stack {
     const functionBucket = new s3.Bucket(this, 'AuditServiceFunctionBucket', {
       bucketName: `audit-service-functions-${cdk.Stack.of(this).account}-${cdk.Stack.of(this).region}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
     });
 
     // Create asset
