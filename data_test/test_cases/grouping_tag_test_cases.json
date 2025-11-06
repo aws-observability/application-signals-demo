@@ -2,6 +2,7 @@
   "tag_test_cases": [
     {
       "test_case_id": "lambda_appointment_service_create_tags_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate tags on appointment-service-create Lambda function",
       "resource_type": "lambda",
       "resource_name": "appointment-service-create",
@@ -13,6 +14,7 @@
     },
     {
       "test_case_id": "lambda_appointment_service_list_tags_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate tags on appointment-service-list Lambda function",
       "resource_type": "lambda",
       "resource_name": "appointment-service-list",
@@ -23,7 +25,8 @@
       }
     },
     {
-      "test_case_id": "lambda_appointment_service_get_tags_validation", 
+      "test_case_id": "lambda_appointment_service_get_tags_validation",
+      "test_scenario": "Resource Grouping Validation", 
       "description": "Validate tags on appointment-service-get Lambda function",
       "resource_type": "lambda",
       "resource_name": "appointment-service-get",
@@ -35,6 +38,7 @@
     },
     {
       "test_case_id": "apigateway_appointment_service_gateway_tags_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate tags on appointment-service-gateway API Gateway",
       "resource_type": "apigateway",
       "resource_name": "appointment-service-gateway",
@@ -46,6 +50,7 @@
     },
     {
       "test_case_id": "audit_service_tags_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate tags on AuditServiceLambda Lambda function",
       "resource_type": "lambda",
       "resource_name": "audit-service",

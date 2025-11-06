@@ -2,6 +2,7 @@
   "otel_resource_attribute_test_cases": [
     {
       "test_case_id": "customers_service_java_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for customers-service-java",
       "service_name": "customers-service-java",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER",
@@ -14,6 +15,7 @@
     },
     {
       "test_case_id": "visits_service_java_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for visits-service-java",
       "service_name": "visits-service-java",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER",
@@ -26,6 +28,7 @@
     },
     {
       "test_case_id": "billing_service_python_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for billing-service-python",
       "service_name": "billing-service-python",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
@@ -38,6 +41,7 @@
     },
     {
       "test_case_id": "vets_service_java_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for vets-service-java",
       "service_name": "vets-service-java",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
@@ -50,6 +54,7 @@
     },
     {
       "test_case_id": "pet_clinic_frontend_java_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for pet-clinic-frontend-java",
       "service_name": "pet-clinic-frontend-java",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
@@ -62,6 +67,7 @@
     },
     {
       "test_case_id": "payment_service_dotnet_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for payment-service-dotnet",
       "service_name": "payment-service-dotnet",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
@@ -74,6 +80,7 @@
     },
     {
       "test_case_id": "insurance_service_python_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for insurance-service-python",
       "service_name": "insurance-service-python",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 
@@ -86,6 +93,7 @@
     },
     {
       "test_case_id": "nutrition_service_nodejs_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
       "description": "Validate OTEL resource attributes for nutrition-service-nodejs",
       "service_name": "nutrition-service-nodejs",
       "environment": "ENVIRONMENT_NAME_PLACEHOLDER", 

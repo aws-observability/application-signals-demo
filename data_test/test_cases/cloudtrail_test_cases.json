@@ -3,7 +3,7 @@
     {
       "test_case_id": "audit_service_update_function_code_cloudtrail_check",
       "description": "Verify CloudTrail logs UpdateFunctionCode20150331v2 events for audit-service",
-      "test_scenario": "Audit Service Function Update",
+      "test_scenario": "Resource Grouping Validation",
       "time_range": {
         "relative_minutes": 300
       },

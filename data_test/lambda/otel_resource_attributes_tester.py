@@ -15,7 +15,7 @@ def execute_test(test_case):
     
     query = f'''
     fields @timestamp, @message
-    | filter attributes.aws.local.service = "{service_name}"
+    | filter attributes.aws.local.service = "{service_name}" and resource.attributes.aws.application_signals.metric_resource_keys like /Application&Team&Tier/
     | filter @message like /resource/
     | limit 5
     '''
