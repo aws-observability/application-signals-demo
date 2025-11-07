@@ -67,6 +67,14 @@ if [[ "$ACTION" == "deploy" ]]; then
     ./destroy.sh
     exit 1
   fi
+  cd ../../lambda-audit-service/cdk
+  if ./cdk.sh deploy; then
+    echo "Lambda audit service was deployed successfully"
+  else
+    echo "Lambda audit service deployment failed"
+    ./cdk.sh destroy
+    exit 1
+  fi
   cd ../../cdk/eks
 
   # update vets service config to use the otlp collector when use-otlp is true
@@ -121,6 +129,10 @@ elif [[ "$ACTION" == "destroy" ]]; then
   cd ../../lambda-petclinic/cdk
   ./destroy.sh
   echo "Destroy complete for all stacks in the lambda app"
+  echo "Starting CDK destroy for audit service"
+  cd ../../lambda-audit-service/cdk
+  ./cdk.sh destroy
+  echo "Destroy complete for audit service"
 else
   echo "Invalid action: $ACTION. Please use 'synth', 'deploy', or 'destroy'."
   exit 1
