@@ -8,14 +8,28 @@ The CDK stack provisions the following AWS resources:
 
 - **SQS Queue**: `audit-jobs` - Main queue for processing payment audit messages
 - **SQS Queue**: `audit-jobs-dlq` - Dead letter queue for failed messages
-- **Lambda Function**: `audit-service` - Processes audit messages from the SQS queue
+- **Lambda Function**: 
+  1. `audit-service` - Processes audit messages from the SQS queue
+  2. `audit-service-update` - Deployment function that simulates code updates and rollbacks
+- **S3 Bucket**: `audit-service-functions-{account-id}-{region}` - Stores Lambda deployment packages
+- **EventBridge Scheduler**: Triggers the deployment function every 90 minutes
 - **IAM Role**: `lambda_exec_role_audit_service` - Role for Lambda execution
 
-The Lambda function is configured with:
+**audit-service** Lambda function is configured with:
 - Python 3.12 runtime
 - OpenTelemetry layer for AWS Application Signals integration
 - 600 second (10 minute) timeout
 - SQS event source with batch size of 1
+
+**audit-service-update** Lambda function architecture:
+- **Purpose**: Simulates deployment scenarios for observability testing for deployments 
+- **Deployment Cycle**: 
+  1. Deploys faulty code that throws exceptions (simulates deployment issues)
+  2. Waits 2 minutes to allow error metrics to accumulate
+  3. Rolls back to stable code from S3 bucket
+- **Trigger**: EventBridge Scheduler runs every 90 minutes
+- **Permissions**: Can update the `audit-service` function code and access S3 deployment artifacts
+- **Use Case**: Generates realistic deployment events and error patterns for Application Signals monitoring
 
 ## Prerequisites
 
@@ -125,12 +139,21 @@ The `cdk.sh` script supports the following commands:
 
 ## Lambda Function Code
 
-The Lambda function code is located in the `sample-app/function` directory. It:
+### audit-service
+The main audit service code is located in the `sample-app/function` directory. It:
 
 1. Processes SQS messages containing payment information
 2. Adds OpenTelemetry tracing attributes
 3. Queries a DynamoDB table named `PetClinicPayment` to verify payments
 4. Implements retry logic when items are not immediately found
+
+### audit-service-update
+The deployment function code simulates real-world deployment scenarios:
+
+1. **Error Injection**: Deploys code with intentional exceptions to simulate deployment failures
+2. **Monitoring Window**: Waits 2 minutes to allow Application Signals to capture error metrics
+3. **Automatic Rollback**: Restores stable code from S3 to simulate incident recovery
+4. **Account-Aware**: Dynamically determines the correct S3 bucket using caller's account ID
 
 ## Payment Workflow and System Integration
 

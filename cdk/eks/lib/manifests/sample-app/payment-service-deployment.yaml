@@ -40,6 +40,8 @@ spec:
               value: "30"
             - name: eureka__client__registryFetchIntervalSeconds
               value: "30"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: Application=Payment,Team=RevenueTeam,Tier=Tier-1,aws.application_signals.metric_resource_keys=Application&Team&Tier
 
           ports:
             - containerPort: 8089
