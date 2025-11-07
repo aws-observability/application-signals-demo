@@ -21,8 +21,7 @@ class PetClinicAgentsTrafficGeneratorStack extends Stack {
       environment: {
         PRIMARY_AGENT_ARN: props?.primaryAgentArn || '',
         NUTRITION_AGENT_ARN: props?.nutritionAgentArn || '',
-        PET_CLINIC_URL: props?.petClinicUrl || '',
-        REQUESTS_PER_INVOKE: '1'
+        PET_CLINIC_URL: props?.petClinicUrl || ''
       }
     });
 
