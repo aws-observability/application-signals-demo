@@ -7,22 +7,19 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.signer.Aws4Signer;
-import software.amazon.awssdk.auth.signer.params.Aws4SignerParams;
-import software.amazon.awssdk.http.SdkHttpFullRequest;
-import software.amazon.awssdk.http.SdkHttpMethod;
-import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.bedrockagentcore.BedrockAgentCoreClient;
+import software.amazon.awssdk.services.bedrockagentcore.model.InvokeAgentRuntimeRequest;
+import software.amazon.awssdk.services.bedrockagentcore.model.InvokeAgentRuntimeResponse;
 
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -38,7 +35,15 @@ public class AgentController {
     @Value("${aws.region:us-east-1}")
     private String awsRegion;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final BedrockAgentCoreClient bedrockClient;
+    private final String sessionId;
+
+    public AgentController(@Value("${aws.region:us-east-1}") String region) {
+        this.bedrockClient = BedrockAgentCoreClient.builder()
+                .region(Region.of(region))
+                .build();
+        this.sessionId = "pet-clinic-web-session-" + UUID.randomUUID().toString();
+    }
 
     @PostMapping(value = "/ask", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<Map<String, Object>> askAgent(@RequestBody Map<String, String> request) {
@@ -56,52 +61,55 @@ public class AgentController {
     }
 
     private Map<String, Object> invokeAgent(String query) throws Exception {
-        String sessionId = "pet-clinic-web-session-" + UUID.randomUUID().toString();
         String prompt = query;
         
         if (nutritionAgentArn != null && !nutritionAgentArn.isEmpty()) {
             prompt = query + "\n\nNote: Our nutrition specialist agent ARN is " + nutritionAgentArn;
         }
 
-        String encodedArn = URLEncoder.encode(primaryAgentArn, StandardCharsets.UTF_8);
-        String url = String.format("https://bedrock-agentcore.%s.amazonaws.com/runtimes/%s/invocations?qualifier=DEFAULT",
-                awsRegion, encodedArn);
+        String payload = String.format("{\"prompt\": \"%s\"}", escapeJson(prompt));
 
-        String payload = String.format("{\"prompt\": \"%s\"}", prompt.replace("\"", "\\\""));
-
-        // Sign the request with AWS SigV4
-        SdkHttpFullRequest httpRequest = SdkHttpFullRequest.builder()
-                .uri(URI.create(url))
-                .method(SdkHttpMethod.POST)
-                .putHeader("Content-Type", "application/json")
-                .putHeader("X-Amzn-Bedrock-AgentCore-Runtime-Session-Id", sessionId)
-                .contentStreamProvider(() -> SdkBytes.fromUtf8String(payload).asInputStream())
+        InvokeAgentRuntimeRequest invokeRequest = InvokeAgentRuntimeRequest.builder()
+                .agentRuntimeArn(primaryAgentArn)
+                .qualifier("DEFAULT")
+                .runtimeSessionId(sessionId)
+                .contentType("application/json")
+                .accept("application/json")
+                .payload(SdkBytes.fromUtf8String(payload))
                 .build();
 
-        Aws4SignerParams signerParams = Aws4SignerParams.builder()
-                .awsCredentials(DefaultCredentialsProvider.create().resolveCredentials())
-                .signingName("bedrock-agentcore")
-                .signingRegion(Region.of(awsRegion))
-                .build();
+        try (ResponseInputStream<InvokeAgentRuntimeResponse> responseStream = bedrockClient.invokeAgentRuntime(invokeRequest)) {
+            String responseBody = new BufferedReader(
+                    new InputStreamReader(responseStream, StandardCharsets.UTF_8))
+                    .lines()
+                    .collect(Collectors.joining("\n"));
 
-        SdkHttpFullRequest signedRequest = Aws4Signer.create().sign(httpRequest, signerParams);
+            String formattedResponse = formatForUI(responseBody);
 
-        // Build HTTP request
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .POST(HttpRequest.BodyPublishers.ofString(payload));
+            return Map.of(
+                    "query", query,
+                    "response", formattedResponse,
+                    "sessionId", sessionId
+            );
+        }
+    }
 
-        signedRequest.headers().forEach((key, values) -> 
-            values.forEach(value -> requestBuilder.header(key, value))
-        );
+    private String escapeJson(String str) {
+        return str.replace("\\", "\\\\")
+                  .replace("\"", "\\\"")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r")
+                  .replace("\t", "\\t");
+    }
 
-        HttpResponse<String> response = httpClient.send(requestBuilder.build(), 
-                HttpResponse.BodyHandlers.ofString());
-
-        return Map.of(
-                "query", query,
-                "response", response.body(),
-                "sessionId", sessionId
-        );
+    private String formatForUI(String response) {
+        if (response == null || response.isEmpty()) {
+            return response;
+        }
+        String formatted = response.trim();
+        if (formatted.startsWith("\"") && formatted.endsWith("\"")) {
+            formatted = formatted.substring(1, formatted.length() - 1);
+        }
+        return formatted.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
     }
 }
