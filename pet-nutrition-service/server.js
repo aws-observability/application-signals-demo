@@ -20,7 +20,13 @@ async function main () {
       const { pet_type } = req.params;
       const fact = await NutritionFact.findOne({ pet_type });
       if (!fact) {
-        return res.status(404).json({ message: 'nutrition fact not found for the given pet_type' });
+        // Return generic nutrition advice instead of 404
+        const genericAdvice = {
+          pet_type: pet_type,
+          facts: 'Consult with a veterinarian for specific dietary recommendations for your pet. General guidelines include providing fresh water daily, age-appropriate food portions, and avoiding toxic foods.',
+          products: 'Visit your local pet store or consult your veterinarian for recommended pet food brands suitable for your specific pet type.'
+        };
+        return res.status(200).json(genericAdvice);
       }
       res.status(200).json(fact);
     } catch (error) {
