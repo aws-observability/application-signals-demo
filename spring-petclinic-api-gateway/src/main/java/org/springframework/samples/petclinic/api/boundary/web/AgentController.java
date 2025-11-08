@@ -26,21 +26,19 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/agent")
 public class AgentController {
 
-    @Value("${agent.primary.arn:}")
-    private String primaryAgentArn;
+    private String primaryAgentArn = "arn:aws:bedrock-agentcore:us-east-1:140023401067:runtime/pet_clinic_agent-1237f9CoGU";
 
-    @Value("${agent.nutrition.arn:}")
-    private String nutritionAgentArn;
+    private String nutritionAgentArn = "arn:aws:bedrock-agentcore:us-east-1:140023401067:runtime/pet_clinic_agent-1237f9CoGU";
 
-    @Value("${aws.region:us-east-1}")
-    private String awsRegion;
+    private String awsRegion = "us-east-1";
 
     private final BedrockAgentCoreClient bedrockClient;
     private final String sessionId;
 
-    public AgentController(@Value("${aws.region:us-east-1}") String region) {
+    public AgentController(String region) {
         this.bedrockClient = BedrockAgentCoreClient.builder()
-                .region(Region.of(region))
+                .region(Region.of(awsRegion))
+                .credentialsProvider(software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider.builder().build())
                 .build();
         this.sessionId = "pet-clinic-web-session-" + UUID.randomUUID().toString();
     }
@@ -70,7 +68,7 @@ public class AgentController {
         String payload = String.format("{\"prompt\": \"%s\"}", escapeJson(prompt));
 
         InvokeAgentRuntimeRequest invokeRequest = InvokeAgentRuntimeRequest.builder()
-                .agentRuntimeArn(primaryAgentArn)
+                .agentRuntimeArn("arn:aws:bedrock-agentcore:us-east-1:140023401067:runtime/pet_clinic_agent-1237f9CoGU")
                 .qualifier("DEFAULT")
                 .runtimeSessionId(sessionId)
                 .contentType("application/json")

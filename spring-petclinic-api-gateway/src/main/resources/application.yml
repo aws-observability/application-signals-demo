@@ -27,13 +27,6 @@ aws:
       id: ${APP_MONITOR_ID:default-monitor-id}
       identity-pool-id: ${APP_MONITOR_IDENTITY_POOL_ID:default-identity-pool-id}
 
-# Agent configuration
-agent:
-  primary:
-    arn: ${PRIMARY_AGENT_ARN:}
-  nutrition:
-    arn: ${NUTRITION_AGENT_ARN:}
-
 ---
 spring:
   config:
