@@ -5,7 +5,7 @@ set -e
 # Default values
 REGION="us-east-1"
 OPERATION="deploy"
-NUTRITION_SERVICE_URL=""
+PET_CLINIC_URL=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -18,8 +18,8 @@ while [[ $# -gt 0 ]]; do
       OPERATION="${1#*=}"
       shift
       ;;
-    --nutrition-service-url=*)
-      NUTRITION_SERVICE_URL="${1#*=}"
+    --pet-clinic-url=*)
+      PET_CLINIC_URL="${1#*=}"
       shift
       ;;
     *)
@@ -45,27 +45,27 @@ unset DOCKER_HOST
 case $OPERATION in
   deploy)
     echo "Deploying Pet Clinic Agents..."
-    if [[ -z "$NUTRITION_SERVICE_URL" ]]; then
-      echo "Auto-discovering nutrition service URL from EKS cluster..."
+    if [[ -z "$PET_CLINIC_URL" ]]; then
+      echo "Auto-discovering Pet Clinic URL from EKS cluster..."
       if ! command -v kubectl &> /dev/null; then
-        echo "Warning: kubectl not found. Skipping nutrition service URL discovery."
+        echo "Warning: kubectl not found. Skipping Pet Clinic URL discovery."
       elif ! kubectl cluster-info &> /dev/null; then
-        echo "Warning: Cannot connect to Kubernetes cluster. Skipping nutrition service URL discovery."
+        echo "Warning: Cannot connect to Kubernetes cluster. Skipping Pet Clinic URL discovery."
       else
-        INGRESS_HOST=$(kubectl get ingress -n pet-clinic -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+        INGRESS_HOST=$(kubectl get svc -n ingress-nginx -o jsonpath='{.items[?(@.metadata.name=="ingress-nginx-controller")].status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
         if [[ -n "$INGRESS_HOST" ]]; then
-          NUTRITION_SERVICE_URL="http://${INGRESS_HOST}/nutrition"
-          echo "Discovered nutrition service URL: $NUTRITION_SERVICE_URL"
+          PET_CLINIC_URL="http://${INGRESS_HOST}"
+          echo "Discovered Pet Clinic URL: $PET_CLINIC_URL"
         else
-          echo "Warning: No ingress found in pet-clinic namespace."
-          echo "Agent will run without nutrition service integration."
+          echo "Warning: No ingress found."
+          echo "Agent will run without Pet Clinic integration."
         fi
       fi
     else
-      echo "Using provided nutrition service URL: $NUTRITION_SERVICE_URL"
+      echo "Using provided Pet Clinic URL: $PET_CLINIC_URL"
     fi
-    if [[ -n "$NUTRITION_SERVICE_URL" ]]; then
-      export NUTRITION_SERVICE_URL
+    if [[ -n "$PET_CLINIC_URL" ]]; then
+      export PET_CLINIC_URL
     fi
     npm install
     cdk bootstrap --region $REGION

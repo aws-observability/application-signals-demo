@@ -57,12 +57,14 @@ def get_nutritional_supplements(pet_type):
 
 @tool
 def create_order(product_name, pet_type, quantity=1):
-    """Create an order for a recommended product. Requires pet_type and quantity."""
+    """Create an order for a recommended product. Requires product_name, pet_type, and optional quantity (default 1)."""
+    product_lower = product_name.lower()
     data = get_nutrition_data(pet_type)
     if data['products'] and product_name.lower() in data['products'].lower():
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-        return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days."
-    return f"Sorry, can't make the order. {product_name} is not available in our inventory for {pet_type}."
+        return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
+    
+    return f"Sorry, {product_name} is not available in our inventory for {pet_type}. Available products: {data['products']}"
 
 def create_nutrition_agent():
     model = BedrockModel(
@@ -97,7 +99,7 @@ async def invoke(payload, context):
     msg = payload.get('prompt', '')
 
     response_data = []
-    async for event in agent.stream_async(msg):
+    async for event in agent.stream_async(msg, context=context):
         if 'data' in event:
             response_data.append(event['data'])
     
