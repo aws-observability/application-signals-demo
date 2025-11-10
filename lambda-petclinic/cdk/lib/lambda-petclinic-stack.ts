@@ -68,9 +68,21 @@ export class LambdaPetClinicStack extends cdk.Stack {
       'us-west-2': 'arn:aws:lambda:us-west-2:615299751070:layer:AWSOpenTelemetryDistroPython:12',
     };
 
-    // Get current region and corresponding layer ARN
-    const regionName = cdk.Stack.of(this).region;
-    const layerArn = layerArns[regionName] || layerArns['us-east-1']; // Default to us-east-1 if not found
+    // Get current region with improved resolution logic
+    const regionName = this.region;
+    
+    // Validate that we have a layer ARN for this region
+    if (!layerArns[regionName]) {
+      throw new Error(`OpenTelemetry layer not available for region: ${regionName}. Supported regions: ${Object.keys(layerArns).join(', ')}`);
+    }
+    
+    const layerArn = layerArns[regionName];
+    
+    // Validate that the layer ARN matches the deployment region to prevent cross-region access
+    if (!layerArn.includes(`:${regionName}:`)) {
+      throw new Error(`Layer ARN region mismatch. Expected region ${regionName} but got ARN: ${layerArn}`);
+    }
+    
     const otelLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'OpenTelemetryLayer', layerArn);
 
     // Define the bundle options for Python Lambda functions
@@ -251,6 +263,17 @@ export class LambdaPetClinicStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'LambdaVersionInfo', {
       value: `Traffic is split 50/50 between two versions of ${getLambda.functionName} function`,
+    });
+
+    // Output the region and layer ARN for debugging
+    new cdk.CfnOutput(this, 'DeploymentRegion', {
+      value: regionName,
+      description: 'The AWS region where this stack is deployed',
+    });
+
+    new cdk.CfnOutput(this, 'OpenTelemetryLayerArn', {
+      value: layerArn,
+      description: 'The OpenTelemetry layer ARN being used',
     });
   }
 }
