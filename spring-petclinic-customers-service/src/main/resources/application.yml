@@ -4,6 +4,18 @@ spring:
   config:
     import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888/}
 
+# HTTP client timeout configuration to prevent ResourceAccessException
+server:
+  tomcat:
+    connection-timeout: 60000  # 60 seconds
+    keep-alive-timeout: 60000
+
+# RestTemplate and WebClient timeout configuration
+rest:
+  client:
+    connection-timeout: 30000  # 30 seconds
+    read-timeout: 60000        # 60 seconds
+
 eureka:
   instance:
     preferIpAddress: true
@@ -16,6 +28,7 @@ logging:
     root: OFF
     org.springframework.samples.petclinic.customers.web.PetResource: INFO
     org.springframework.samples.petclinic.customers.aws.SqsService: FATAL
+    org.springframework.web.client.RestTemplate: WARN  # Log HTTP client errors
   pattern:
     level: trace_id=%mdc{trace_id} span_id=%mdc{span_id} trace_flags=%mdc{trace_flags} %5p
 
