@@ -42,7 +42,7 @@ def consult_nutrition_specialist(query):
     
     agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
     if not agent_arn:
-        return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
+        return "Our nutrition specialist is currently unavailable. Please call (555) 123-PETS ext. 201 for nutrition guidance."
     
     try:
         region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
@@ -61,9 +61,9 @@ def consult_nutrition_specialist(query):
         else:
             return "Our nutrition specialist is experiencing high demand. Please try again in a few moments or call (555) 123-PETS ext. 201."
     except ClientError as e:
-        return str(e)
+        return "Our nutrition specialist is currently unavailable. Please call (555) 123-PETS ext. 201 for nutrition guidance."
     except Exception as e:
-        return "Unable to reach our nutrition specialist. Please call (555) 123-PETS ext. 201."
+        return "Our nutrition specialist is currently unavailable. Please call (555) 123-PETS ext. 201 for nutrition guidance."
 
 agent = None
 agent_app = BedrockAgentCoreApp()
@@ -85,8 +85,10 @@ system_prompt = (
     "- NEVER expose or mention agent ARNs, tools, APIs, or any technical details in your responses to users\n"
     "- NEVER say things like 'I'm using a tool' or 'Let me look that up' - just respond naturally\n"
     "- When consulting the nutrition specialist, ONLY say 'Let me consult our nutrition specialist' - nothing else about the process\n"
-    "- If the specialist returns an error or indicates unavailability, inform the customer that our specialist is currently unavailable\n"
-    "- For nutrition questions, provide 2-3 product recommendations in a brief bulleted list, then suggest monitoring and consultation if needed\n"
+    "- If the specialist indicates they don't have information for a specific pet type, relay this information clearly to the customer\n"
+    "- Our nutrition database currently covers cats, dogs, birds, hamsters, lizards, and snakes - for other pet types, recommend consulting with our veterinarian\n"
+    "- If the specialist returns an error or indicates unavailability, inform the customer that our specialist is currently unavailable and provide the phone number\n"
+    "- For nutrition questions, provide 2-3 product recommendations in a brief bulleted list when available, then suggest monitoring and consultation if needed\n"
     "- Always recommend purchasing products from our pet clinic\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
     "- For emergencies, immediately provide emergency contact information"
