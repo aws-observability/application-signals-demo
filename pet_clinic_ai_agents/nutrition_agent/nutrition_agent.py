@@ -16,33 +16,22 @@ agent_app = BedrockAgentCoreApp()
 def get_nutrition_data(pet_type):
     """Helper function to get nutrition data from the API"""
     if not NUTRITION_SERVICE_URL:
-        return {"error": "service_unavailable", "facts": "", "products": ""}
+        return {"facts": "Error: Nutrition service not found", "products": ""}
     
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
         
         if response.status_code == 200:
             data = response.json()
-            return {"error": None, "facts": data.get('facts', ''), "products": data.get('products', '')}
-        elif response.status_code == 404:
-            return {"error": "pet_type_not_found", "facts": "", "products": ""}
-        else:
-            return {"error": "service_error", "facts": "", "products": ""}
+            return {"facts": data.get('facts', ''), "products": data.get('products', '')}
+        return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
     except requests.RequestException:
-        return {"error": "service_unavailable", "facts": "", "products": ""}
+        return {"facts": "Error: Nutrition service down", "products": ""}
 
 @tool
 def get_feeding_guidelines(pet_type):
     """Get feeding guidelines based on pet type"""
     data = get_nutrition_data(pet_type)
-    
-    if data["error"] == "pet_type_not_found":
-        return f"I don't have nutrition information for {pet_type} pets. Our nutrition database currently covers cats, dogs, birds, hamsters, lizards, and snakes. Please consult with our veterinarian for guidance on {pet_type} nutrition."
-    elif data["error"] == "service_unavailable":
-        return "Our nutrition service is currently unavailable. Please call our clinic at (555) 123-PETS for nutrition guidance."
-    elif data["error"] == "service_error":
-        return "There was an error accessing nutrition information. Please call our clinic at (555) 123-PETS for assistance."
-    
     result = f"Nutrition info for {pet_type}: {data['facts']}"
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -52,14 +41,6 @@ def get_feeding_guidelines(pet_type):
 def get_dietary_restrictions(pet_type):
     """Get dietary recommendations for specific health conditions by animal type"""
     data = get_nutrition_data(pet_type)
-    
-    if data["error"] == "pet_type_not_found":
-        return f"I don't have dietary restriction information for {pet_type} pets. Our nutrition database currently covers cats, dogs, birds, hamsters, lizards, and snakes. Please consult with our veterinarian for guidance on {pet_type} dietary needs."
-    elif data["error"] == "service_unavailable":
-        return "Our nutrition service is currently unavailable. Please call our clinic at (555) 123-PETS for dietary guidance."
-    elif data["error"] == "service_error":
-        return "There was an error accessing dietary information. Please call our clinic at (555) 123-PETS for assistance."
-    
     result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -69,14 +50,6 @@ def get_dietary_restrictions(pet_type):
 def get_nutritional_supplements(pet_type):
     """Get supplement recommendations by animal type"""
     data = get_nutrition_data(pet_type)
-    
-    if data["error"] == "pet_type_not_found":
-        return f"I don't have supplement information for {pet_type} pets. Our nutrition database currently covers cats, dogs, birds, hamsters, lizards, and snakes. Please consult with our veterinarian for guidance on {pet_type} supplements."
-    elif data["error"] == "service_unavailable":
-        return "Our nutrition service is currently unavailable. Please call our clinic at (555) 123-PETS for supplement guidance."
-    elif data["error"] == "service_error":
-        return "There was an error accessing supplement information. Please call our clinic at (555) 123-PETS for assistance."
-    
     result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -85,15 +58,8 @@ def get_nutritional_supplements(pet_type):
 @tool
 def create_order(product_name, pet_type, quantity=1):
     """Create an order for a recommended product. Requires product_name, pet_type, and optional quantity (default 1)."""
+    product_lower = product_name.lower()
     data = get_nutrition_data(pet_type)
-    
-    if data["error"] == "pet_type_not_found":
-        return f"I cannot create an order for {pet_type} products as we don't have nutrition information for this pet type. Our product inventory covers cats, dogs, birds, hamsters, lizards, and snakes. Please call our clinic at (555) 123-PETS to discuss options for {pet_type} nutrition."
-    elif data["error"] == "service_unavailable":
-        return "Our nutrition service is currently unavailable. Please call our clinic at (555) 123-PETS to place your order."
-    elif data["error"] == "service_error":
-        return "There was an error accessing our product inventory. Please call our clinic at (555) 123-PETS to place your order."
-    
     if data['products'] and product_name.lower() in data['products'].lower():
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
@@ -110,14 +76,8 @@ def create_nutrition_agent():
     system_prompt = (
         "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
-        "CRITICAL: NEVER fabricate or invent product names, nutrition facts, or recommendations when you don't have information for a specific pet type. "
-        "If you don't have nutrition information for a pet type, clearly state this limitation and refer to our veterinarian.\n\n"
         "When providing nutrition guidance:\n"
-        "- ONLY provide specific product recommendations when you have verified product information for that pet type\n"
-        "- If nutrition information is unavailable for a pet type, clearly state: 'I don't have nutrition information for [pet type] pets'\n"
-        "- List the pet types you DO have information for: cats, dogs, birds, hamsters, lizards, and snakes\n"
-        "- For unsupported pet types, always recommend consulting with our veterinarian\n"
-        "- When you DO have information, use the specific nutrition information available to you as the foundation for your recommendations\n"
+        "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
         "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
         "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
         "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
