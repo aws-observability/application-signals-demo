@@ -16,7 +16,7 @@ agent_app = BedrockAgentCoreApp()
 def get_nutrition_data(pet_type):
     """Helper function to get nutrition data from the API"""
     if not NUTRITION_SERVICE_URL:
-        return {"facts": "Error: Nutrition service not found", "products": ""}
+        return {"facts": "Nutrition service unavailable. Please consult your veterinarian for specific dietary recommendations.", "products": ""}
     
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
@@ -24,9 +24,17 @@ def get_nutrition_data(pet_type):
         if response.status_code == 200:
             data = response.json()
             return {"facts": data.get('facts', ''), "products": data.get('products', '')}
-        return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
-    except requests.RequestException:
-        return {"facts": "Error: Nutrition service down", "products": ""}
+        elif response.status_code == 404:
+            # Handle 404 gracefully with generic advice instead of crashing
+            return {
+                "facts": f"We don't have specific nutrition data for {pet_type} in our database. Please consult your veterinarian for species-specific dietary recommendations and feeding guidelines.",
+                "products": "Contact our clinic for specialized pet food recommendations."
+            }
+        else:
+            return {"facts": "Nutrition service temporarily unavailable. Please consult your veterinarian for dietary recommendations.", "products": ""}
+    except requests.RequestException as e:
+        # Log the error but don't expose technical details to users
+        return {"facts": "Nutrition service temporarily unavailable. Please consult your veterinarian for dietary recommendations.", "products": ""}
 
 @tool
 def get_feeding_guidelines(pet_type):
@@ -58,9 +66,14 @@ def get_nutritional_supplements(pet_type):
 @tool
 def create_order(product_name, pet_type, quantity=1):
     """Create an order for a recommended product. Requires product_name, pet_type, and optional quantity (default 1)."""
-    product_lower = product_name.lower()
     data = get_nutrition_data(pet_type)
-    if data['products'] and product_name.lower() in data['products'].lower():
+    
+    # Check if we have valid product data
+    if not data['products'] or "unavailable" in data['products'].lower() or "contact our clinic" in data['products'].lower():
+        return f"I'm unable to process orders for {pet_type} products at this time. Please contact our clinic directly at (555) 123-4567 to discuss available nutrition options for your {pet_type}."
+    
+    # Check if the requested product is in our inventory
+    if product_name.lower() in data['products'].lower():
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
     
