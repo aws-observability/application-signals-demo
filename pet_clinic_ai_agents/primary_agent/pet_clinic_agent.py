@@ -42,7 +42,7 @@ def consult_nutrition_specialist(query):
     
     agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
     if not agent_arn:
-        return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
+        return "Please consult veterinarian for recommendations"
     
     try:
         region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
@@ -59,11 +59,11 @@ def consult_nutrition_specialist(query):
             body = response['response'].read().decode('utf-8')
             return body
         else:
-            return "Our nutrition specialist is experiencing high demand. Please try again in a few moments or call (555) 123-PETS ext. 201."
+            return "Please consult veterinarian for recommendations"
     except ClientError as e:
-        return str(e)
+        return "Please consult veterinarian for recommendations"
     except Exception as e:
-        return "Unable to reach our nutrition specialist. Please call (555) 123-PETS ext. 201."
+        return "Please consult veterinarian for recommendations"
 
 agent = None
 agent_app = BedrockAgentCoreApp()
@@ -75,6 +75,11 @@ system_prompt = (
     "- Directing clients to appropriate specialists\n"
     "- Scheduling guidance\n"
     "- Basic medical guidance and when to seek veterinary care\n\n"
+    "CRITICAL ERROR HANDLING RULES:\n"
+    "- If the nutrition specialist returns 'Please consult veterinarian for recommendations', you MUST respond with EXACTLY that phrase and NOTHING else\n"
+    "- NEVER fabricate, invent, or make up product names, nutrition facts, or recommendations when tools fail\n"
+    "- NEVER provide generic advice when specific data is unavailable\n"
+    "- If you cannot access specific information, always defer to veterinary consultation or direct contact\n\n"
     "IMPORTANT GUIDELINES:\n"
     "- Keep ALL responses BRIEF and CONCISE - aim for 2-3 sentences maximum unless specifically asked for details\n"
     "- When recommending products, clearly list them using bullet points with product names\n"
