@@ -6,8 +6,11 @@ const { PetClinicAgentsTrafficGeneratorStack } = require('./lib/pet-clinic-agent
 const app = new cdk.App();
 
 // Deploy Pet Clinic agents
+const petClinicUrl = process.env.PET_CLINIC_URL;
+const nutritionServiceUrl = petClinicUrl ? `${petClinicUrl.replace(/\/$/, '')}/nutrition` : undefined;
+
 const agentsStack = new PetClinicAgentsStack(app, 'PetClinicAgentsStack', {
-  nutritionServiceUrl: process.env.NUTRITION_SERVICE_URL,
+  nutritionServiceUrl: nutritionServiceUrl,
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,
@@ -22,6 +25,7 @@ new PetClinicAgentsTrafficGeneratorStack(app, 'PetClinicAgentsTrafficGeneratorSt
   },
   primaryAgentArn: agentsStack.primaryAgentArn,
   nutritionAgentArn: agentsStack.nutritionAgentArn,
+  petClinicUrl: petClinicUrl,
 });
 
 app.synth();

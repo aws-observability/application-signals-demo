@@ -103,6 +103,19 @@
         "Tier": "Tier-1"
       },
       "time_range_minutes": 60
+    },
+    {
+      "test_case_id": "bedrock_nutrition_agent_otel_attributes_validation",
+      "test_scenario": "Resource Grouping Validation",
+      "description": "Validate OTEL resource attributes for nutrition_agent",
+      "service_name": "nutrition_agent",
+      "environment": "ENVIRONMENT_NAME_PLACEHOLDER",
+      "expected_resource_attributes": {
+        "Application": "Audit",
+        "Team": "AnalyticsTeam",
+        "Tier": "Tier-4"
+      },
+      "time_range_minutes": 60
     }
   ]
 }

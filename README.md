@@ -176,7 +176,7 @@ The following instructions set up AI agents deployed to Bedrock AgentCore Runtim
 The setup includes:
 
 - **Primary Agent**: A general pet clinic assistant that handles appointment scheduling, clinic information, and emergency contacts. Any nutrition related queries will be delegated to the Nutrition Agent.
-- **Nutrition Agent**: A specialized agent focused on pet nutrition, diet recommendations, and feeding guidelines. When deployed with the Pet Clinic EKS demo, it utilizes the nutrition service API at `http://<ingress-host>/nutrition` to base its answers on data from the service
+- **Nutrition Agent**: A specialized agent focused on pet nutrition, diet recommendations, and feeding guidelines. When deployed with the Pet Clinic EKS demo, it utilizes the pet clinic service API to base its answers on data from the service
 - **Traffic Generator**: A Lambda function scheduled via AWS EventBridge that sends queries to the Primary Agent on set a cadence.
 
 **Prerequisites:**
@@ -194,12 +194,17 @@ The setup includes:
    cd scripts/agents && ./setup-agents-demo.sh --region=region-name
    ```
 
-   The Nutrition Agent relies on the nutrition service to retrieve pet nutrition information and provide accurate dietary recommendations. To enable this feature, the [EKS demo](#eks-demo) must be set up first. The deployment script will attempt to auto-discover the nutrition service endpoint from your EKS cluster. If auto-discovery fails or you want to specify a custom endpoint, you can manually provide the nutrition service URL using the `--nutrition-service-url` parameter:
+   The Nutrition Agent relies on the pet clinic service to retrieve pet nutrition information and provide accurate dietary recommendations. To enable this feature:
+   
+   - The [EKS demo](#eks-demo) must be set up first
+   - **The pet clinic service must be exposed as an ingress service** with a publicly accessible URL for the agent to connect to it
+   
+   The deployment script will attempt to auto-discover the pet clinic service endpoint from your EKS cluster. If auto-discovery fails or you want to specify a custom endpoint, you can manually provide the pet clinic service URL using the `--pet-clinic-url` parameter:
 
    ```shell
-   export MY_NUTRITION_ENDPOINT=my-load-balancer.us-east-1.elb.amazonaws.com
+   export MY_PET_CLINIC_ENDPOINT=my-load-balancer.us-east-1.elb.amazonaws.com
 
-   cd scripts/agents && ./setup-agents-demo.sh --region=us-east-1 --nutrition-service-url=http://${MY_NUTRITION_ENDPOINT}/nutrition
+   cd scripts/agents && ./setup-agents-demo.sh --region=us-east-1 --pet-clinic-url=http://${MY_PET_CLINIC_ENDPOINT}
    ```
 
 2. **Clean up resources** when finished:
