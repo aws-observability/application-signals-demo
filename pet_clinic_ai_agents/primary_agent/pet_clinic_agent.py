@@ -57,9 +57,12 @@ def consult_nutrition_specialist(query):
         # Read the streaming response
         if 'response' in response:
             body = response['response'].read().decode('utf-8')
+            # Check if the response indicates an error or unavailability
+            if "not available" in body.lower() or "error" in body.lower() or "temporarily unavailable" in body.lower():
+                return "Our nutrition specialist doesn't have that information available right now. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith for personalized advice."
             return body
         else:
-            return "Our nutrition specialist is experiencing high demand. Please try again in a few moments or call (555) 123-PETS ext. 201."
+            return "Our nutrition specialist is experiencing high demand. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
     except ClientError as e:
         return str(e)
     except Exception as e:

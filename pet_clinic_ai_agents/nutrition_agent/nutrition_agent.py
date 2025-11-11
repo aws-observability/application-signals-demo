@@ -41,7 +41,7 @@ def get_feeding_guidelines(pet_type):
     
     result = f"Nutrition guidelines for {pet_type}: {data['facts']}"
     if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+        result += f" We carry these recommended products at our clinic: {data['products']}"
     return result
 
 @tool
@@ -57,7 +57,7 @@ def get_dietary_restrictions(pet_type):
     
     result = f"Dietary considerations for {pet_type}: {data['facts']}. Always consult our veterinarian for condition-specific advice."
     if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+        result += f" We carry these recommended products at our clinic: {data['products']}"
     return result
 
 @tool
@@ -73,7 +73,7 @@ def get_nutritional_supplements(pet_type):
     
     result = f"Supplement guidance for {pet_type}: Based on {data['facts']}, consult our veterinarian for specific supplement needs."
     if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+        result += f" We carry these recommended products at our clinic: {data['products']}"
     return result
 
 @tool
@@ -92,7 +92,7 @@ def create_order(product_name, pet_type, quantity=1):
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
     
-    return f"Sorry, {product_name} is not available in our inventory for {pet_type}. Available products: {data['products']}"
+    return f"Sorry, {product_name} is not available in our current inventory for {pet_type}. Available products: {data['products']}. Please call (555) 123-PETS for more options."
 
 def create_nutrition_agent():
     model = BedrockModel(
