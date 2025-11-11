@@ -38,11 +38,11 @@ def get_appointment_availability():
 
 @tool
 def consult_nutrition_specialist(query):
-    """Delegate nutrition questions to the specialized nutrition agent."""
+    """Delegate nutrition questions to the specialized nutrition agent with improved error handling."""
     
     agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
     if not agent_arn:
-        return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
+        return "Our nutrition specialist is currently unavailable. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
     
     try:
         region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
@@ -57,13 +57,18 @@ def consult_nutrition_specialist(query):
         # Read the streaming response
         if 'response' in response:
             body = response['response'].read().decode('utf-8')
+            # Check if the response indicates an error or unavailability
+            if "information not available" in body.lower() or "error" in body.lower():
+                return "Our nutrition specialist doesn't have specific information for that request. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith for personalized advice."
             return body
         else:
-            return "Our nutrition specialist is experiencing high demand. Please try again in a few moments or call (555) 123-PETS ext. 201."
+            return "Our nutrition specialist is experiencing high demand. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
     except ClientError as e:
-        return str(e)
+        # Log error internally but provide user-friendly message
+        return "Our nutrition specialist is temporarily unavailable. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
     except Exception as e:
-        return "Unable to reach our nutrition specialist. Please call (555) 123-PETS ext. 201."
+        # Catch all other exceptions and provide fallback
+        return "Unable to reach our nutrition specialist at the moment. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
 
 agent = None
 agent_app = BedrockAgentCoreApp()
@@ -85,11 +90,13 @@ system_prompt = (
     "- NEVER expose or mention agent ARNs, tools, APIs, or any technical details in your responses to users\n"
     "- NEVER say things like 'I'm using a tool' or 'Let me look that up' - just respond naturally\n"
     "- When consulting the nutrition specialist, ONLY say 'Let me consult our nutrition specialist' - nothing else about the process\n"
-    "- If the specialist returns an error or indicates unavailability, inform the customer that our specialist is currently unavailable\n"
+    "- If the specialist returns an error or indicates unavailability, gracefully direct the customer to call our clinic\n"
+    "- NEVER fabricate product names or nutrition information - always direct to veterinarians when information is unavailable\n"
     "- For nutrition questions, provide 2-3 product recommendations in a brief bulleted list, then suggest monitoring and consultation if needed\n"
     "- Always recommend purchasing products from our pet clinic\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
-    "- For emergencies, immediately provide emergency contact information"
+    "- For emergencies, immediately provide emergency contact information\n"
+    "- When services are unavailable, always provide the direct phone number (555) 123-PETS for immediate assistance"
 )
 
 def create_clinic_agent():
