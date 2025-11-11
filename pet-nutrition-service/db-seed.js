@@ -17,7 +17,10 @@ module.exports = function(){
     { pet_type: 'lizard', facts: 'Insects, leafy greens, and calcium supplements', products: 'ScaleStrong Calcium Boost, CricketCrunch Live Supply, ReptileVitality D3 Formula' },
     { pet_type: 'snake', facts: 'Whole prey (mice/rats) based on size', products: 'SlitherSnack Frozen Mice, CoilCuisine Feeder Rats, SerpentSupreme Multivitamin' },
     { pet_type: 'bird', facts: 'High-quality seeds, pellets, and fresh fruits/veggies', products: 'FeatherFeast Premium Pellets, WingWellness Seed Mix, BeakBoost Cuttlebone Calcium' },
-    { pet_type: 'hamster', facts: 'Pellets, grains, fresh vegetables, and occasional fruits', products: 'HamsterHaven Complete Pellets, CheekPouch Gourmet Mix, WhiskerWonder Vitamin Drops' }
+    { pet_type: 'hamster', facts: 'Pellets, grains, fresh vegetables, and occasional fruits', products: 'HamsterHaven Complete Pellets, CheekPouch Gourmet Mix, WhiskerWonder Vitamin Drops' },
+    { pet_type: 'rabbit', facts: 'High-fiber pellets, hay, and fresh vegetables', products: 'BunnyBest Timothy Pellets, HayHaven Premium Mix, RabbitVital Digestive Support' },
+    { pet_type: 'fish', facts: 'Species-specific flakes or pellets with proper nutrients', products: 'AquaBalance Tropical Flakes, FinFeast Goldfish Pellets, MarineMax Saltwater Formula' },
+    { pet_type: 'guinea pig', facts: 'Vitamin C-rich pellets, hay, and fresh vegetables', products: 'GuineaGold Vitamin C Pellets, CavyChoice Timothy Hay, PiggyPerfect Veggie Mix' }
   ])
     .then(() => logger.info('collection populated'))
     .catch(err => logger.error('error populating collection:', err));
