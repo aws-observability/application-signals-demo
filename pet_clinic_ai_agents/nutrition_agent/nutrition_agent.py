@@ -16,22 +16,25 @@ agent_app = BedrockAgentCoreApp()
 def get_nutrition_data(pet_type):
     """Helper function to get nutrition data from the API"""
     if not NUTRITION_SERVICE_URL:
-        return {"facts": "Error: Nutrition service not found", "products": ""}
+        return {"error": True, "facts": "", "products": ""}
     
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
         
         if response.status_code == 200:
             data = response.json()
-            return {"facts": data.get('facts', ''), "products": data.get('products', '')}
-        return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
+            return {"error": False, "facts": data.get('facts', ''), "products": data.get('products', '')}
+        return {"error": True, "facts": "", "products": ""}
     except requests.RequestException:
-        return {"facts": "Error: Nutrition service down", "products": ""}
+        return {"error": True, "facts": "", "products": ""}
 
 @tool
 def get_feeding_guidelines(pet_type):
     """Get feeding guidelines based on pet type"""
     data = get_nutrition_data(pet_type)
+    if data['error']:
+        return "Please consult veterinarian for recommendations"
+    
     result = f"Nutrition info for {pet_type}: {data['facts']}"
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -41,6 +44,9 @@ def get_feeding_guidelines(pet_type):
 def get_dietary_restrictions(pet_type):
     """Get dietary recommendations for specific health conditions by animal type"""
     data = get_nutrition_data(pet_type)
+    if data['error']:
+        return "Please consult veterinarian for recommendations"
+    
     result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -50,6 +56,9 @@ def get_dietary_restrictions(pet_type):
 def get_nutritional_supplements(pet_type):
     """Get supplement recommendations by animal type"""
     data = get_nutrition_data(pet_type)
+    if data['error']:
+        return "Please consult veterinarian for recommendations"
+    
     result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
@@ -58,9 +67,15 @@ def get_nutritional_supplements(pet_type):
 @tool
 def create_order(product_name, pet_type, quantity=1):
     """Create an order for a recommended product. Requires product_name, pet_type, and optional quantity (default 1)."""
-    product_lower = product_name.lower()
     data = get_nutrition_data(pet_type)
-    if data['products'] and product_name.lower() in data['products'].lower():
+    if data['error']:
+        return "Please consult veterinarian for recommendations"
+    
+    if not data['products']:
+        return "Please consult veterinarian for recommendations"
+    
+    product_lower = product_name.lower()
+    if product_name.lower() in data['products'].lower():
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
     
@@ -76,7 +91,12 @@ def create_nutrition_agent():
     system_prompt = (
         "You are a specialized pet nutrition expert at our veterinary clinic, providing accurate, evidence-based dietary guidance for pets. "
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
-        "When providing nutrition guidance:\n"
+        "CRITICAL ERROR HANDLING RULES:\n"
+        "- If ANY tool returns 'Please consult veterinarian for recommendations', you MUST respond with EXACTLY that phrase and NOTHING else\n"
+        "- NEVER fabricate, invent, or make up product names, nutrition facts, or recommendations when tools fail\n"
+        "- NEVER provide generic advice when specific data is unavailable\n"
+        "- If you cannot access specific nutrition information, always defer to veterinary consultation\n\n"
+        "When providing nutrition guidance (ONLY when tools return valid data):\n"
         "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
         "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
         "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
