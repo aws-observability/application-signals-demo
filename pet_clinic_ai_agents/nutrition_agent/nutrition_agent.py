@@ -26,54 +26,33 @@ def get_nutrition_data(pet_type):
             return {"facts": data.get('facts', ''), "products": data.get('products', '')}
         return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
     except requests.RequestException:
-        return {"facts": "", "products": "", "error": "Nutrition service temporarily unavailable"}
+        return {"facts": "Error: Nutrition service down", "products": ""}
 
 @tool
 def get_feeding_guidelines(pet_type):
     """Get feeding guidelines based on pet type"""
     data = get_nutrition_data(pet_type)
-    
-    if data["error"]:
-        return f"I don't have specific nutrition information available for {pet_type} at the moment. Please consult with our veterinarian at (555) 123-PETS for personalized dietary recommendations."
-    
-    if not data["facts"]:
-        return f"Nutrition information for {pet_type} is not available in our current database. Please speak with our veterinarian for proper dietary guidance."
-    
-    result = f"Nutrition guidelines for {pet_type}: {data['facts']}"
+    result = f"Nutrition info for {pet_type}: {data['facts']}"
     if data['products']:
-        result += f" We carry these recommended products at our clinic: {data['products']}"
+        result += f" Recommended products available at our clinic: {data['products']}"
     return result
 
 @tool
 def get_dietary_restrictions(pet_type):
     """Get dietary recommendations for specific health conditions by animal type"""
     data = get_nutrition_data(pet_type)
-    
-    if data["error"]:
-        return f"I don't have specific dietary restriction information for {pet_type} at the moment. Please consult with our veterinarian at (555) 123-PETS for condition-specific dietary advice."
-    
-    if not data["facts"]:
-        return f"Dietary restriction information for {pet_type} is not available in our current database. Please speak with our veterinarian for proper guidance on health conditions."
-    
-    result = f"Dietary considerations for {pet_type}: {data['facts']}. Always consult our veterinarian for condition-specific advice."
+    result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
     if data['products']:
-        result += f" We carry these recommended products at our clinic: {data['products']}"
+        result += f" Recommended products available at our clinic: {data['products']}"
     return result
 
 @tool
 def get_nutritional_supplements(pet_type):
     """Get supplement recommendations by animal type"""
     data = get_nutrition_data(pet_type)
-    
-    if data["error"]:
-        return f"I don't have specific supplement information for {pet_type} at the moment. Please consult with our veterinarian at (555) 123-PETS for supplement recommendations."
-    
-    if not data["facts"]:
-        return f"Supplement information for {pet_type} is not available in our current database. Please speak with our veterinarian for proper supplement guidance."
-    
-    result = f"Supplement guidance for {pet_type}: Based on {data['facts']}, consult our veterinarian for specific supplement needs."
+    result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
     if data['products']:
-        result += f" We carry these recommended products at our clinic: {data['products']}"
+        result += f" Recommended products available at our clinic: {data['products']}"
     return result
 
 @tool
@@ -81,18 +60,11 @@ def create_order(product_name, pet_type, quantity=1):
     """Create an order for a recommended product. Requires product_name, pet_type, and optional quantity (default 1)."""
     product_lower = product_name.lower()
     data = get_nutrition_data(pet_type)
-    
-    if data["error"]:
-        return f"I cannot process orders for {pet_type} products at the moment. Please call our clinic at (555) 123-PETS to place your order."
-    
-    if not data['products']:
-        return f"I don't have product information available for {pet_type}. Please call our clinic at (555) 123-PETS to check product availability."
-    
-    if product_name.lower() in data['products'].lower():
+    if data['products'] and product_name.lower() in data['products'].lower():
         order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
     
-    return f"Sorry, {product_name} is not available in our current inventory for {pet_type}. Available products: {data['products']}. Please call (555) 123-PETS for more options."
+    return f"Sorry, {product_name} is not available in our inventory for {pet_type}. Available products: {data['products']}"
 
 def create_nutrition_agent():
     model = BedrockModel(
