@@ -3,19 +3,13 @@ name: Application observability for AWS
 on:
   issue_comment:
     types: [created, edited]
-  pull_request_review_comment:
-    types: [created]
   issues:
     types: [opened, assigned, edited]
-  pull_request_review:
-    types: [submitted]
 
 jobs:
   awsapm-investigation:
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@awsapm')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@awsapm')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@awsapm')) ||
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@awsapm') || contains(github.event.issue.title, '@awsapm')))
     runs-on: ubuntu-latest
     permissions:
@@ -30,7 +24,7 @@ jobs:
 
       - name: Run Application observability for AWS Investigation
         id: awsapm
-        uses: mxiamxia/aws-apm-action@main
+        uses: mxiamxia/aws-apm-action@core-feat
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
