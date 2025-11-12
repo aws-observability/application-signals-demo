@@ -11,6 +11,15 @@ This code for sample application is intended for demonstration purposes only. It
 
 # Prerequisite
 
+## Java Version Requirements
+
+**Important**: This application requires **Java 11 or higher** for building. If you encounter build errors with newer Java versions (Java 17+, 21+, 23+), ensure you're using a compatible version.
+
+**Recommended Java versions:**
+- Java 11 (LTS) - Fully supported
+- Java 17 (LTS) - Supported  
+- Java 21 (LTS) - Supported
+
 ## Option 1: Using AWS CodeBuild (Recommended - No Local Setup Required)
 * AWS CLI 2.x is installed. For more information about installing the AWS CLI, see [Install or update the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 * AWS CDK >= v2.1024.0 is installed - https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_install
@@ -18,6 +27,7 @@ This code for sample application is intended for demonstration purposes only. It
 
 ## Option 2: Local Build Environment
 * A Linux machine with x86-64 (AMD64) architecture is required for building Docker images for the sample application.
+* **Java 11 or higher** is required for building the application.
 * Docker is installed and running on the machine.
 * AWS CLI 2.x is installed. For more information about installing the AWS CLI, see [Install or update the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 * Golang is installed.
@@ -31,6 +41,30 @@ This code for sample application is intended for demonstration purposes only. It
 * Golang is installed.
 * [Optional] If you plan to install the infrastructure resources using Terraform, terraform cli is required. https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 * [Optional] If you want to try out AWS Bedrock/GenAI support with Application Signals, enable Amazon Titian, Anthropic Claude, Meta Llama foundation models by following the instructions in https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html
+
+# Troubleshooting
+
+## Build Issues
+
+### Maven Build Errors with Lombok
+If you encounter compilation errors like "cannot find symbol" for getter/setter methods, this is typically a Java version compatibility issue with Lombok annotation processing.
+
+**Solution**: Ensure you're using Java 11 or higher. The project has been updated to use Java 11 with proper Lombok configuration.
+
+**Check your Java version:**
+```shell
+java --version
+```
+
+**If using Java 23+ and still encountering issues:**
+- Use Java 11 for building (as suggested by community feedback)
+- Or ensure your IDE has the latest Lombok plugin installed
+
+### Docker Build Issues on Apple Silicon (M1/M2)
+If you encounter Docker build failures on Apple Silicon Macs, this is due to architecture compatibility issues with the Docker Maven plugin.
+
+**Solution**: The project includes updated Docker plugin configuration that's compatible with Apple Silicon.
+
 # EKS demo
 
 ## Deploy via Shell Scripts
