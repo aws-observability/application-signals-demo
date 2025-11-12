@@ -42,7 +42,7 @@ def consult_nutrition_specialist(query):
     
     agent_arn = os.environ.get('NUTRITION_AGENT_ARN')
     if not agent_arn:
-        return "Our nutrition specialist is currently unavailable. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
+        return "Nutrition specialist configuration error. Please call (555) 123-PETS ext. 201."
     
     try:
         region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
@@ -57,16 +57,13 @@ def consult_nutrition_specialist(query):
         # Read the streaming response
         if 'response' in response:
             body = response['response'].read().decode('utf-8')
-            # Check if the response indicates an error or unavailability
-            if "not available" in body.lower() or "error" in body.lower() or "temporarily unavailable" in body.lower():
-                return "Our nutrition specialist doesn't have that information available right now. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith for personalized advice."
             return body
         else:
-            return "Our nutrition specialist is experiencing high demand. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
+            return "Our nutrition specialist is experiencing high demand. Please try again in a few moments or call (555) 123-PETS ext. 201."
     except ClientError as e:
-        return "Our nutrition specialist is currently unavailable. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
+        return str(e)
     except Exception as e:
-        return "Our nutrition specialist is currently unavailable. Please call (555) 123-PETS ext. 201 to speak with Dr. Smith directly."
+        return "Unable to reach our nutrition specialist. Please call (555) 123-PETS ext. 201."
 
 agent = None
 agent_app = BedrockAgentCoreApp()
@@ -78,23 +75,21 @@ system_prompt = (
     "- Directing clients to appropriate specialists\n"
     "- Scheduling guidance\n"
     "- Basic medical guidance and when to seek veterinary care\n\n"
-    "CRITICAL GUIDELINES - NEVER FABRICATE INFORMATION:\n"
-    "- NEVER invent, make up, or fabricate product names, services, or medical advice\n"
-    "- ONLY provide information that is explicitly available through your tools\n"
-    "- If information is not available, clearly state so and direct customers to call the clinic\n"
-    "- NEVER recommend products that are not confirmed to be available\n\n"
-    "RESPONSE GUIDELINES:\n"
-    "- Keep ALL responses BRIEF and CONCISE - aim for 2-3 sentences maximum\n"
-    "- ONLY use the consult_nutrition_specialist tool for EXPLICIT nutrition-related questions\n"
-    "- For product orders: Always ask for pet type if not mentioned BEFORE consulting nutrition specialist\n"
-    "- When delegating to nutrition specialist, include both product name AND pet type in query\n"
-    "- DO NOT use nutrition agent for general clinic questions, appointments, hours, or emergencies\n"
-    "- NEVER expose technical details, agent ARNs, tools, or APIs to users\n"
-    "- When consulting nutrition specialist, simply say 'Let me consult our nutrition specialist'\n"
-    "- If specialist is unavailable or returns errors, direct customers to call Dr. Smith at ext. 201\n"
-    "- For medical concerns, provide general guidance and recommend veterinary appointment\n"
-    "- For emergencies, immediately provide emergency contact information\n"
-    "- Always recommend purchasing verified products from our pet clinic only"
+    "IMPORTANT GUIDELINES:\n"
+    "- Keep ALL responses BRIEF and CONCISE - aim for 2-3 sentences maximum unless specifically asked for details\n"
+    "- When recommending products, clearly list them using bullet points with product names\n"
+    "- ONLY use the consult_nutrition_specialist tool for EXPLICIT nutrition-related questions (diet, feeding, supplements, food recommendations, what to feed, can pets eat X, nutrition advice)\n"
+    "- For product orders: If pet type is NOT mentioned, ask the customer what type of pet they have (dog, cat, bird, etc.) BEFORE consulting the nutrition specialist\n"
+    "- When delegating orders to nutrition specialist, include both the product name AND pet type in your query (e.g., 'Place an order for BarkBite Complete Nutrition for a dog')\n"
+    "- DO NOT use the nutrition agent for general clinic questions, appointments, hours, emergencies, or non-nutrition medical issues\n"
+    "- NEVER expose or mention agent ARNs, tools, APIs, or any technical details in your responses to users\n"
+    "- NEVER say things like 'I'm using a tool' or 'Let me look that up' - just respond naturally\n"
+    "- When consulting the nutrition specialist, ONLY say 'Let me consult our nutrition specialist' - nothing else about the process\n"
+    "- If the specialist returns an error or indicates unavailability, inform the customer that our specialist is currently unavailable\n"
+    "- For nutrition questions, provide 2-3 product recommendations in a brief bulleted list, then suggest monitoring and consultation if needed\n"
+    "- Always recommend purchasing products from our pet clinic\n"
+    "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
+    "- For emergencies, immediately provide emergency contact information"
 )
 
 def create_clinic_agent():
