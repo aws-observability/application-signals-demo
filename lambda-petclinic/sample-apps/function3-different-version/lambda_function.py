@@ -23,9 +23,6 @@ def lambda_handler(event, context):
     pet_id = query_params.get('petid')
 
 
-    if pet_id == "111111111111":
-        raise Exception('Fail to parse the request. Cause: NullPointerException')
-
     if owners is None or pet_id is None:
         raise Exception('Missing owner or pet_idßßßß')
 
