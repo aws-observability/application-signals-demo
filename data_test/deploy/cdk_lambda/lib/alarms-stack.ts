@@ -8,6 +8,9 @@ export interface AlarmsStackProps extends StackProps {
   logsTestCasesPath: string;
   metricsTestCasesPath: string;
   tracesTestCasesPath: string;
+  cloudtrailTestCasesPath: string;
+  otelResourceAttributesTestCasesPath: string;
+  tagsTestCasesPath: string;
 }
 
 export class AlarmsStack extends Stack {
@@ -24,11 +27,17 @@ export class AlarmsStack extends Stack {
     const logsTestCases = this.loadTestCases(props.logsTestCasesPath, 'logs');
     const metricsTestCases = this.loadTestCases(props.metricsTestCasesPath, 'metrics');
     const tracesTestCases = this.loadTestCases(props.tracesTestCasesPath, 'traces');
+    const cloudtrailTestCases = this.loadTestCases(props.cloudtrailTestCasesPath, 'cloudtrail');
+    const otelResourceAttributesTestCases = this.loadTestCases(props.otelResourceAttributesTestCasesPath, 'otel_resource_attributes');
+    const tagsTestCases = this.loadTestCases(props.tagsTestCasesPath, 'tags');
 
     // Create individual alarms for each test case
     this.createLogsAlarms(logsTestCases);
     this.createMetricsAlarms(metricsTestCases);
     this.createTracesAlarms(tracesTestCases);
+    this.createCloudtrailAlarms(cloudtrailTestCases);
+    this.createOtelResourceAttributesAlarms(otelResourceAttributesTestCases);
+    this.createTagsAlarms(tagsTestCases);
 
     // Create composite alarms by scenario
     this.createScenarioAlarms();
@@ -48,6 +57,12 @@ export class AlarmsStack extends Stack {
         return data.metric_test_cases || [];
       } else if (testType === 'traces') {
         return data.trace_test_cases || [];
+      } else if (testType === 'cloudtrail') {
+        return data.cloudtrail_test_cases || [];
+      } else if (testType === 'otel_resource_attributes') {
+        return data.otel_resource_attribute_test_cases || [];
+      } else if (testType === 'tags') {
+        return data.tag_test_cases || [];
       }
       
       return [];
@@ -197,6 +212,138 @@ export class AlarmsStack extends Stack {
       this.individualAlarms[alarmName] = alarm;
 
       // Keep track of scenarios for composite alarms
+      if (!this.scenarioAlarms[testCase.test_scenario]) {
+        this.scenarioAlarms[testCase.test_scenario] = {
+          alarmName: `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}`,
+          childAlarms: []
+        };
+      }
+      
+      this.scenarioAlarms[testCase.test_scenario].childAlarms.push(alarm);
+    });
+  }
+
+  private createCloudtrailAlarms(testCases: any[]): void {
+    testCases.forEach(testCase => {
+      if (testCase.disabled === true) {
+        console.log(`Skipping alarm creation for disabled test: ${testCase.test_case_id}`);
+        return;
+      }
+      const alarmName = `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}.${this.sanitizeName(testCase.test_case_id)}`;
+      const alarmDescription = `Alarm for monitoring ${testCase.description}`;
+
+      const alarm = new cloudwatch.Alarm(this, alarmName, {
+        alarmName,
+        alarmDescription,
+        metric: new cloudwatch.Metric({
+          namespace: 'APMTestResults',
+          metricName: 'TestResult',
+          dimensionsMap: {
+            TestType: 'cloudtrail',
+            TestCaseId: testCase.test_case_id,
+            TestScenario: testCase.test_scenario
+          },
+          statistic: 'Sum',
+          period: Duration.minutes(30),
+        }),
+        evaluationPeriods: 8,
+        threshold: 0.5,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        datapointsToAlarm: 8,
+        treatMissingData: cloudwatch.TreatMissingData.MISSING,
+      });
+
+      Tags.of(alarm).add('Project', 'APMDemo');
+      this.individualAlarms[alarmName] = alarm;
+
+      if (!this.scenarioAlarms[testCase.test_scenario]) {
+        this.scenarioAlarms[testCase.test_scenario] = {
+          alarmName: `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}`,
+          childAlarms: []
+        };
+      }
+      
+      this.scenarioAlarms[testCase.test_scenario].childAlarms.push(alarm);
+    });
+  }
+
+  private createOtelResourceAttributesAlarms(testCases: any[]): void {
+    testCases.forEach(testCase => {
+      if (testCase.disabled === true) {
+        console.log(`Skipping alarm creation for disabled test: ${testCase.test_case_id}`);
+        return;
+      }
+      const alarmName = `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}.${this.sanitizeName(testCase.test_case_id)}`;
+      const alarmDescription = `Alarm for monitoring ${testCase.description}`;
+
+      const alarm = new cloudwatch.Alarm(this, alarmName, {
+        alarmName,
+        alarmDescription,
+        metric: new cloudwatch.Metric({
+          namespace: 'APMTestResults',
+          metricName: 'TestResult',
+          dimensionsMap: {
+            TestType: 'otel_resource_attributes',
+            TestCaseId: testCase.test_case_id,
+            TestScenario: testCase.test_scenario
+          },
+          statistic: 'Sum',
+          period: Duration.minutes(30),
+        }),
+        evaluationPeriods: 8,
+        threshold: 0.5,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        datapointsToAlarm: 8,
+        treatMissingData: cloudwatch.TreatMissingData.MISSING,
+      });
+
+      Tags.of(alarm).add('Project', 'APMDemo');
+      this.individualAlarms[alarmName] = alarm;
+
+      if (!this.scenarioAlarms[testCase.test_scenario]) {
+        this.scenarioAlarms[testCase.test_scenario] = {
+          alarmName: `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}`,
+          childAlarms: []
+        };
+      }
+      
+      this.scenarioAlarms[testCase.test_scenario].childAlarms.push(alarm);
+    });
+  }
+
+  private createTagsAlarms(testCases: any[]): void {
+    testCases.forEach(testCase => {
+      if (testCase.disabled === true) {
+        console.log(`Skipping alarm creation for disabled test: ${testCase.test_case_id}`);
+        return;
+      }
+      const alarmName = `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}.${this.sanitizeName(testCase.test_case_id)}`;
+      const alarmDescription = `Alarm for monitoring ${testCase.description}`;
+
+      const alarm = new cloudwatch.Alarm(this, alarmName, {
+        alarmName,
+        alarmDescription,
+        metric: new cloudwatch.Metric({
+          namespace: 'APMTestResults',
+          metricName: 'TestResult',
+          dimensionsMap: {
+            TestType: 'tags',
+            TestCaseId: testCase.test_case_id,
+            TestScenario: testCase.test_scenario
+          },
+          statistic: 'Sum',
+          period: Duration.minutes(30),
+        }),
+        evaluationPeriods: 8,
+        threshold: 0.5,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        datapointsToAlarm: 8,
+        treatMissingData: cloudwatch.TreatMissingData.MISSING,
+      });
+
+      Tags.of(alarm).add('Project', 'APMDemo');
+      this.individualAlarms[alarmName] = alarm;
+
       if (!this.scenarioAlarms[testCase.test_scenario]) {
         this.scenarioAlarms[testCase.test_scenario] = {
           alarmName: `APMDemoTest.${this.sanitizeName(testCase.test_scenario)}`,

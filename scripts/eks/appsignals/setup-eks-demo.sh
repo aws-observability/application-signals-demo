@@ -72,6 +72,8 @@ function delete_resources() {
 # Execute based on operation
 if [ "$OPERATION" == "delete" ]; then
   delete_resources
+  ./setup-grouping-config.sh $REGION delete
 else
   run_cdk deploy
+  ./setup-grouping-config.sh $REGION create
 fi

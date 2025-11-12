@@ -29,6 +29,17 @@ export class LambdaStack extends Stack {
     // Add permissions for CloudWatch Logs, Metrics, and X-Ray
     role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchFullAccess'));
     role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXrayFullAccess'));
+    role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AWSCloudTrail_ReadOnlyAccess'));
+
+    // Add custom permissions for Lambda tags and API Gateway access
+    role.addToPolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'lambda:ListTags',
+        'apigateway:GET'
+      ],
+      resources: ['*']
+    }));
 
     // Create Lambda function from a directory
     this.lambdaFunction = new lambda.Function(this, 'APMDemoTestLambda', {

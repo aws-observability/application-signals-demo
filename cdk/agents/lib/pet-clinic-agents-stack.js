@@ -79,20 +79,36 @@ class PetClinicAgentsStack extends Stack {
       directory: '../../pet_clinic_ai_agents/primary_agent'
     });
 
-    // Deploy nutrition agent
-    const nutritionAgent = new BedrockAgentCoreDeployer(this, 'NutritionAgent', {
-      AgentName: 'nutrition_agent',
+    // Deploy nutrition agent with optional environment variable
+    const nutritionAgentName = 'nutrition_agent';
+    const nutritionAgentProps = {
+      AgentName: nutritionAgentName,
       ImageUri: nutritionAgentImage.imageUri,
       ExecutionRole: agentCoreRole.roleArn,
-      Entrypoint: 'nutrition_agent.py'
-    });
+      Entrypoint: 'nutrition_agent.py',
+      EnvironmentVariables: {
+        OTEL_RESOURCE_ATTRIBUTES: `service.name=${nutritionAgentName},deployment.environment=bedrock-agentcore:default,Application=Audit,Team=AnalyticsTeam,Tier=Tier-4,aws.application_signals.metric_resource_keys=Application&Team&Tier`,
+        OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: 'sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,system_metrics,google-genai'
+      }
+    };
+    
+    if (props?.nutritionServiceUrl) {
+      nutritionAgentProps.EnvironmentVariables.NUTRITION_SERVICE_URL = props.nutritionServiceUrl;
+    }
+    
+    const nutritionAgent = new BedrockAgentCoreDeployer(this, 'NutritionAgent', nutritionAgentProps);
 
     // Deploy primary agent
+    const petClinicAgentName = 'pet_clinic_agent'
     const primaryAgent = new BedrockAgentCoreDeployer(this, 'PrimaryAgent', {
-      AgentName: 'pet_clinic_agent',
+      AgentName: petClinicAgentName,
       ImageUri: primaryAgentImage.imageUri,
       ExecutionRole: agentCoreRole.roleArn,
-      Entrypoint: 'pet_clinic_agent.py'
+      Entrypoint: 'pet_clinic_agent.py',
+      EnvironmentVariables: {
+        NUTRITION_AGENT_ARN: nutritionAgent.agentArn,
+        OTEL_RESOURCE_ATTRIBUTES: `service.name=${petClinicAgentName},deployment.environment=bedrock-agentcore:default,Application=Audit,Team=AnalyticsTeam,Tier=Tier-4,aws.application_signals.metric_resource_keys=Application&Team&Tier`
+      }
     });
 
     this.nutritionAgentImageUri = nutritionAgentImage.imageUri;

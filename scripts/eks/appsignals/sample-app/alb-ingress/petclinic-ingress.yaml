@@ -39,3 +39,10 @@ spec:
                 name: visits-service-java
                 port:
                   number: 8082
+          - path: /nutrition
+            pathType: Prefix
+            backend:
+              service:
+                name: nutrition-service-nodejs
+                port:
+                  number: 80

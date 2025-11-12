@@ -1,7 +1,8 @@
-strands-agents
+strands-agents>=1.14.0
 strands-agents-tools
 uv
 boto3
 bedrock-agentcore
 bedrock-agentcore-starter-toolkit
-aws-opentelemetry-distro>=0.12.1
+aws-opentelemetry-distro>=0.12.2
+requests
