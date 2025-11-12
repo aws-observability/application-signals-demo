@@ -1,6 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from django.db.models import Subquery
+from django.db.models import Subquery, Count, Sum
+from django.utils import timezone
+from django.core.cache import cache
 from .models import Billing,CheckList
 from .serializers import BillingSerializer
 from opentelemetry import trace
@@ -152,6 +154,42 @@ class BillingViewSet(viewsets.ViewSet):
         except Exception as e:
             logger.error(f"BillingViewSet.log() - Failed to log billing data to DynamoDB: {str(e)}")
             # Don't raise the exception to avoid disrupting the main flow
+
+
+class SummaryViewSet(viewsets.ViewSet):
+    def list(self, request, pk=None):
+        span = trace.get_current_span()
+        
+        # Always set request counter to 1
+        span.set_attribute("billing_summary_request", 1)
+
+         # Set num_summaries based on current minute
+        current_minute = timezone.now().minute
+        num_summaries = 50 if current_minute % 5 == 0 else 2
+        
+        # Use random cache key to simulate high cache miss rate
+        cache_key = f'billing_summary_last_7_days_{random.randint(1, num_summaries)}'
+        summary = cache.get(cache_key)
+        
+        if summary is None:
+            # Cache miss
+            span.set_attribute("billing_summary_cache_hit", 0)
+            
+            time.sleep(2)
+            billings = Billing.objects.all()
+            
+            summary = {
+                'total_count': billings.count(),
+                'total_amount': billings.aggregate(Sum('payment'))['payment__sum'] or 0,
+                'period': 'all_time'
+            }
+            
+            cache.set(cache_key, summary, 300)  # Cache for 5 minutes
+        else:
+            # Cache hit
+            span.set_attribute("billing_summary_cache_hit", 1)
+        
+        return Response(summary)
 
 
 class HealthViewSet(viewsets.ViewSet):
