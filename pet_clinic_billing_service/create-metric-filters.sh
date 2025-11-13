@@ -5,6 +5,7 @@ LOG_GROUP_NAME="aws/spans"
 REGION=${AWS_REGION:-us-east-1}
 NAMESPACE="CustomBilling"
 
+# TODO: [@lnnofal] convert it to CDK and hooked up with other CDK stacks (for EKS)
 echo "Creating log group if it doesn't exist..."
 aws logs create-log-group --log-group-name "$LOG_GROUP_NAME" --region "$REGION" 2>/dev/null || echo "Log group already exists or creation failed"
 

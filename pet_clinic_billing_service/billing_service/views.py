@@ -175,7 +175,9 @@ class SummaryViewSet(viewsets.ViewSet):
             # Cache miss
             span.set_attribute("billing_summary_cache_hit", 0)
             
+            # Sleep to simulate high latency when there's a cache miss 
             time.sleep(2)
+            
             billings = Billing.objects.all()
             
             summary = {
