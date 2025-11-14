@@ -8,7 +8,7 @@ table_name = 'HistoricalRecordDynamoDBTable'
 table = dynamodb.Table(table_name)
 
 def lambda_handler(event, context):
-    query_params = event.get('queryStringParameters', {})
+    query_params = event.get('queryStringParameters') or {}
     current_span = trace.get_current_span()
     # Add an attribute to the current span
     owner_id = random.randint(1, 9)  # Generate a random value between 1 and 9
@@ -18,10 +18,14 @@ def lambda_handler(event, context):
     pet_id = query_params.get('petid')
 
     try:
-        response = table.scan()
+        # Optimize: Use pagination to limit scan results and improve performance
+        response = table.scan(
+            Limit=100,  # Limit results to prevent large scans
+            ProjectionExpression='recordId'  # Only fetch recordId to reduce data transfer
+        )
         items = response.get('Items', [])
 
-        print("Record IDs in DynamoDB Table:")
+        print(f"Retrieved {len(items)} records from DynamoDB")
         for item in items:
             print(item['recordId'])
 
@@ -30,14 +34,19 @@ def lambda_handler(event, context):
         return {
             'statusCode': 200,
             'body': json.dumps({
-                'recordIds': record_ids
+                'recordIds': record_ids,
+                'count': len(record_ids)
             }),
             'headers': {
                 'Content-Type': 'application/json'
             }
         }
     except Exception as e:
+        print(f"Error scanning table: {str(e)}")
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': 'Failed to retrieve records'}),
+            'headers': {
+                'Content-Type': 'application/json'
+            }
         }
