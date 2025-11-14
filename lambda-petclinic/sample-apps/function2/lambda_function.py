@@ -18,7 +18,8 @@ def lambda_handler(event, context):
     pet_id = query_params.get('petid')
 
     try:
-        response = table.scan()
+        # Optimize scan operation with pagination limit to reduce latency
+        response = table.scan(Limit=100)
         items = response.get('Items', [])
 
         print("Record IDs in DynamoDB Table:")

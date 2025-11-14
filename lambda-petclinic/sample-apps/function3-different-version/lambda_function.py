@@ -22,12 +22,15 @@ def lambda_handler(event, context):
     owners = query_params.get('owners')
     pet_id = query_params.get('petid')
 
-
-    if pet_id == "111111111111":
-        raise Exception('Fail to parse the request. Cause: NullPointerException')
-
+    # Improved input validation with proper error responses
     if owners is None or pet_id is None:
-        raise Exception('Missing owner or pet_idßßßß')
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'Missing required parameters: owners or petid'}),
+            'headers': {
+                'Content-Type': 'application/json'
+            }
+        }
 
     if record_id is None:
         return {
