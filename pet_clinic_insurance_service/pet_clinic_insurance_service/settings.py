@@ -117,6 +117,14 @@ DATABASES = {
         "PASSWORD": DB_PASSWORD,
         "HOST": os.environ.get("DB_SERVICE_HOST"),
         "PORT": os.environ.get("DB_SERVICE_PORT"),
+        # Database connection pool optimization
+        "CONN_MAX_AGE": 600,  # Keep connections alive for 10 minutes
+        "OPTIONS": {
+            "MAX_CONNS": 20,  # Maximum number of connections
+            "MIN_CONNS": 5,   # Minimum number of connections
+            "connect_timeout": 10,  # Connection timeout in seconds
+            "options": "-c default_transaction_isolation=read_committed"
+        }
     }
 }
 
@@ -137,6 +145,11 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Log slow queries
+            'propagate': False,
         },
     },
 }

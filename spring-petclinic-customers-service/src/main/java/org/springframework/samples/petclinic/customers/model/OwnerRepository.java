@@ -16,6 +16,9 @@
 package org.springframework.samples.petclinic.customers.model;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Repository class for <code>Owner</code> domain objects All method names are compliant with Spring Data naming
@@ -27,4 +30,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @author Michael Isvy
  * @author Maciej Szarlinski
  */
-public interface OwnerRepository extends JpaRepository<Owner, Integer> { }
+public interface OwnerRepository extends JpaRepository<Owner, Integer> {
+    
+    /**
+     * Custom delete method to prevent StackOverflowError in deleteAllInBatch
+     * Uses native SQL to avoid Hibernate HQL parsing issues
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM owners", nativeQuery = true)
+    void deleteAllOwners();
+}
