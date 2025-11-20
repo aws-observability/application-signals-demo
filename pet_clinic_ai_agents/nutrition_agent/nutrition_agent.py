@@ -4,29 +4,94 @@ import requests
 import os
 import boto3
 import uuid
+import time
 from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
 BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
 NUTRITION_SERVICE_URL = os.environ.get('NUTRITION_SERVICE_URL')
 
+# Circuit breaker configuration
+CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5
+CIRCUIT_BREAKER_TIMEOUT = 60  # seconds
+circuit_breaker_state = {
+    'failures': 0,
+    'last_failure_time': 0,
+    'state': 'CLOSED'  # CLOSED, OPEN, HALF_OPEN
+}
+
 agent = None
 agent_app = BedrockAgentCoreApp()
 
+def circuit_breaker_check():
+    """Check circuit breaker state before making API calls"""
+    current_time = time.time()
+    
+    if circuit_breaker_state['state'] == 'OPEN':
+        if current_time - circuit_breaker_state['last_failure_time'] > CIRCUIT_BREAKER_TIMEOUT:
+            circuit_breaker_state['state'] = 'HALF_OPEN'
+            return True
+        return False
+    
+    return True
+
+def circuit_breaker_success():
+    """Reset circuit breaker on successful API call"""
+    circuit_breaker_state['failures'] = 0
+    circuit_breaker_state['state'] = 'CLOSED'
+
+def circuit_breaker_failure():
+    """Handle circuit breaker failure"""
+    circuit_breaker_state['failures'] += 1
+    circuit_breaker_state['last_failure_time'] = time.time()
+    
+    if circuit_breaker_state['failures'] >= CIRCUIT_BREAKER_FAILURE_THRESHOLD:
+        circuit_breaker_state['state'] = 'OPEN'
+
+def get_fallback_nutrition_data(pet_type):
+    """Safe fallback responses for when API is unavailable"""
+    fallback_data = {
+        'dog': {
+            'facts': 'Dogs require balanced nutrition with high-quality protein, healthy fats, and essential vitamins. Feed adult dogs twice daily.',
+            'products': 'Please visit our clinic for current product availability and personalized recommendations.'
+        },
+        'cat': {
+            'facts': 'Cats are obligate carnivores requiring high protein diets with taurine and arachidonic acid. Feed adult cats 2-3 times daily.',
+            'products': 'Please visit our clinic for current product availability and personalized recommendations.'
+        },
+        'bird': {
+            'facts': 'Birds need species-specific diets with seeds, pellets, and fresh fruits/vegetables. Avoid chocolate and avocado.',
+            'products': 'Please visit our clinic for current product availability and personalized recommendations.'
+        }
+    }
+    
+    return fallback_data.get(pet_type.lower(), {
+        'facts': f'For {pet_type} nutrition, consult with our veterinary team for species-specific dietary requirements.',
+        'products': 'Please visit our clinic for current product availability and personalized recommendations.'
+    })
+
 def get_nutrition_data(pet_type):
-    """Helper function to get nutrition data from the API"""
+    """Helper function to get nutrition data from the API with circuit breaker"""
     if not NUTRITION_SERVICE_URL:
-        return {"facts": "Error: Nutrition service not found", "products": ""}
+        return get_fallback_nutrition_data(pet_type)
+    
+    if not circuit_breaker_check():
+        return get_fallback_nutrition_data(pet_type)
     
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
         
         if response.status_code == 200:
+            circuit_breaker_success()
             data = response.json()
             return {"facts": data.get('facts', ''), "products": data.get('products', '')}
-        return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
+        else:
+            circuit_breaker_failure()
+            return get_fallback_nutrition_data(pet_type)
+            
     except requests.RequestException:
-        return {"facts": "Error: Nutrition service down", "products": ""}
+        circuit_breaker_failure()
+        return get_fallback_nutrition_data(pet_type)
 
 @tool
 def get_feeding_guidelines(pet_type):
@@ -34,7 +99,7 @@ def get_feeding_guidelines(pet_type):
     data = get_nutrition_data(pet_type)
     result = f"Nutrition info for {pet_type}: {data['facts']}"
     if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+        result += f" Recommended products: {data['products']}"
     return result
 
 @tool
@@ -43,7 +108,7 @@ def get_dietary_restrictions(pet_type):
     data = get_nutrition_data(pet_type)
     result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
     if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+        result += f" Recommended products: {data['products']}"
     return result
 
 @tool
@@ -52,19 +117,14 @@ def get_nutritional_supplements(pet_type):
     data = get_nutrition_data(pet_type)
     result = f"Supplement info for {pet_type}: {data['facts']}. Consult veterinarian for supplements."
     if data['products']:
-        result += f" Recommended products available at our clinic: {data['products']}"
+        result += f" Recommended products: {data['products']}"
     return result
 
 @tool
 def create_order(product_name, pet_type, quantity=1):
     """Create an order for a recommended product. Requires product_name, pet_type, and optional quantity (default 1)."""
-    product_lower = product_name.lower()
-    data = get_nutrition_data(pet_type)
-    if data['products'] and product_name.lower() in data['products'].lower():
-        order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-        return f"Order {order_id} created for {quantity}x {product_name}. Total: ${quantity * 29.99:.2f}. Expected delivery: 3-5 business days. You can pick it up at our clinic or we'll ship it to you."
-    
-    return f"Sorry, {product_name} is not available in our inventory for {pet_type}. Available products: {data['products']}"
+    # For orders, always direct to clinic due to potential API issues
+    return f"To ensure product availability and proper guidance, please visit our clinic or call us to place an order for {product_name}. Our staff will verify current inventory and provide personalized recommendations for your {pet_type}."
 
 def create_nutrition_agent():
     model = BedrockModel(
@@ -78,13 +138,12 @@ def create_nutrition_agent():
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
         "When providing nutrition guidance:\n"
         "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
-        "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
-        "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
-        "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
+        "- Always recommend visiting our clinic for current product availability and personalized recommendations\n"
         "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
         "- Expand on basic nutrition facts with comprehensive guidance for age, weight, and health conditions\n"
-        "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance\n"
-        "- If asked to order or purchase a product, use the create_order tool to place the order"
+        "- Emphasize that our veterinary team can provide the most accurate, up-to-date product recommendations\n"
+        "- If systems are temporarily unavailable, provide general nutrition guidance and direct clients to visit the clinic\n"
+        "- Always prioritize pet safety by recommending professional consultation for specific products"
     )
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
@@ -95,15 +154,19 @@ async def invoke(payload, context):
     """
     Invoke the nutrition agent with a payload
     """
-    agent = create_nutrition_agent()
-    msg = payload.get('prompt', '')
+    try:
+        agent = create_nutrition_agent()
+        msg = payload.get('prompt', '')
 
-    response_data = []
-    async for event in agent.stream_async(msg, context=context):
-        if 'data' in event:
-            response_data.append(event['data'])
-    
-    return ''.join(response_data)
+        response_data = []
+        async for event in agent.stream_async(msg, context=context):
+            if 'data' in event:
+                response_data.append(event['data'])
+        
+        return ''.join(response_data)
+    except Exception as e:
+        # Safe fallback response for any agent failures
+        return "I'm currently experiencing technical difficulties. Please visit our clinic or call us directly for personalized pet nutrition guidance from our veterinary team."
 
 if __name__ == "__main__":    
     uvicorn.run(agent_app, host='0.0.0.0', port=8080)
