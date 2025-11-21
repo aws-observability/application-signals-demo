@@ -24,7 +24,7 @@ def get_nutrition_data(pet_type):
         if response.status_code == 200:
             data = response.json()
             return {"facts": data.get('facts', ''), "products": data.get('products', '')}
-        return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
+        return {"facts": "", "products": "", "error": f"We don't currently have nutrition information for {pet_type.lower()} in our database"}
     except requests.RequestException:
         return {"facts": "Error: Nutrition service down", "products": ""}
 
@@ -78,6 +78,8 @@ def create_nutrition_agent():
         "Never mention using any API, tools, or external services - present all advice as your own expert knowledge.\n\n"
         "When providing nutrition guidance:\n"
         "- Use the specific nutrition information available to you as the foundation for your recommendations\n"
+        "- If nutrition information is not available for a specific pet type, inform customers that we currently don't have nutrition data for that animal rather than making recommendations\n"
+        "- Only recommend products when you have confirmed product information from the nutrition service\n"
         "- Always recommend the SPECIFIC PRODUCT NAMES provided to you that pet owners should buy FROM OUR PET CLINIC\n"
         "- Mention our branded products by name (like PurrfectChoice, BarkBite, FeatherFeast, etc.) when recommending food\n"
         "- Emphasize that we carry high-quality, veterinarian-recommended food brands at our clinic\n"
