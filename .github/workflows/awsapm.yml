@@ -53,7 +53,7 @@ jobs:
       # Step 1: Prepare AWS MCP configuration and investigation prompt
       - name: Prepare Investigation Context
         id: prepare
-        uses: mxiamxia/aws-apm-action@action-basedline
+        uses: aws-actions/application-observability-for-aws@v1
         with:
           bot_name: "@awsapm"
           cli_tool: "claude_code"
@@ -72,7 +72,7 @@ jobs:
       # Step 3: Post results back to GitHub issue/PR (reuse the same action)
       - name: Post Investigation Results
         if: always()  # Run even if Claude step fails
-        uses: mxiamxia/aws-apm-action@action-basedline
+        uses: aws-actions/application-observability-for-aws@v1
         with:
           bot_name: "@awsapm"
           cli_tool: "claude_code"
