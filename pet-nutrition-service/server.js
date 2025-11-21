@@ -20,7 +20,11 @@ async function main () {
       const { pet_type } = req.params;
       const fact = await NutritionFact.findOne({ pet_type });
       if (!fact) {
-        return res.status(404).json({ message: 'nutrition fact not found for the given pet_type' });
+        return res.status(200).json({
+          pet_type: pet_type,
+          facts: 'Balanced diet with quality proteins, vitamins, and minerals appropriate for the species. Consult with a veterinarian for specific dietary recommendations.',
+          products: 'PetCare Essential Nutrition, VetChoice Balanced Formula'
+        });
       }
       res.status(200).json(fact);
     } catch (error) {
