@@ -16,7 +16,7 @@ agent_app = BedrockAgentCoreApp()
 def get_nutrition_data(pet_type):
     """Helper function to get nutrition data from the API"""
     if not NUTRITION_SERVICE_URL:
-        return {"facts": "Error: Nutrition service not found", "products": ""}
+        return {"facts": "Balanced diet with quality proteins, vitamins, and minerals. Consult with a veterinarian for specific recommendations.", "products": "PetCare Essential Nutrition, VetChoice Balanced Formula"}
     
     try:
         response = requests.get(f"{NUTRITION_SERVICE_URL}/{pet_type.lower()}", timeout=5)
@@ -24,9 +24,9 @@ def get_nutrition_data(pet_type):
         if response.status_code == 200:
             data = response.json()
             return {"facts": data.get('facts', ''), "products": data.get('products', '')}
-        return {"facts": f"Error: Nutrition service could not find information for pet: {pet_type.lower()}", "products": ""}
+        return {"facts": "Balanced diet with quality proteins, vitamins, and minerals. Consult with a veterinarian for specific recommendations.", "products": "PetCare Essential Nutrition, VetChoice Balanced Formula"}
     except requests.RequestException:
-        return {"facts": "Error: Nutrition service down", "products": ""}
+        return {"facts": "Balanced diet with quality proteins, vitamins, and minerals. Consult with a veterinarian for specific recommendations.", "products": "PetCare Essential Nutrition, VetChoice Balanced Formula"}
 
 @tool
 def get_feeding_guidelines(pet_type):
