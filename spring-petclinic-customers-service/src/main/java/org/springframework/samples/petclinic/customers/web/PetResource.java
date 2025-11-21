@@ -18,6 +18,7 @@
  */
 package org.springframework.samples.petclinic.customers.web;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.annotation.Timed;
 import io.opentelemetry.api.trace.Span;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.validation.constraints.Min;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * @author Juergen Hoeller
@@ -58,6 +60,7 @@ class PetResource {
     private final BedrockRuntimeV2Service bedrockRuntimeV2Service;
     private final BedrockV1Service bedrockV1Service;
     private final BedrockV2Service bedrockV2Service;
+    private final CircuitBreaker insuranceServiceCircuitBreaker;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -161,34 +164,45 @@ class PetResource {
 
         PetDetails detail = new PetDetails(findPetById(petId));
 
-        // enrich with insurance
         PetInsurance petInsurance = null;
-        try{
-            ResponseEntity<PetInsurance> response = restTemplate.getForEntity("http://insurance-service/pet-insurances/" + detail.getId(), PetInsurance.class);
-            petInsurance = response.getBody();
+        try {
+            Supplier<PetInsurance> insuranceSupplier = () -> {
+                ResponseEntity<PetInsurance> response = restTemplate.getForEntity(
+                    "http://insurance-service/pet-insurances/" + detail.getId(),
+                    PetInsurance.class
+                );
+                return response.getBody();
+            };
+            
+            petInsurance = insuranceServiceCircuitBreaker.decorateSupplier(insuranceSupplier).get();
+        } catch (Exception ex) {
+            log.warn("Failed to fetch insurance for pet {}: {}", detail.getId(), ex.getMessage());
         }
-        catch (Exception ex){
-            ex.printStackTrace();
+        
+        if (petInsurance != null) {
+            detail.setInsurance_id(petInsurance.getInsurance_id());
+            detail.setInsurance_name(petInsurance.getInsurance_name());
+            detail.setPrice(petInsurance.getPrice());
+        } else {
+            log.info("Returning pet details without insurance data for pet {}", detail.getId());
         }
-        if(petInsurance == null){
-            System.out.println("empty petInsurance");
-            return detail;
-        }
-        detail.setInsurance_id(petInsurance.getInsurance_id());
-        detail.setInsurance_name(petInsurance.getInsurance_name());
-        detail.setPrice(petInsurance.getPrice());
 
-        // enrich with nutrition
         PetNutrition petNutrition = null;
-        // will throw exception when the pet type is not found
-        ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
-        petNutrition = response.getBody();
-
-        if(petNutrition == null){
-            System.out.println("empty petNutrition");
-            return detail;
+        try {
+            ResponseEntity<PetNutrition> response = restTemplate.getForEntity(
+                "http://nutrition-service/nutrition/" + detail.getType().getName(),
+                PetNutrition.class
+            );
+            petNutrition = response.getBody();
+        } catch (Exception ex) {
+            log.warn("Failed to fetch nutrition for pet {}: {}", detail.getId(), ex.getMessage());
         }
-        detail.setNutritionFacts(petNutrition.getFacts());
+
+        if (petNutrition != null) {
+            detail.setNutritionFacts(petNutrition.getFacts());
+        } else {
+            log.info("Returning pet details without nutrition data for pet {}", detail.getId());
+        }
 
         return detail;
     }
