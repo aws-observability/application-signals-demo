@@ -61,6 +61,27 @@
       },
       "notes": "Corresponds to PDF scenario 2"
     },
+     {
+      "test_case_id": "billing_summary_service_metric_availability_check",
+      "description": "Verify Service Latency metric availability for billing summary API (Scenario 16)",
+      "test_scenario": "Scenario 16",
+      "metric_namespace": "ApplicationSignals",
+      "metric_name": "Latency",
+      "statistic": "p99",
+      "dimensions": [
+        {"Name": "Operation", "Value": "GET ^summary/$"},
+        {"Name": "Environment", "Value": "ENVIRONMENT_NAME_PLACEHOLDER"},
+        {"Name": "Service", "Value": "billing-service-python"}
+      ],
+      "evaluation_period_minutes": 180,
+      "threshold": {
+        "comparison_operator": [{
+          "operator": "GreaterThanOrEqualToThreshold",
+          "threshold_value": 0
+        }]
+      },
+      "notes": "Corresponds to PDF scenario 16"
+    },
     {
       "test_case_id": "database_insight_dependency_metric_availability_check",
       "use_query_style": true,

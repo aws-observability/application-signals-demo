@@ -45,4 +45,11 @@ public class BillingServiceClient {
             .bodyToFlux(BillingDetail.class);
     }
 
+    public Mono<Object> getBillingSummary() {
+        return webClientBuilder.build().get()
+            .uri("http://billing-service/summary/")
+            .retrieve()
+            .bodyToMono(Object.class);
+    }
+
 }
