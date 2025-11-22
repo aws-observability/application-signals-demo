@@ -122,11 +122,6 @@ public class ApiController {
         return billingServiceClient.getBillings();
     }
 
-    @GetMapping(value = "billing/summary")
-    public Mono<Object> getBillingSummary() {
-        return billingServiceClient.getBillingSummary();
-    }
-
     @PostMapping(value = "insurance/pet-insurances")
     public Mono<Void> addPetInsurance(final @RequestBody PetInsurance petInsurance) {
         System.out.println(petInsurance.toString());

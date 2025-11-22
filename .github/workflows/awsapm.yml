@@ -1,81 +1,38 @@
-# Example workflow for Claude Code with Amazon Bedrock
-#
-# This workflow demonstrates how to use the Application Observability for AWS action
-# with Claude Code and a custom Bedrock model.
-#
-# Key Features:
-# - Brings your own Bedrock model (pay-per-token usage on your AWS account)
-# - Uses Anthropic's official claude-code-base-action for execution
-# - Two-step process: preparation + execution
-#
-# Prerequisites:
-# 1. AWS IAM role with OIDC trust for GitHub Actions
-# 2. Bedrock InvokeModel permissions in your IAM role
-# 3. Application Signals and CloudWatch permissions
-#
-# Setup:
-# 1. Create repository secret AWSAPM_ROLE_ARN with your IAM role ARN
-# 2. (Optional) Set repository variable AWS_REGION for your preferred region
-# 3. Copy this file to .github/workflows/awsapm.yml in your repository
-
-name: Application observability for AWS (Claude + Bedrock)
+name: Application observability for AWS
 
 on:
   issue_comment:
     types: [created, edited]
+  pull_request_review_comment:
+    types: [created]
   issues:
     types: [opened, assigned, edited]
+  pull_request_review:
+    types: [submitted]
 
 jobs:
   awsapm-investigation:
-    # Only run when @awsapm is mentioned
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@awsapm')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@awsapm')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@awsapm')) ||
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@awsapm') || contains(github.event.issue.title, '@awsapm')))
     runs-on: ubuntu-latest
-
     permissions:
-      contents: write        # To create branches for PRs
-      pull-requests: write   # To post comments on PRs
-      issues: write          # To post comments on issues
-      id-token: write        # Required for AWS OIDC authentication
-
+      contents: write
+      pull-requests: write
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          fetch-depth: 1
 
-      # Step 1: Prepare AWS MCP configuration and investigation prompt
-      - name: Prepare Investigation Context
-        id: prepare
-        uses: aws-actions/application-observability-for-aws@v1
+      - name: Run Application observability for AWS Investigation
+        id: awsapm
+        uses: mxiamxia/aws-apm-action@main
         with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
           bot_name: "@awsapm"
-          cli_tool: "claude_code"
-
-      # Step 2: Execute investigation with Claude Code
-      - name: Run Claude Investigation
-        id: claude
-        uses: anthropics/claude-code-base-action@beta
-        with:
-          use_bedrock: "true" 
-          model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-          prompt_file: ${{ steps.prepare.outputs.prompt_file }}
-          mcp_config: ${{ steps.prepare.outputs.mcp_config_file }}
-          allowed_tools: ${{ steps.prepare.outputs.allowed_tools }}
-
-      # Step 3: Post results back to GitHub issue/PR (reuse the same action)
-      - name: Post Investigation Results
-        if: always()  # Run even if Claude step fails
-        uses: aws-actions/application-observability-for-aws@v1
-        with:
-          bot_name: "@awsapm"
-          cli_tool: "claude_code"
-          comment_id: ${{ steps.prepare.outputs.awsapm_comment_id }}
-          output_file: ${{ steps.claude.outputs.execution_file }}
-          output_status: ${{ steps.claude.outputs.conclusion }}

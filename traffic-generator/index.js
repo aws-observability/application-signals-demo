@@ -251,13 +251,3 @@ const lowTrafficBillingTask = cron.schedule('*/2 * * * *', () => {
 }, { scheduled: false });
 
 lowTrafficBillingTask.start();
-
-const lowTrafficBillingSummaryTask = cron.schedule('* * * * * *', () => {
-    console.log('query billing summary every 1 second');
-    axios.get(`${baseUrl}/api/billing/summary`, { timeout: 10000 })
-        .catch(err => {
-            console.error(`${baseUrl}/api/billing/summary, error: ` + (err.response ? err.response.data : err.toString()));
-        }); // Catch and log errors
-}, { scheduled: false });
-
-lowTrafficBillingSummaryTask.start();
