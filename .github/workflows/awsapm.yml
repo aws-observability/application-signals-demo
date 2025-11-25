@@ -51,6 +51,8 @@ jobs:
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       # Step 1: Prepare AWS MCP configuration and investigation prompt
+      # Add attemp to mitigate Cluade Code Action time-out issue 
+      # - https://github.com/anthropics/claude-code-action/issues/693
       - name: Prepare Investigation Context
         id: prepare
         uses: aws-actions/application-observability-for-aws@v1
@@ -58,24 +60,39 @@ jobs:
           bot_name: "@awsapm"
           cli_tool: "claude_code"
 
-      # Step 2: Execute investigation with Claude Code
-      - name: Run Claude Investigation
+      # Step 2: Execute investigation with Claude Code (with retry on timeout)
+      - name: Run Claude Investigation - Attempt 1
         id: claude
+        continue-on-error: true
         uses: anthropics/claude-code-base-action@beta
+        timeout-minutes: 3
         with:
           use_bedrock: "true" 
+          # Set to any Bedrock Model ID 
+          model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+          prompt_file: ${{ steps.prepare.outputs.prompt_file }}
+          mcp_config: ${{ steps.prepare.outputs.mcp_config_file }}
+          allowed_tools: ${{ steps.prepare.outputs.allowed_tools }}
+      
+      # Retry if first attempt fails or times out
+      - name: Run Claude Investigation - Attempt 2
+        id: claude-retry
+        if: steps.claude.outcome == 'failure'
+        uses: anthropics/claude-code-base-action@beta
+        timeout-minutes: 3
+        with:
+          use_bedrock: "true"
           model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
           prompt_file: ${{ steps.prepare.outputs.prompt_file }}
           mcp_config: ${{ steps.prepare.outputs.mcp_config_file }}
           allowed_tools: ${{ steps.prepare.outputs.allowed_tools }}
 
-      # Step 3: Post results back to GitHub issue/PR (reuse the same action)
+      # Step 3: Post results back to GitHub issue/PR
       - name: Post Investigation Results
-        if: always()  # Run even if Claude step fails
+        if: always()
         uses: aws-actions/application-observability-for-aws@v1
         with:
-          bot_name: "@awsapm"
           cli_tool: "claude_code"
           comment_id: ${{ steps.prepare.outputs.awsapm_comment_id }}
-          output_file: ${{ steps.claude.outputs.execution_file }}
-          output_status: ${{ steps.claude.outputs.conclusion }}
+          output_file: ${{ steps.claude.outputs.execution_file || steps.claude-retry.outputs.execution_file }}
+          output_status: ${{ steps.claude.outputs.conclusion || steps.claude-retry.outputs.conclusion }}
