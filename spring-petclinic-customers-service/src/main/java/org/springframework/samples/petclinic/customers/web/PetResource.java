@@ -161,31 +161,28 @@ class PetResource {
 
         PetDetails detail = new PetDetails(findPetById(petId));
 
-        // enrich with insurance
         PetInsurance petInsurance = null;
         try{
             ResponseEntity<PetInsurance> response = restTemplate.getForEntity("http://insurance-service/pet-insurances/" + detail.getId(), PetInsurance.class);
             petInsurance = response.getBody();
         }
         catch (Exception ex){
-            ex.printStackTrace();
+            log.warn("Failed to fetch pet insurance for pet {}: {}", detail.getId(), ex.getMessage());
         }
         if(petInsurance == null){
-            System.out.println("empty petInsurance");
+            log.info("No insurance information available for pet {}", detail.getId());
             return detail;
         }
         detail.setInsurance_id(petInsurance.getInsurance_id());
         detail.setInsurance_name(petInsurance.getInsurance_name());
         detail.setPrice(petInsurance.getPrice());
 
-        // enrich with nutrition
         PetNutrition petNutrition = null;
-        // will throw exception when the pet type is not found
         ResponseEntity<PetNutrition> response = restTemplate.getForEntity("http://nutrition-service/nutrition/" + detail.getType().getName(), PetNutrition.class);
         petNutrition = response.getBody();
 
         if(petNutrition == null){
-            System.out.println("empty petNutrition");
+            log.info("No nutrition information available for pet type {}", detail.getType().getName());
             return detail;
         }
         detail.setNutritionFacts(petNutrition.getFacts());
