@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/agent")
 public class AgentController {
 
-    private String primaryAgentArn = "arn:aws:bedrock-agentcore:us-east-1:140023401067:runtime/pet_clinic_agent-1237f9CoGU";
+    private String primaryAgentArn = System.getenv("PRIMARY_AGENT_ARN");
 
-    private String nutritionAgentArn = "arn:aws:bedrock-agentcore:us-east-1:140023401067:runtime/pet_clinic_agent-1237f9CoGU";
+    private String nutritionAgentArn = System.getenv("NUTRITION_AGENT_ARN");
 
     private String awsRegion = "us-east-1";
 
