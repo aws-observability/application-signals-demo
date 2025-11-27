@@ -3,6 +3,12 @@ spring:
     name: api-gateway
   config:
     import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888/}
+  cloud:
+    gateway:
+      forwarded:
+        enabled: false
+      x-forwarded:
+        enabled: false
 
 eureka:
   instance:
