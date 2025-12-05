@@ -46,7 +46,7 @@ export class RdsStack extends Stack {
     // Create parameter group for slow SQL logging
     const parameterGroup = new ParameterGroup(this, 'EksSlowSQLParameterGroup', {
       engine: DatabaseClusterEngine.auroraPostgres({
-        version: AuroraPostgresEngineVersion.VER_15_4,
+        version: AuroraPostgresEngineVersion.VER_15_12,
       }),
       description: 'Parameter group for enabling slow SQL logging',
       parameters: {
@@ -59,7 +59,7 @@ export class RdsStack extends Stack {
     // Create an Aurora PostgreSQL cluster
     const dbCluster = new DatabaseCluster(this, 'EksRdsCluster', {
       engine: DatabaseClusterEngine.auroraPostgres({
-        version: AuroraPostgresEngineVersion.VER_15_4,
+        version: AuroraPostgresEngineVersion.VER_15_12,
       }),
       credentials: Credentials.fromUsername(this.masterUsername, {
         password: dbSecret.secretValue,
