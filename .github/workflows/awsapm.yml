@@ -55,7 +55,7 @@ jobs:
       # - https://github.com/anthropics/claude-code-action/issues/693
       - name: Prepare Investigation Context
         id: prepare
-        uses: mxiamxia/application-observability-for-aws@main
+        uses: aws-actions/application-observability-for-aws@v1
         with:
           bot_name: "@awsapm"
           cli_tool: "claude_code"
@@ -88,7 +88,7 @@ jobs:
       # Step 3: Post results back to GitHub issue/PR
       - name: Post Investigation Results
         if: always()
-        uses: mxiamxia/application-observability-for-aws@main
+        uses: aws-actions/application-observability-for-aws@v1
         with:
           cli_tool: "claude_code"
           comment_id: ${{ steps.prepare.outputs.awsapm_comment_id }}
