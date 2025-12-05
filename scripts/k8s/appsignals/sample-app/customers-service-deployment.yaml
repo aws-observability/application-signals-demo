@@ -35,6 +35,7 @@ spec:
           image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-customers-service:latest
           securityContext:
             runAsNonRoot: true
+            runAsUser: 101
             allowPrivilegeEscalation: false
           name: customers-service-java
           ports:
