@@ -29,7 +29,7 @@ headless_mode = os.environ['HEADLESS_MODE'].lower() == 'true'
 
 test_failed = False
 
-model_id = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+model_id = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # Disable browser-use's built-in LLM API-key check
 os.environ["SKIP_LLM_API_KEY_VERIFICATION"] = "True"
