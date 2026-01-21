@@ -8,7 +8,7 @@ from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from botocore.exceptions import ClientError
 
-BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 @tool
 def get_clinic_hours():
