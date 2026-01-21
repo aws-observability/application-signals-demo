@@ -30,12 +30,12 @@ public class AgentController {
 
     private String nutritionAgentArn = System.getenv("NUTRITION_AGENT_ARN");
 
-    private String awsRegion = "us-east-1";
+    private String awsRegion = System.getenv().getOrDefault("AWS_REGION", "us-east-1");
 
     private final BedrockAgentCoreClient bedrockClient;
     private final String sessionId;
 
-    public AgentController(String region) {
+    public AgentController() {
         this.bedrockClient = BedrockAgentCoreClient.builder()
                 .region(Region.of(awsRegion))
                 .credentialsProvider(software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider.builder().build())
@@ -68,7 +68,7 @@ public class AgentController {
         String payload = String.format("{\"prompt\": \"%s\"}", escapeJson(prompt));
 
         InvokeAgentRuntimeRequest invokeRequest = InvokeAgentRuntimeRequest.builder()
-                .agentRuntimeArn("arn:aws:bedrock-agentcore:us-east-1:140023401067:runtime/pet_clinic_agent-1237f9CoGU")
+                .agentRuntimeArn(primaryAgentArn)
                 .qualifier("DEFAULT")
                 .runtimeSessionId(sessionId)
                 .contentType("application/json")
