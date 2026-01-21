@@ -3,12 +3,15 @@ import boto3
 import json
 import uvicorn
 import uuid
+import random
 from strands import Agent, tool
 from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from botocore.exceptions import ClientError
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
 
-BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 @tool
 def get_clinic_hours():
@@ -80,7 +83,7 @@ system_prompt = (
     "- When recommending products, clearly list them using bullet points with product names\n"
     "- ONLY use the consult_nutrition_specialist tool for EXPLICIT nutrition-related questions (diet, feeding, supplements, food recommendations, what to feed, can pets eat X, nutrition advice)\n"
     "- For product orders: If pet type is NOT mentioned, ask the customer what type of pet they have (dog, cat, bird, etc.) BEFORE consulting the nutrition specialist\n"
-    "- When delegating orders to nutrition specialist, include both the product name AND pet type in your query (e.g., 'Place an order for BarkBite Complete Nutrition for a dog')\n"
+    "- When delegating orders to nutrition specialist, include both the product name AND pet type in your query (e.g., 'Place an order for BarkBite Complete Nutrition for a dog..')\n"
     "- DO NOT use the nutrition agent for general clinic questions, appointments, hours, emergencies, or non-nutrition medical issues\n"
     "- NEVER expose or mention agent ARNs, tools, APIs, or any technical details in your responses to users\n"
     "- NEVER say things like 'I'm using a tool' or 'Let me look that up' - just respond naturally\n"
@@ -89,7 +92,7 @@ system_prompt = (
     "- For nutrition questions, provide 2-3 product recommendations in a brief bulleted list, then suggest monitoring and consultation if needed\n"
     "- Always recommend purchasing products from our pet clinic\n"
     "- For medical concerns, provide general guidance and recommend scheduling a veterinary appointment\n"
-    "- For emergencies, immediately provide emergency contact information"
+    "- For emergencies, immediately provide emergency contact information.."
 )
 
 def create_clinic_agent():
@@ -116,6 +119,41 @@ async def invoke(payload, context):
     async for event in agent.stream_async(msg, context=context):
         if 'data' in event:
             response_data.append(event['data'])
+    
+    # Simulate exception after processing events
+    if random.random() < 0.15:
+        span = trace.get_current_span()
+        
+        exception_id = format(random.getrandbits(64), '016x')
+        
+        stacktrace = (
+            'Traceback (most recent call last):\n'
+            'File "/usr/local/lib/python3.11/site-packages/botocore/parsers.py", line 358, in _parse_shape\n'
+            '  parsed[member_name] = self._parse_shape(member_shape, body[member_name])\n'
+            'File "/usr/local/lib/python3.11/site-packages/botocore/parsers.py", line 1043, in _parse_body_as_json\n'
+            '  return self._parse_shape(shape, parsed_json)\n'
+            'File "/usr/local/lib/python3.11/site-packages/botocore/parsers.py", line 921, in _do_parse\n'
+            '  return self._parse_body_as_json(response["body"], shape)\n'
+            'File "/usr/local/lib/python3.11/site-packages/botocore/parsers.py", line 856, in parse\n'
+            '  parsed = self._do_parse(response, shape)\n'
+            'File "/usr/local/lib/python3.11/site-packages/botocore/eventstream.py", line 394, in __iter__\n'
+            '  for event in self._event_generator:\n'
+            'File "/usr/local/lib/python3.11/site-packages/strands/models/bedrock.py", line 672, in _stream\n'
+            '  for chunk in response["stream"]:\n'
+            'File "/app/pet_clinic_agent.py", line 145, in invoke\n'
+            '  raise error\n'
+            "KeyError: 'output'"
+        )
+
+        error = KeyError("Error parsing JSON response from ConverseStream, KeyError: 'output'")
+        
+        span.record_exception(error, attributes={
+            "exception.message": "Error parsing JSON response from ConverseStream, KeyError: 'output'",
+            "exception.id": exception_id,
+            "exception.stacktrace": stacktrace,
+        })
+        
+        raise error
     
     return ''.join(response_data)
 

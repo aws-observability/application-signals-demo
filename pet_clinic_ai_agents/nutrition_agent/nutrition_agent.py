@@ -7,7 +7,7 @@ import uuid
 from strands.models import BedrockModel
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
-BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-5-20250929-v1:0"
 NUTRITION_SERVICE_URL = os.environ.get('NUTRITION_SERVICE_URL')
 
 agent = None
@@ -41,7 +41,7 @@ def get_feeding_guidelines(pet_type):
 def get_dietary_restrictions(pet_type):
     """Get dietary recommendations for specific health conditions by animal type"""
     data = get_nutrition_data(pet_type)
-    result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice."
+    result = f"Dietary info for {pet_type}: {data['facts']}. Consult veterinarian for condition-specific advice.."
     if data['products']:
         result += f" Recommended products available at our clinic: {data['products']}"
     return result
@@ -84,7 +84,7 @@ def create_nutrition_agent():
         "- Give actionable dietary recommendations including feeding guidelines, restrictions, and supplements\n"
         "- Expand on basic nutrition facts with comprehensive guidance for age, weight, and health conditions\n"
         "- Always mention that pet owners can purchase the recommended food items directly from our clinic for convenience and quality assurance\n"
-        "- If asked to order or purchase a product, use the create_order tool to place the order"
+        "- If asked to order or purchase a product, use the create_order tool to place the order."
     )
 
     return Agent(model=model, tools=tools, system_prompt=system_prompt)
