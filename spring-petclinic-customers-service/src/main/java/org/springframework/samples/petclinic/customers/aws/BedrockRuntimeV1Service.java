@@ -45,20 +45,20 @@ public class BedrockRuntimeV1Service {
 
     public String invokeTitanModel(String petType) {
         try {
-            String modelId = "amazon.titan-text-express-v1";
+            String modelId = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
             String inputText = String.format("What's the common disease for a %s?", petType);
             float temperature = 0.8f;
-            float topP = 0.9f;
             int maxTokenCount = 1000;
 
-            JSONObject textGenerationConfig = new JSONObject();
-            textGenerationConfig.put("temperature", temperature);
-            textGenerationConfig.put("topP", topP);
-            textGenerationConfig.put("maxTokenCount", maxTokenCount);
+            JSONObject message = new JSONObject();
+            message.put("role", "user");
+            message.put("content", inputText);
 
             JSONObject nativeRequestObject = new JSONObject();
-            nativeRequestObject.put("inputText", inputText);
-            nativeRequestObject.put("textGenerationConfig", textGenerationConfig);
+            nativeRequestObject.put("anthropic_version", "bedrock-2023-05-31");
+            nativeRequestObject.put("max_tokens", maxTokenCount);
+            nativeRequestObject.put("temperature", temperature);
+            nativeRequestObject.put("messages", new JSONArray().put(message));
 
             String nativeRequest = nativeRequestObject.toString();
             ByteBuffer buffer = StandardCharsets.UTF_8.encode(nativeRequest);
@@ -73,16 +73,14 @@ public class BedrockRuntimeV1Service {
             resultBodyBuffer.get(bytes);
             String result_body = new String(bytes, StandardCharsets.UTF_8);
 
-            String generatedText = "";
             JSONObject jsonObject = new JSONObject(result_body);
-            int inputTextTokenCount = jsonObject.getInt("inputTextTokenCount");
-            JSONArray resultsArray = jsonObject.getJSONArray("results");
-            JSONObject firstResult = resultsArray.getJSONObject(0);
-            int outputTokenCount = firstResult.getInt("tokenCount");
-            generatedText = firstResult.getString("outputText");
-            String completionReason = firstResult.getString("completionReason");
+            JSONObject usage = jsonObject.getJSONObject("usage");
+            int inputTextTokenCount = usage.getInt("input_tokens");
+            int outputTokenCount = usage.getInt("output_tokens");
+            String generatedText = jsonObject.getJSONArray("content").getJSONObject(0).getString("text");
+            String completionReason = jsonObject.getString("stop_reason");
             log.info(
-                    "Invoke Titan Model Result: " +
+                    "Invoke Model Result: " +
                             "{ " +
                             "\"modelId\": \"" + modelId + "\", " +
                             "\"prompt_token_count\": " + inputTextTokenCount + ", " +
@@ -90,14 +88,12 @@ public class BedrockRuntimeV1Service {
                             "\"prompt\": \"" + inputText + "\", " +
                             "\"generated_text\": \"" + generatedText.replace("\n", " ") + "\", " +
                             "\"stop_reason\": \"" + completionReason + "\", " +
-                            "\"temperature\": " + temperature + ", " +
-                            "\"top_p\": " + topP + ", " +
-                            "\"max_gen_len\": " + maxTokenCount +
+                            "\"temperature\": " + temperature +
                             " }"
             );
-            return "Invoke titan Model Result: " + result_body;
+            return "Invoke Model Result: " + result_body;
         } catch (Exception e) {
-            log.error("Invoke titan Model Result: Error: %s", e.getMessage());
+            log.error("Invoke Model Result: Error: %s", e.getMessage());
             throw e;
         }
     }
