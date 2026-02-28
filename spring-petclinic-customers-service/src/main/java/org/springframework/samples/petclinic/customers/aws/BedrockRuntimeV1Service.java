@@ -43,7 +43,7 @@ public class BedrockRuntimeV1Service {
 
     }
 
-    public String invokeTitanModel(String petType) {
+    public String invokeModel(String petType) {
         try {
             String modelId = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
             String inputText = String.format("What's the common disease for a %s?", petType);
