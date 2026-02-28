@@ -175,6 +175,7 @@ module "eks" {
 module "demo_service_account" {
   #checkov:skip=CKV_TF_1:sub-module hash key ignored
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+  version = "5.46.0"
 
   create_role                   = true
   role_name                     = "DemoServiceRole-${var.cluster_name}"
