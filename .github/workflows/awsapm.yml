@@ -64,7 +64,7 @@ jobs:
       - name: Run Claude Investigation - Attempt 1
         id: claude
         continue-on-error: true
-        uses: anthropics/claude-code-base-action@e8132bc5e637a42c27763fc757faa37e1ee43b34 #beta
+        uses: anthropics/claude-code-base-action@e8132bc5e637a42c27763fc757faa37e1ee43b34 #v0.0.63
         with:
           use_bedrock: "true" 
           # Set to any Bedrock Model ID 
@@ -77,7 +77,7 @@ jobs:
       - name: Run Claude Investigation - Attempt 2
         id: claude-retry
         if: steps.claude.outcome == 'failure'
-        uses: anthropics/claude-code-base-action@e8132bc5e637a42c27763fc757faa37e1ee43b34 #beta
+        uses: anthropics/claude-code-base-action@e8132bc5e637a42c27763fc757faa37e1ee43b34 #v0.0.63
         with:
           use_bedrock: "true"
           model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
