@@ -9,6 +9,9 @@ CLUSTER_NAME=$1
 REGION=$2
 NAMESPACE=${3:-default}
 
+# Optional: same env var used in enable-app-signals.sh
+ADDON_INSTALL_MODE=${ADDON_INSTALL_MODE:-addon}
+
 # Check if the current context points to the new cluster in the correct region
 kub_config=$(kubectl config current-context)
 if [[ $kub_config != *"$CLUSTER_NAME"* ]] || [[ $kub_config != *"$REGION"* ]]; then
@@ -16,8 +19,19 @@ if [[ $kub_config != *"$CLUSTER_NAME"* ]] || [[ $kub_config != *"$REGION"* ]]; t
     exit 1
 fi
 
-echo "Deleting amazon-cloudwatch-observability addon"
-aws eks delete-addon --cluster-name $CLUSTER_NAME --addon-name amazon-cloudwatch-observability --region $REGION 
+if [[ "${ADDON_INSTALL_MODE}" == "helm" ]]; then
+    echo "Uninstalling amazon-cloudwatch-observability helm release"
+    helm uninstall amazon-cloudwatch-observability --namespace amazon-cloudwatch 2>/dev/null || true
+    # Clean up CRDs that helm doesn't remove by default
+    kubectl delete crd amazoncloudwatchagents.cloudwatch.aws.amazon.com 2>/dev/null || true
+    kubectl delete crd instrumentations.cloudwatch.aws.amazon.com 2>/dev/null || true
+    kubectl delete crd dcgmexporters.cloudwatch.aws.amazon.com 2>/dev/null || true
+    kubectl delete crd neuronmonitors.cloudwatch.aws.amazon.com 2>/dev/null || true
+    kubectl delete namespace amazon-cloudwatch 2>/dev/null || true
+else
+    echo "Deleting amazon-cloudwatch-observability addon"
+    aws eks delete-addon --cluster-name $CLUSTER_NAME --addon-name amazon-cloudwatch-observability --region $REGION
+fi
 
 echo "Deleting ServiceAccount"
 eksctl delete iamserviceaccount --cluster $CLUSTER_NAME --region $REGION --name cloudwatch-agent --namespace amazon-cloudwatch
