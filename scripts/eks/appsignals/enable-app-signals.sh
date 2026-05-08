@@ -6,15 +6,24 @@ CLUSTER_NAME=$1
 REGION=$2
 NAMESPACE=${3:-default}
 
-# Optional parameters via environment variables (backwards compatible)
+# Optional parameters via environment variables (backwards compatible).
+# When none are set, behavior is identical to the original script.
+#
 # ADDON_INSTALL_MODE: "addon" (default) or "helm"
-# ADDON_VERSION: specific add-on version to install (only used when mode is "addon")
+#   - addon: installs via aws eks create-addon (original behavior)
+#   - helm: installs from helm chart source (for testing unreleased add-on versions)
+#
+# ADDON_VERSION: specific released add-on version (only used when mode is "addon")
+#   e.g. "v5.3.1-eksbuild.1"
+#
 # HELM_CHART_REF: git ref of aws-observability/helm-charts (required when mode is "helm")
+#   e.g. "main" or a commit SHA
+#
 # OPERATOR_IMAGE: full operator image URI to override (optional, used with "helm" mode)
+#   e.g. "123456789.dkr.ecr.us-east-1.amazonaws.com/staging-operator:integration"
 ADDON_INSTALL_MODE=${ADDON_INSTALL_MODE:-addon}
 
 echo "Enabling Application Signals for EKS Cluster ${CLUSTER_NAME} in ${REGION} for namespace ${NAMESPACE}"
-echo "Install mode: ${ADDON_INSTALL_MODE}"
 
 # Check if the current context points to the new cluster in the correct region
 kub_config=$(kubectl config current-context)
@@ -58,11 +67,13 @@ eksctl create iamserviceaccount \
 check_if_step_failed_and_exit "There was an error creating the ServiceAccount, exiting"
 
 
-# Install the observability stack based on the selected mode
-if [[ "${ADDON_INSTALL_MODE}" == "helm" ]]; then
-    #############################
-    # Helm chart install mode
-    #############################
+###############################################################################
+# Install the observability stack.
+# The helm path is an alternative for testing unreleased add-on versions.
+# When ADDON_INSTALL_MODE is unset or "addon", the original behavior is preserved.
+###############################################################################
+
+install_via_helm() {
     if [ -z "${HELM_CHART_REF}" ]; then
         echo "ERROR: HELM_CHART_REF is required when ADDON_INSTALL_MODE=helm"
         exit 1
@@ -70,18 +81,19 @@ if [[ "${ADDON_INSTALL_MODE}" == "helm" ]]; then
 
     echo "Installing from helm chart at ref: ${HELM_CHART_REF}"
 
-    # Ensure helm is available
+    # Install helm if not available
     if ! command -v helm &> /dev/null; then
-        echo "ERROR: helm is not installed. Please install helm before using helm mode."
-        exit 1
+        echo "helm not found, installing..."
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        check_if_step_failed_and_exit "Failed to install helm"
     fi
 
     # Clone the helm-charts repo at the specified ref
     HELM_CHARTS_DIR=$(mktemp -d)
-    echo "Cloning aws-observability/helm-charts at ref ${HELM_CHART_REF} into ${HELM_CHARTS_DIR}"
+    echo "Cloning aws-observability/helm-charts at ref ${HELM_CHART_REF}"
     git clone --depth 1 --branch "${HELM_CHART_REF}" https://github.com/aws-observability/helm-charts.git "${HELM_CHARTS_DIR}" 2>/dev/null
     if [ $? -ne 0 ]; then
-        # If --branch fails (e.g., for a commit SHA), clone and checkout
+        # --branch may fail for a commit SHA; fall back to full clone + checkout
         rm -rf "${HELM_CHARTS_DIR}"
         HELM_CHARTS_DIR=$(mktemp -d)
         git clone https://github.com/aws-observability/helm-charts.git "${HELM_CHARTS_DIR}"
@@ -96,41 +108,31 @@ if [[ "${ADDON_INSTALL_MODE}" == "helm" ]]; then
         exit 1
     fi
 
-    # Build helm install command with optional overrides
-    HELM_SET_ARGS="--set region=${REGION} --set clusterName=${CLUSTER_NAME}"
-
+    # Build --set args for optional operator image override
+    HELM_SET_ARGS=""
     if [ -n "${OPERATOR_IMAGE}" ]; then
-        # Parse the operator image into repository domain, repo name, and tag
-        # Expected format: <domain>/<repo>:<tag>
-        # e.g., 123456789.dkr.ecr.us-east-1.amazonaws.com/staging-operator:integration
         IMAGE_TAG="${OPERATOR_IMAGE##*:}"
         IMAGE_REPO_FULL="${OPERATOR_IMAGE%:*}"
-        # Split into domain and repository name
         IMAGE_DOMAIN="${IMAGE_REPO_FULL%%/*}"
         IMAGE_REPO="${IMAGE_REPO_FULL#*/}"
-
-        HELM_SET_ARGS="${HELM_SET_ARGS} --set manager.image.repositoryDomainMap.public=${IMAGE_DOMAIN}"
-        HELM_SET_ARGS="${HELM_SET_ARGS} --set manager.image.repository=${IMAGE_REPO}"
-        HELM_SET_ARGS="${HELM_SET_ARGS} --set manager.image.tag=${IMAGE_TAG}"
+        HELM_SET_ARGS="--set manager.image.repositoryDomainMap.public=${IMAGE_DOMAIN} --set manager.image.repository=${IMAGE_REPO} --set manager.image.tag=${IMAGE_TAG}"
         echo "Overriding operator image: ${OPERATOR_IMAGE}"
     fi
 
-    echo "Running: helm install amazon-cloudwatch-observability ${CHART_PATH} --namespace amazon-cloudwatch --create-namespace ${HELM_SET_ARGS}"
+    echo "Running helm install..."
     eval helm install amazon-cloudwatch-observability "${CHART_PATH}" \
         --namespace amazon-cloudwatch --create-namespace \
         --wait --timeout 5m \
+        --set region=${REGION} \
+        --set clusterName=${CLUSTER_NAME} \
         ${HELM_SET_ARGS}
     check_if_step_failed_and_exit "Helm install failed!"
 
     echo "Helm chart installed successfully"
-
-    # Clean up cloned repo
     rm -rf "${HELM_CHARTS_DIR}"
+}
 
-else
-    #############################
-    # EKS add-on install mode (default)
-    #############################
+install_via_addon() {
     echo "Checking amazon-cloudwatch-observability add-on"
     result=$(aws eks describe-addon --addon-name amazon-cloudwatch-observability --cluster-name ${CLUSTER_NAME} --region ${REGION} 2>&1)
     echo "${result}"
@@ -150,10 +152,9 @@ else
             --region ${REGION} \
             ${ADDON_VERSION_ARG}
 
-        # Wait until the amazon-cloudwatch-observability add-on is active
+        # Wait until the add-on is active
         status=$(aws eks describe-addon --cluster-name ${CLUSTER_NAME} --addon-name amazon-cloudwatch-observability --region ${REGION} | grep '"status":' | awk -F '"' '{print $4}')
 
-        # Loop until status becomes "ACTIVE"
         while [[ "$status" != "ACTIVE" ]]; do
           echo "Current status: $status"
           if [[ "$status" == "CREATE_FAILED" ]]; then
@@ -177,12 +178,10 @@ else
                --addon-name amazon-cloudwatch-observability \
                --addon-version v1.4.0-eksbuild.1 \
                --region ${REGION}
-            # Wait until the amazon-cloudwatch-observability add-on is active
             echo "Waiting for addon to become ACTIVE..."
             sleep 5
             status=$(aws eks describe-addon --cluster-name ${CLUSTER_NAME} --addon-name amazon-cloudwatch-observability --region ${REGION} | grep '"status":' | awk -F '"' '{print $4}')
 
-            # Loop until status becomes "ACTIVE"
             while [[ "$status" != "ACTIVE" ]]; do
               echo "Current status: $status"
               if [[ "$status" == "UPDATE_FAILED" ]]; then
@@ -202,6 +201,13 @@ else
         echo "EKS amazon-cloudwatch-observability add-on has been installed"
       fi
     fi
+}
+
+# Dispatch based on install mode
+if [[ "${ADDON_INSTALL_MODE}" == "helm" ]]; then
+    install_via_helm
+else
+    install_via_addon
 fi
 
 if [ -z "${REGION}" ]
