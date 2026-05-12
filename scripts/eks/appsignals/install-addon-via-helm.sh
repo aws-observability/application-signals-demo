@@ -12,8 +12,6 @@
 #   OPERATOR_IMAGE  - full operator image URI to override
 #                     e.g. "123456789.dkr.ecr.us-east-1.amazonaws.com/staging-operator:integration"
 
-set -e
-
 if [ -z "${HELM_CHART_REF}" ]; then
     echo "ERROR: HELM_CHART_REF is required"
     exit 1
@@ -45,6 +43,11 @@ if [ $? -ne 0 ]; then
     rm -rf "${HELM_CHARTS_DIR}"
     HELM_CHARTS_DIR=$(mktemp -d)
     git clone https://github.com/aws-observability/helm-charts.git "${HELM_CHARTS_DIR}"
+    if [ $? -ne 0 ]; then
+        echo "Failed to clone helm-charts repo"
+        rm -rf "${HELM_CHARTS_DIR}"
+        exit 1
+    fi
     cd "${HELM_CHARTS_DIR}" && git checkout "${HELM_CHART_REF}"
     if [ $? -ne 0 ]; then
         echo "Failed to checkout helm-charts at ref ${HELM_CHART_REF}"
@@ -61,24 +64,29 @@ if [ ! -d "${CHART_PATH}" ]; then
     exit 1
 fi
 
-# Build --set args for optional operator image override
-HELM_SET_ARGS=""
+HELM_SET_ARGS=(
+    --set "region=${REGION}"
+    --set "clusterName=${CLUSTER_NAME}"
+)
+
 if [ -n "${OPERATOR_IMAGE}" ]; then
     IMAGE_TAG="${OPERATOR_IMAGE##*:}"
     IMAGE_REPO_FULL="${OPERATOR_IMAGE%:*}"
     IMAGE_DOMAIN="${IMAGE_REPO_FULL%%/*}"
     IMAGE_REPO="${IMAGE_REPO_FULL#*/}"
-    HELM_SET_ARGS="--set manager.image.repositoryDomainMap.public=${IMAGE_DOMAIN} --set manager.image.repository=${IMAGE_REPO} --set manager.image.tag=${IMAGE_TAG}"
+    HELM_SET_ARGS+=(
+        --set "manager.image.repositoryDomainMap.public=${IMAGE_DOMAIN}"
+        --set "manager.image.repository=${IMAGE_REPO}"
+        --set "manager.image.tag=${IMAGE_TAG}"
+    )
     echo "Overriding operator image: ${OPERATOR_IMAGE}"
 fi
 
 echo "Running helm install..."
-eval helm install amazon-cloudwatch-observability "${CHART_PATH}" \
+helm install amazon-cloudwatch-observability "${CHART_PATH}" \
     --namespace amazon-cloudwatch --create-namespace \
     --wait --timeout 5m \
-    --set region=${REGION} \
-    --set clusterName=${CLUSTER_NAME} \
-    ${HELM_SET_ARGS}
+    "${HELM_SET_ARGS[@]}"
 
 if [ $? -ne 0 ]; then
     echo "Helm install failed!"
