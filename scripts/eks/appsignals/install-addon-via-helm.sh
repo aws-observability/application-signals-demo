@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# set -x
 #
 # Installs the amazon-cloudwatch-observability stack from the helm chart source.
 # Used for testing unreleased add-on versions before they are published to the EKS marketplace.

@@ -95,7 +95,7 @@ else
     else
       addon_version=$(echo "${result}" | grep "addonVersion" | awk -F '"' '{print $4}')
       if [[ "$addon_version" < "v1.4.0" ]]; then
-         read -p "Do you want to update the add-on version to v1.2.0, current version $addon_version? (yes/no): " choice
+         read -p "Do you want to update the add-on version to v1.4.0, current version $addon_version? (yes/no): " choice
 
           if [ "$choice" == "yes" ]; then
             aws eks update-addon \
