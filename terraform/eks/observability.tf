@@ -10,7 +10,8 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 module "irsa_cloudwatch_observability" {
   #checkov:skip=CKV_TF_1:sub-module hash key ignored
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-
+  version = "5.46.0"
+  
   create_role                   = true
   role_name                     = "AmazonCloudWatchObservabilityAddonRole-${var.cluster_name}"
   provider_url                  = replace(module.eks.oidc_provider, "https://", "")
