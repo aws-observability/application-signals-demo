@@ -6,6 +6,7 @@ import { Secret as SmSecret } from 'aws-cdk-lib/aws-secretsmanager';
 import {
     Cluster,
     Compatibility,
+    ContainerDependencyCondition,
     ContainerImage,
     FargateService,
     HealthCheck,
@@ -217,6 +218,10 @@ export class EcsClusterStack extends Stack {
             },
             assignPublicIp: false,
             desiredCount: 1,
+            // Spring Boot + OTel javaagent takes ~150s to reach a responsive state on Fargate.
+            // Without this grace period the ALB starts health-checking too early, marks the
+            // task unhealthy, and ECS kills it in a loop.
+            healthCheckGracePeriod: Duration.seconds(360),
         });
 
         // Add Application Load Balancer target group
@@ -296,7 +301,8 @@ export class EcsClusterStack extends Stack {
             interval: Duration.seconds(60),
             timeout: Duration.seconds(10),
             retries: 5,
-            startPeriod: Duration.seconds(3),
+            // 3s was too short — Django needs ~30s to run migrations and start.
+            startPeriod: Duration.seconds(60),
         };
 
         const insuranceConfig: ServiceTaskDefinitionConfig = {
@@ -554,6 +560,14 @@ export class EcsClusterStack extends Stack {
             readOnly: false,
         });
 
+        // Main container must wait for init container to finish copying the ADOT
+        // javaagent JAR into the shared volume, otherwise the JVM fails to start
+        // with "Error opening zip file or JAR manifest missing".
+        mainContainer.addContainerDependencies({
+            container: initContainer,
+            condition: ContainerDependencyCondition.COMPLETE,
+        });
+
         // Add CloudWatch agent container
         taskDefinition.addContainer(`${serviceName}-cwagent-container`, {
             image: ContainerImage.fromRegistry('public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest'),
@@ -671,6 +685,13 @@ export class EcsClusterStack extends Stack {
             sourceVolume: 'opentelemetry-auto-instrumentation-python',
             containerPath: '/otel-auto-instrumentation-python',
             readOnly: false,
+        });
+
+        // Main container must wait for init container to finish copying the ADOT
+        // Python auto-instrumentation files into the shared volume.
+        mainContainer.addContainerDependencies({
+            container: initContainer,
+            condition: ContainerDependencyCondition.COMPLETE,
         });
 
         // Add CloudWatch agent container

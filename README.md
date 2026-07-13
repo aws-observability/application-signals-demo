@@ -17,9 +17,10 @@ This code for sample application is intended for demonstration purposes only. It
 * Node.js >= v18.0.0 is installed.
 
 ## Option 2: Local Build Environment
-* A Linux machine with x86-64 (AMD64) architecture is required for building Docker images for the sample application.
-* Docker is installed and running on the machine.
+* Linux x86-64 or macOS (Intel or Apple Silicon). macOS users: see the [ECS Demo macOS notes](#macos-notes) — the default Maven `buildDocker` profile does not work on macOS.
+* Docker is installed and running (Docker Desktop, Colima, or Rancher Desktop).
 * AWS CLI 2.x is installed. For more information about installing the AWS CLI, see [Install or update the latest version of the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+* Java 17 (Amazon Corretto recommended).
 * Golang is installed.
 
 ## Additional Prerequisites for Deployment
@@ -149,24 +150,41 @@ The following instructions set up an kubernetes cluster on 2 EC2 instances (one 
 # ECS Demo
 The following instructions set up an ECS cluster with all services running in Fargate. You can run these steps in your personal AWS account to follow along (Not recommended for production usage).
 
-1. Build container images and push them to private ECR repo. Replace `region-name` with the region you choose.
+## macOS notes
+
+The default `./mvnw -P buildDocker` command uses the archived Spotify `docker-maven-plugin`, which does not run on Apple Silicon. On macOS, use [build-docker.sh](build-docker.sh) instead — it drives `docker build` directly against [docker/Dockerfile](docker/Dockerfile). [otel-collector/ocb.sh](otel-collector/ocb.sh) also builds natively on the host (macOS or Linux) and cross-compiles the collector for `linux/amd64`.
+
+Install: `brew install jq wget node go awscli && npm i -g aws-cdk`. Start a Docker daemon (Docker Desktop, Colima, or Rancher Desktop) — for Colima, also `export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock`.
+
+## Deploy
+
+1. Build container images and push them to private ECR. Replace `region-name` with the region you choose.
    ```shell
-   export ACCOUNT=`aws sts get-caller-identity | jq .Account -r`
+   export ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
    export REGION=region-name
    ```
-   ``` shell
+   On **Linux x86-64**:
+   ```shell
    ./mvnw clean install -P buildDocker && ./push-ecr.sh
    ```
-
-2. Set up a ECS cluster and deploy sample app. Replace `region-name` with the region you choose.
-
-   ``` shell
-   cd scripts/ecs/appsignals && ./setup-ecs-demo.sh --region=region-name
-   ``` 
-
-3. Clean up after you are done with the sample app. Replace `region-name` with the same value that you use in previous step.
+   On **macOS**:
+   ```shell
+   ./mvnw clean install -DskipTests
+   ./build-docker.sh
+   ./push-ecr.sh
    ```
-   cd scripts/ecs/appsignals/ && ./setup-ecs-demo.sh --operation=delete --region=region-name
+   `push-ecr.sh` creates the ECR repos (existing-repo errors are safe to ignore — the script continues) and builds/pushes the Python, Node, .NET, traffic-generator, and otel-collector images inline.
+
+   > **Note:** The ECS CDK stack does not reference `dotnet-petclinic-payment` — that image is only used by the EKS demo. If the .NET build hangs on Apple Silicon (QEMU emulation of `dotnet restore` is very slow), you can safely skip it: `Ctrl-C` `push-ecr.sh` after the Python/Node/traffic-generator/otel-collector images push, and the empty `dotnet-petclinic-payment` ECR repo will not block the ECS deploy.
+
+2. Deploy the ECS cluster and sample app:
+   ```shell
+   cd scripts/ecs/appsignals && ./setup-ecs-demo.sh --region=region-name
+   ```
+
+3. Clean up when done:
+   ```shell
+   cd scripts/ecs/appsignals && ./setup-ecs-demo.sh --operation=delete --region=region-name
    ```
 
 # Bedrock AgentCore Runtime Demo
