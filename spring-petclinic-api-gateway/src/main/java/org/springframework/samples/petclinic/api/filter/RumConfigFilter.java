@@ -65,8 +65,12 @@ public class RumConfigFilter implements WebFilter {
                             
                             // Create a new data buffer with modified content
                             byte[] modifiedBytes = content.getBytes(StandardCharsets.UTF_8);
+                            // Recompute Content-Length; the original header matched the
+                            // pre-replacement size, so leaving it triggers
+                            // ERR_CONTENT_LENGTH_MISMATCH in browsers.
+                            originalResponse.getHeaders().setContentLength(modifiedBytes.length);
                             DataBuffer modifiedBuffer = exchange.getResponse().bufferFactory().wrap(modifiedBytes);
-                            
+
                             return modifiedBuffer;
                         }).flatMap(Flux::just));
                     }
