@@ -1,0 +1,717 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AIOps Integration Test - Image Service'
+
+Resources:
+  # S3 Bucket
+  S3BucketAIOpsIntegration:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Join 
+        - ''
+        - - 'aiops-image-bucket-'
+          - !Select [0, !Split ["-", !Select [2, !Split ["/", !Ref "AWS::StackId"]]]]
+
+  CleanupLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: S3CleanupPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                  - 's3:DeleteObject'
+                  - 's3:DeleteObjectVersion'
+                Resource:
+                  - !Sub 'arn:aws:s3:::${S3BucketAIOpsIntegration}'
+                  - !Sub 'arn:aws:s3:::${S3BucketAIOpsIntegration}/*'
+
+  # Cleanup Lambda used to empty contents of S3 Bucket
+  CleanupLambda:
+    Type: 'AWS::Lambda::Function'
+    DependsOn:
+      - CleanupLambdaRole
+      - S3BucketAIOpsIntegration
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-cleanup-lambda'
+      Handler: 'index.lambda_handler'
+      Role: !GetAtt CleanupLambdaRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+
+          def lambda_handler(event, context):
+              try:
+                  if event['RequestType'] == 'Delete':
+                      s3 = boto3.resource('s3')
+                      bucket = s3.Bucket(event['ResourceProperties']['BucketName'])
+                      bucket.objects.all().delete()
+                      print(f"Cleaned up bucket {event['ResourceProperties']['BucketName']}")
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+      Runtime: python3.13
+      Timeout: 300
+      MemorySize: 128
+
+  S3BucketCleanup:
+    Type: 'Custom::S3BucketCleanup'
+    DependsOn: 
+      - CleanupLambda
+      - BedrockLambda
+      - TriggerCustomResource
+    Properties:
+      ServiceToken: !GetAtt CleanupLambda.Arn
+      BucketName: !Ref S3BucketAIOpsIntegration
+
+  # SSM Parameter for Bucket Name
+  BucketNameParameter:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: !Sub '/${AWS::StackName}/bucket-name'
+      Type: 'String'
+      Value: !Ref S3BucketAIOpsIntegration
+      Description: 'S3 Bucket name for AIOps Integration Test'
+
+  # Lambda Role for Bucket Policy Update
+  BucketPolicyLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-bucket-policy-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-bucket-policy-lambda-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - s3:PutBucketPolicy
+                Resource: !GetAtt S3BucketAIOpsIntegration.Arn
+
+  # Lambda Function for Bucket Policy Update
+  BucketPolicyLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-bucket-policy-lambda'
+      Handler: 'index.lambda_handler'
+      Role: !GetAtt BucketPolicyLambdaRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import os
+
+          def lambda_handler(event, context):
+              try:
+                  s3 = boto3.client('s3')
+                  bucket_name = os.environ['BUCKET_NAME']
+                  role_arn = os.environ['LAMBDA_ROLE_ARN']
+                  
+                  bucket_policy = {
+                      "Version": "2012-10-17",
+                      "Id": "Policy1736953436011",
+                      "Statement": [{
+                          "Sid": "DenyBucketAccess",
+                          "Effect": "Deny",
+                          "Principal": {
+                              "AWS": role_arn
+                          },
+                          "Action": "s3:ListBucket",
+                          "Resource": f"arn:aws:s3:::{bucket_name}"
+                      }, {
+                          "Sid": "DenyObjectAccess",
+                          "Effect": "Deny",
+                          "Principal": {
+                              "AWS": role_arn
+                          },
+                          "Action": "s3:GetObject",
+                          "Resource": f"arn:aws:s3:::{bucket_name}/*"
+                      }]
+                  }
+                  
+                  s3.put_bucket_policy(
+                      Bucket=bucket_name,
+                      Policy=json.dumps(bucket_policy)
+                  )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': 'Bucket policy updated successfully'
+                  }
+                  
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': f"Error updating bucket policy: {str(e)}"
+                  }
+      Runtime: python3.13
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref S3BucketAIOpsIntegration
+          LAMBDA_ROLE_ARN: !GetAtt LambdaRoleAIOpsIntegration.Arn
+
+  LambdaTriggerBucketPolicyAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-lambda-trigger-alarm'
+      AlarmDescription: 'Alarm when Lambda is triggered 3 or more times'
+      MetricName: 'Invocations'
+      Namespace: 'AWS/Lambda'
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref LambdaAIOpsIntegration
+      Statistic: 'Sum'
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: 'GreaterThanOrEqualToThreshold'
+      TreatMissingData: 'notBreaching'
+      AlarmActions:
+        - !GetAtt BucketPolicyLambda.Arn
+
+  # Lambda Permission for CloudWatch Alarm
+  BucketPolicyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !Ref BucketPolicyLambda
+      Action: 'lambda:InvokeFunction'
+      Principal: 'lambda.alarms.cloudwatch.amazonaws.com'
+      SourceAccount: !Ref 'AWS::AccountId'
+      SourceArn: !Sub 'arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${AWS::StackName}-lambda-trigger-alarm'
+
+  BedrockLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-bedrock-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-bedrock-lambda-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-bedrock-lambda:*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub '${S3BucketAIOpsIntegration.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/bucket-name'
+
+  # Bedrock Lambda Function
+  BedrockLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-bedrock-lambda'
+      Handler: 'index.lambda_handler'
+      Role: !GetAtt BedrockLambdaRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import base64
+          import json
+          import os
+
+          def get_bucket_name():
+              ssm = boto3.client('ssm')
+              parameter_name = os.environ['BUCKET_NAME_PARAMETER']
+              response = ssm.get_parameter(Name=parameter_name)
+              return response['Parameter']['Value']
+
+          def lambda_handler(event, context):
+              try:
+                  # Initialize S3 and Bedrock clients
+                  s3 = boto3.client('s3')
+                  bedrock = boto3.client('bedrock-runtime')
+                  
+                  # Get bucket name from Parameter Store
+                  bucket_name = get_bucket_name()
+                  print(f"Using bucket: {bucket_name}")
+                  
+                  print("Generating images using Bedrock...")
+                  
+                  # Prepare request body for Bedrock
+                  request_body = {
+                      "taskType": "TEXT_IMAGE",
+                      "textToImageParams": {
+                          "text": "Provide me images of different breeds of Dogs with Sunglasses",
+                          "negativeText": "Dont include cats"
+                      },
+                      "imageGenerationConfig": {
+                          "numberOfImages": 5,
+                          "height": 1024,
+                          "width": 1024,
+                          "cfgScale": 8.0,
+                          "seed": 0
+                      }
+                  }
+                  
+                  # Call Bedrock to generate image
+                  response = bedrock.invoke_model(
+                      modelId="amazon.titan-image-generator-v1",
+                      contentType="application/json",
+                      accept="application/json",
+                      body=json.dumps(request_body)
+                  )
+                  
+                  # Parse response and save image to S3
+                  response_body = json.loads(response['body'].read())
+                  for idx, image in enumerate(response_body['images']):
+                      # Decode base64 image
+                      image_data = base64.b64decode(image)
+                      
+                      # Upload to S3
+                      file_name = f"generated_image_{idx}.jpg"
+                      s3.put_object(
+                          Bucket=bucket_name,
+                          Key=file_name,
+                          Body=image_data,
+                          ContentType='image/jpeg'
+                      )
+                  
+                  print("Images generated and stored in S3")
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({'message': 'Images generated successfully'})
+                  }
+                  
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'message': 'Internal Server Error - HTTP 500'})
+                  }
+      Runtime: python3.13
+      Timeout: 300
+      MemorySize: 1024
+      Environment:
+        Variables:
+          BUCKET_NAME_PARAMETER: !Sub '/${AWS::StackName}/bucket-name'
+      TracingConfig:
+        Mode: Active
+
+  # Custom Resource Lambda Role
+  TriggerLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: InvokeBedrockLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 'lambda:InvokeFunction'
+                Resource: !GetAtt BedrockLambda.Arn
+
+  # Custom Resource Lambda
+  TriggerLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-trigger-lambda'
+      Handler: 'index.lambda_handler'
+      Role: !GetAtt TriggerLambdaRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+
+          def lambda_handler(event, context):
+              try:
+                  if event['RequestType'] == 'Create':
+                      lambda_client = boto3.client('lambda')
+                      response = lambda_client.invoke(
+                          FunctionName=f"{event['ResourceProperties']['StackName']}-bedrock-lambda",
+                          InvocationType='Event'
+                      )
+                      print("Successfully triggered Bedrock Lambda")
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  else:
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+      Runtime: python3.13
+      Timeout: 30
+      MemorySize: 128
+
+  TriggerCustomResource:
+    Type: 'Custom::TriggerBedrock'
+    DependsOn:
+      - S3BucketAIOpsIntegration
+      - BedrockLambda
+    Properties:
+      ServiceToken: !GetAtt TriggerLambda.Arn
+      StackName: !Ref 'AWS::StackName'
+  # Updated Lambda Role with SSM permissions
+  LambdaRoleAIOpsIntegration:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-lambda-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt S3BucketAIOpsIntegration.Arn
+                  - !Sub '${S3BucketAIOpsIntegration.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/bucket-name'
+
+  # Updated Lambda Function with SSM parameter for S3 Bucket
+  LambdaAIOpsIntegration:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-aiops-lambda'
+      Handler: 'index.lambda_handler'
+      Role: !GetAtt LambdaRoleAIOpsIntegration.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import random
+          import base64
+          import os
+          import json
+
+          def get_bucket_name():
+              ssm = boto3.client('ssm')
+              parameter_name = os.environ['BUCKET_NAME_PARAMETER']
+              response = ssm.get_parameter(Name=parameter_name)
+              return response['Parameter']['Value']
+
+          def lambda_handler(event, context):
+              try:
+                  # Initialize S3 client
+                  s3 = boto3.client('s3')
+                  
+                  # Get bucket name from Parameter Store
+                  bucket_name = get_bucket_name()
+                  print(f"Using bucket: {bucket_name}")
+                  
+                  # List all objects
+                  response = s3.list_objects_v2(Bucket=bucket_name)
+                  
+                  if 'Contents' not in response:
+                      return {
+                          'statusCode': 404,
+                          'headers': {
+                              'Content-Type': 'application/json',
+                              'Access-Control-Allow-Origin': '*'
+                          },
+                          'body': '{"message": "No images found"}'
+                      }
+                  
+                  # Filter for both .jpg and .jpeg files
+                  image_files = [obj for obj in response['Contents'] 
+                              if obj['Key'].lower().endswith(('.jpg', '.jpeg'))]
+                  
+                  if not image_files:
+                      return {
+                          'statusCode': 404,
+                          'headers': {
+                              'Content-Type': 'application/json',
+                              'Access-Control-Allow-Origin': '*'
+                          },
+                          'body': '{"message": "No JPG/JPEG images found"}'
+                      }
+                  
+                  # Select random image
+                  random_image = random.choice(image_files)
+                  print(f"Selected image: {random_image['Key']}")
+                  
+                  # Get the image
+                  image = s3.get_object(
+                      Bucket=bucket_name,
+                      Key=random_image['Key']
+                  )
+                  
+                  # Get image data
+                  image_data = image['Body'].read()
+                  
+                  # Return binary response for API Gateway
+                  return {
+                      'statusCode': 200,
+                      'headers': {
+                          'Content-Type': 'image/jpeg'
+                      },
+                      'body': base64.b64encode(image_data).decode('utf-8'),
+                      'isBase64Encoded': True
+                  }
+                  
+              except Exception as e:
+                  print(f"Error: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'headers': {
+                          'Content-Type': 'application/json',
+                          'Access-Control-Allow-Origin': '*'
+                      },
+                      'body': json.dumps({
+                          "message": "Internal Server Error"
+                      })
+                  }
+      Runtime: python3.13
+      Timeout: 60
+      MemorySize: 128
+      Environment:
+        Variables:
+          BUCKET_NAME_PARAMETER: !Sub '/${AWS::StackName}/bucket-name'
+      TracingConfig:
+        Mode: Active
+
+  # API Gateway Role
+  ApiGatewayRoleAIOpsIntegration:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-apigw-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
+
+  # API Gateway Account Settings
+  ApiGatewayAccountConfig:
+    Type: 'AWS::ApiGateway::Account'
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayRoleAIOpsIntegration.Arn
+
+  # REST API Gateway
+  ApiGatewayAIOpsIntegration:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: !Sub '${AWS::StackName}-api'
+      Description: 'API for random image service'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      BinaryMediaTypes:
+        - 'image/jpeg'
+        - '*/*'
+
+  # API Resource
+  ApiResourceRandom:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !Ref ApiGatewayAIOpsIntegration
+      ParentId: !GetAtt ApiGatewayAIOpsIntegration.RootResourceId
+      PathPart: 'random'
+
+  # API Method
+  ApiMethodGet:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref ApiGatewayAIOpsIntegration
+      ResourceId: !Ref ApiResourceRandom
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaAIOpsIntegration.Arn}/invocations'
+
+  # Enable CORS
+  ApiMethodOptions:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref ApiGatewayAIOpsIntegration
+      ResourceId: !Ref ApiResourceRandom
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # API Deployment
+  ApiDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - ApiMethodGet
+      - ApiMethodOptions
+    Properties:
+      RestApiId: !Ref ApiGatewayAIOpsIntegration
+
+  # API Stage
+  ApiStage:
+    Type: 'AWS::ApiGateway::Stage'
+    DependsOn: ApiGatewayAccountConfig
+    Properties:
+      DeploymentId: !Ref ApiDeployment
+      RestApiId: !Ref ApiGatewayAIOpsIntegration
+      StageName: 'prod'
+      Description: 'Production Stage'
+      TracingEnabled: true
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          MetricsEnabled: true
+          DataTraceEnabled: true
+          LoggingLevel: INFO
+
+  # Lambda Permission
+  LambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaAIOpsIntegration
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayAIOpsIntegration}/*'
+  
+  # API Gateway 5XX Error Alarm
+  ApiGateway5XXAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-api-5xx-error-alarm'
+      AlarmDescription: 'Alarm when API Gateway returns 5XX errors'
+      MetricName: '5XXError'
+      Namespace: 'AWS/ApiGateway'
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub '${AWS::StackName}-api'
+        - Name: Stage
+          Value: 'prod'
+      Statistic: 'Sum'
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: 'GreaterThanOrEqualToThreshold'
+      TreatMissingData: 'notBreaching'
+
+Outputs:
+  S3BucketName:
+    Description: 'Name of the created S3 bucket'
+    Value: !Ref S3BucketAIOpsIntegration
+
+  LambdaFunctionName:
+    Description: 'Name of the created Lambda function'
+    Value: !Ref LambdaAIOpsIntegration
+
+  BedrockLambdaName:
+    Description: 'Name of the Bedrock Lambda function'
+    Value: !Ref BedrockLambda
+
+  TriggerLambdaName:
+    Description: 'Name of the Trigger Lambda function'
+    Value: !Ref TriggerLambda
+
+  BucketPolicyLambdaName:
+    Description: 'Name of the Bucket Policy Lambda function'
+    Value: !Ref BucketPolicyLambda
+
+  CloudWatchAlarmName:
+    Description: 'Name of the CloudWatch Alarm'
+    Value: !Ref LambdaTriggerBucketPolicyAlarm
+
+  ApiGateway5XXAlarmName:
+    Description: 'Name of the API Gateway 5XX Error Alarm'
+    Value: !Ref ApiGateway5XXAlarm
+
+  ApiEndpoint:
+    Description: 'API Gateway Endpoint URL'
+    Value: !Sub 'https://${ApiGatewayAIOpsIntegration}.execute-api.${AWS::Region}.amazonaws.com/prod/random'

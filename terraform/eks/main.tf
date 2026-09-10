@@ -77,7 +77,7 @@ module "eks" {
 
   source  = "git::https://github.com/terraform-aws-modules/terraform-aws-eks.git?ref=1627231af669796669ce83e0a4672a7e6d94a0b3"
 
-  cluster_version                 = "1.29"
+  cluster_version                 = "1.31"
   cluster_name                    = var.cluster_name
   cluster_endpoint_private_access = true
   cluster_endpoint_public_access  = true
@@ -101,7 +101,7 @@ module "eks" {
     default = {
       desired_size = 3
       # iam_role_additional_policies = ["arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"]
-      instance_types = ["t3.large"]
+      instance_types = ["m5.large"]
       tags = {
         Owner = "default"
       }
@@ -175,6 +175,7 @@ module "eks" {
 module "demo_service_account" {
   #checkov:skip=CKV_TF_1:sub-module hash key ignored
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+  version = "~> 5.0"
 
   create_role                   = true
   role_name                     = "DemoServiceRole-${var.cluster_name}"

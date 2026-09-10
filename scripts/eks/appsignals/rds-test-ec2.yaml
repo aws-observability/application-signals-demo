@@ -1,0 +1,669 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EC2 instance in RDS VPC for testing with Systems Manager access"
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: VPC ID where RDS is located
+
+  SubnetId:
+    Type: String
+    Description: Subnet ID for EC2 instance (preferably public subnet)
+
+  SecurityGroupId:
+    Type: String
+    Description: Security Group ID that has access to RDS
+
+  RDSEndpoint:
+    Type: String
+    Description: RDS endpoint for automatic configuration
+
+  EKSClusterName:
+    Type: String
+    Description: EKS cluster name for automatic kubectl configuration
+    Default: ""
+
+  S3BucketName:
+    Type: String
+    Description: S3 bucket containing workshop scripts and templates
+    Default: ""
+
+  InstanceType:
+    Type: String
+    Default: t3.large
+    Description: EC2 instance type
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: Latest Amazon Linux 2023 AMI
+
+Resources:
+  # Security Group for EC2 with SSM access
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS test EC2 with SSM access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        # Allow HTTPS for SSM connectivity
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS for SSM and general connectivity
+        # Allow ICMP for ping tests
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+          Description: ICMP for network testing
+      SecurityGroupEgress:
+        # Allow all outbound traffic (needed for SSM, package updates, etc)
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: RDSTestEC2-SSM-SecurityGroup
+
+  # IAM Role for EC2 with Systems Manager
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "RDSTestEC2-SSM-Role-${AWS::StackName}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/CloudWatchFullAccessV2
+        - arn:aws:iam::aws:policy/CloudWatchApplicationSignalsFullAccess
+      Policies:
+        - PolicyName: RDSTestingPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - rds:DescribeDBClusters
+                  - cloudwatch:PutMetricData
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:ListMetrics
+                  - cloudwatch:DescribeAlarms
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:GetLogEvents
+                  - logs:FilterLogEvents
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                  - eks:DescribeNodegroup
+                  - eks:ListNodegroups
+                  - eks:AccessKubernetesApi
+                  - eks:CreateAccessEntry
+                  - eks:AssociateAccessPolicy
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeVpcs
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3BucketName}/*"
+                  - !Sub "arn:aws:s3:::${S3BucketName}"
+
+  # Instance Profile
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub "RDSTestEC2-Profile-${AWS::StackName}"
+      Roles:
+        - !Ref EC2Role
+
+  # EC2 Instance
+  TestInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref SubnetId
+          GroupSet:
+            - !Ref EC2SecurityGroup
+            - !Ref SecurityGroupId
+      Tags:
+        - Key: Name
+          Value: !Sub "RDSTestInstance-${AWS::StackName}"
+        - Key: Purpose
+          Value: RDS-Testing
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # Enable error logging but don't exit on error
+          exec > >(tee /var/log/user-data.log)
+          exec 2>&1
+          echo "=== UserData execution started at $(date) ==="
+
+          # Update system
+          echo "Updating system packages..."
+          dnf update -y || echo "⚠ System update had issues"
+
+          # Install basic tools
+          echo "Installing basic tools..."
+          dnf install -y postgresql15 python3 python3-pip stress-ng jq git unzip || echo "⚠ Some packages failed to install"
+
+          # Install psycopg2 for Python
+          echo "Installing Python packages..."
+          pip3 install psycopg2-binary boto3 || echo "⚠ Python packages had issues"
+
+          # Install AWS CLI v2
+          echo "Installing AWS CLI v2..."
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          ./aws/install
+          rm -rf aws awscliv2.zip
+
+          # Install kubectl
+          echo "Installing kubectl..."
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          mv kubectl /usr/local/bin/
+
+          # Create ssm-user FIRST before creating directories
+          echo "Creating ssm-user..."
+          if ! id -u ssm-user > /dev/null 2>&1; then
+            useradd -m -s /bin/bash ssm-user
+            echo "✓ ssm-user created"
+          else
+            echo "✓ ssm-user already exists"
+          fi
+
+          # Now create directories for both users
+          echo "Creating directories..."
+          mkdir -p /home/ec2-user/rds-tests
+          mkdir -p /home/ssm-user/rds-tests
+
+          # Install uv (Python package manager for MCP servers)
+          echo "Installing uv for root..."
+          curl -LsSf https://astral.sh/uv/install.sh | sh || echo "⚠ uv install script had issues"
+
+          # Also install via pip as backup
+          pip3 install uv || echo "⚠ pip install uv had issues"
+
+          # Add uv to PATH for current session
+          export PATH="/root/.local/bin:$PATH"
+
+          # Install uv for ec2-user
+          echo "Installing uv for ec2-user..."
+          su - ec2-user -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' || echo "⚠ uv install for ec2-user had issues"
+
+          # Install uv for ssm-user
+          echo "Installing uv for ssm-user..."
+          su - ssm-user -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' || echo "⚠ uv install for ssm-user had issues"
+
+          # Install kiro-cli for ec2-user
+          echo "Installing kiro-cli for ec2-user..."
+          su - ec2-user -c 'curl -fsSL https://cli.kiro.dev/install | bash' || echo "⚠ kiro-cli install for ec2-user had issues"
+
+          # Install kiro-cli for ssm-user
+          echo "Installing kiro-cli for ssm-user..."
+          su - ssm-user -c 'curl -fsSL https://cli.kiro.dev/install | bash' || echo "⚠ kiro-cli install for ssm-user had issues"
+
+          # Install CloudWatch agent
+          echo "Installing CloudWatch agent..."
+          wget -q https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+          rpm -U ./amazon-cloudwatch-agent.rpm
+          rm -f ./amazon-cloudwatch-agent.rpm
+
+          # Create configuration file with RDS endpoint
+          cat > /home/ec2-user/rds-tests/config.sh << 'CONFIGEOF'
+          # Workshop Configuration
+          # This file is automatically generated with your environment details
+
+          export RDS_ENDPOINT="${RDSEndpoint}"
+          export EKS_CLUSTER="${EKSClusterName}"
+          export DB_USER="djangouser"
+          export DB_PASSWORD="asdfqwer"
+          export DB_NAME="postgres"
+          export AWS_REGION="$(aws configure get region || echo us-east-1)"
+
+          echo "Workshop Configuration Loaded:"
+          echo "  RDS Endpoint: $RDS_ENDPOINT"
+          echo "  EKS Cluster: $EKS_CLUSTER"
+          echo "  Database: $DB_NAME"
+          echo "  User: $DB_USER"
+          CONFIGEOF
+
+          # Replace variables in config file
+          sed -i "s/\${RDSEndpoint}/${RDSEndpoint}/g" /home/ec2-user/rds-tests/config.sh
+          sed -i "s/\${EKSClusterName}/${EKSClusterName}/g" /home/ec2-user/rds-tests/config.sh
+
+          # Create simple RDS connection test script
+          cat > /home/ec2-user/rds-tests/test-connection.sh << 'EOF'
+          #!/bin/bash
+          # Test RDS connection
+
+          # Load configuration
+          source "$(dirname "$0")/config.sh" 2>/dev/null || true
+
+          # Allow override via command line
+          RDS_ENDPOINT=${1:-$RDS_ENDPOINT}
+          DB_USER=${2:-$DB_USER}
+          DB_NAME=${3:-$DB_NAME}
+
+          if [ -z "$RDS_ENDPOINT" ]; then
+              echo "Usage: $0 [rds-endpoint] [user] [database]"
+              echo ""
+              echo "Or configure RDS_ENDPOINT in config.sh"
+              exit 1
+          fi
+
+          echo "Testing connection to RDS..."
+          echo "Endpoint: $RDS_ENDPOINT"
+          echo "User: $DB_USER"
+          echo "Database: $DB_NAME"
+          echo ""
+
+          PGPASSWORD=$DB_PASSWORD psql -h "$RDS_ENDPOINT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT version();"
+
+          if [ $? -eq 0 ]; then
+              echo ""
+              echo "✓ Connection successful!"
+          else
+              echo ""
+              echo "❌ Connection failed!"
+              exit 1
+          fi
+          EOF
+
+          # Create Python stress test script
+          cat > /home/ec2-user/rds-tests/stress-test.py << 'EOF'
+          #!/usr/bin/env python3
+          import psycopg2
+          from psycopg2 import pool
+          import time
+          import random
+          import sys
+          import argparse
+          from datetime import datetime
+
+          def create_connection_pool(host, database, user, password, port=5432, max_conn=50):
+              return pool.ThreadedConnectionPool(
+                  minconn=1,
+                  maxconn=max_conn,
+                  host=host,
+                  database=database,
+                  user=user,
+                  password=password,
+                  port=port
+              )
+
+          def run_queries(conn_pool, num_queries=100):
+              results = {'successful': 0, 'failed': 0, 'total_time': 0}
+              queries = [
+                  "SELECT COUNT(*) FROM pg_stat_activity;",
+                  "SELECT pg_database_size(current_database());",
+                  "SELECT version();",
+                  "SELECT NOW();",
+              ]
+              
+              for i in range(num_queries):
+                  conn = None
+                  try:
+                      start = time.time()
+                      conn = conn_pool.getconn()
+                      cursor = conn.cursor()
+                      cursor.execute(random.choice(queries))
+                      cursor.fetchall()
+                      cursor.close()
+                      elapsed = time.time() - start
+                      results['total_time'] += elapsed
+                      results['successful'] += 1
+                      if (i + 1) % 10 == 0:
+                          print(f"Progress: {i + 1}/{num_queries} queries")
+                  except Exception as e:
+                      results['failed'] += 1
+                      print(f"Query failed: {e}")
+                  finally:
+                      if conn:
+                          conn_pool.putconn(conn)
+              
+              return results
+
+          def main():
+              # Load config from environment or config file
+              import os
+              default_endpoint = os.environ.get('RDS_ENDPOINT', '')
+              default_user = os.environ.get('DB_USER', 'djangouser')
+              default_password = os.environ.get('DB_PASSWORD', 'asdfqwer')
+              default_database = os.environ.get('DB_NAME', 'postgres')
+              
+              parser = argparse.ArgumentParser(description='RDS Stress Test')
+              parser.add_argument('endpoint', nargs='?', default=default_endpoint, help='RDS endpoint')
+              parser.add_argument('--user', default=default_user, help='Database user')
+              parser.add_argument('--password', default=default_password, help='Database password')
+              parser.add_argument('--database', default=default_database, help='Database name')
+              parser.add_argument('--queries', type=int, default=100, help='Number of queries')
+              parser.add_argument('--connections', type=int, default=20, help='Max connections')
+              
+              args = parser.parse_args()
+              
+              if not args.endpoint:
+                  print("Error: RDS endpoint not provided")
+                  print("Usage: ./stress-test.py [endpoint] --queries 500")
+                  print("Or set RDS_ENDPOINT in config.sh")
+                  sys.exit(1)
+              
+              print(f"=== RDS Stress Test ===")
+              print(f"Endpoint: {args.endpoint}")
+              print(f"Database: {args.database}")
+              print(f"User: {args.user}")
+              print(f"Queries: {args.queries}")
+              print(f"Max Connections: {args.connections}")
+              print(f"Started: {datetime.now()}")
+              print("")
+              
+              try:
+                  pool = create_connection_pool(
+                      args.endpoint, args.database, args.user, args.password,
+                      max_conn=args.connections
+                  )
+                  
+                  results = run_queries(pool, args.queries)
+                  pool.closeall()
+                  
+                  avg_time = results['total_time'] / max(results['successful'], 1)
+                  success_rate = (results['successful'] / (results['successful'] + results['failed'])) * 100
+                  
+                  print("")
+                  print("=== Results ===")
+                  print(f"Successful: {results['successful']}")
+                  print(f"Failed: {results['failed']}")
+                  print(f"Success Rate: {success_rate:.2f}%")
+                  print(f"Average Query Time: {avg_time * 1000:.2f}ms")
+                  print(f"Total Time: {results['total_time']:.2f}s")
+                  print(f"Completed: {datetime.now()}")
+                  
+              except Exception as e:
+                  print(f"Error: {e}")
+                  sys.exit(1)
+
+          if __name__ == '__main__':
+              main()
+          EOF
+
+          # Make scripts executable
+          chmod +x /home/ec2-user/rds-tests/*.sh
+          chmod +x /home/ec2-user/rds-tests/*.py
+
+          # Set ownership
+          chown -R ec2-user:ec2-user /home/ec2-user/rds-tests
+
+          # Create README
+          cat > /home/ec2-user/rds-tests/README.txt << 'EOF'
+          ╔════════════════════════════════════════════════════════════╗
+          ║  Workshop Testing & Management Scripts                    ║
+          ║  All endpoints are pre-configured!                        ║
+          ╚════════════════════════════════════════════════════════════╝
+
+          📋 Quick Start:
+          ---------------
+          # Load configuration (shows all endpoints)
+          source config.sh
+
+          🗄️  RDS Testing (No endpoint needed!):
+          -------------------------------------
+          # Test connection (uses pre-configured endpoint)
+          ./test-connection.sh
+
+          # Run stress tests
+          ./stress-test.py --queries 100        # Light
+          ./stress-test.py --queries 500        # Medium
+          ./stress-test.py --queries 1000       # Heavy
+
+          ☸️  Kubernetes (EKS):
+          --------------------
+          # Configure kubectl (auto-detects cluster)
+          ./configure-kubectl.sh
+
+          # View resources
+          kubectl get pods -A
+          kubectl get services -A
+          kubectl get nodes
+
+          # View logs
+          kubectl logs -n <namespace> <pod-name> --tail=100 -f
+
+          📊 CloudWatch Logs:
+          ------------------
+          # View recent logs
+          ./view-logs.sh /aws/eks/cluster/logs 10
+          ./view-logs.sh /aws/lambda/RDSStressTestFunction 5
+
+          # List all log groups
+          aws logs describe-log-groups --query 'logGroups[*].logGroupName' --output table
+
+          💡 Pro Tips:
+          -----------
+          # Check current configuration
+          source config.sh
+
+          # Override RDS endpoint if needed
+          ./test-connection.sh custom-endpoint.rds.amazonaws.com
+
+          # Run stress test with custom settings
+          ./stress-test.py --queries 2000 --connections 50
+
+          # Watch pods in real-time
+          watch kubectl get pods -A
+
+          🤖 Kiro CLI:
+          --------------------
+          # Kiro CLI is pre-installed and available in your PATH
+
+          kiro-cli chat "how do I list all pods in kubernetes?"
+          kiro-cli chat "show me how to connect to RDS"
+          kiro-cli chat "explain this error: connection timeout"
+
+          # Get help with AWS CLI commands
+          kiro-cli chat "aws eks list-clusters"
+          kiro-cli chat "aws rds describe-db-instances"
+
+          # MCP servers available via uvx:
+          uvx awslabs.cloudwatch-mcp-server@latest
+          uvx awslabs.bedrock-kb-retrieval-mcp-server@latest
+
+          📁 Available Scripts:
+          --------------------
+          config.sh              - Environment configuration
+          test-connection.sh     - Test RDS connectivity
+          stress-test.py         - RDS stress testing
+          configure-kubectl.sh   - Setup kubectl for EKS
+          view-logs.sh          - View CloudWatch logs
+          EOF
+
+          # Create kubectl config helper script
+          cat > /home/ec2-user/rds-tests/configure-kubectl.sh << 'EOF'
+          #!/bin/bash
+          # Configure kubectl for EKS cluster
+
+          # Load configuration
+          source "$(dirname "$0")/config.sh" 2>/dev/null || true
+
+          echo "=== Configuring kubectl for EKS ==="
+
+          # Use configured cluster or discover
+          CLUSTER_NAME=${EKS_CLUSTER:-$(aws eks list-clusters --query 'clusters[0]' --output text)}
+
+          if [ -z "$CLUSTER_NAME" ] || [ "$CLUSTER_NAME" == "None" ]; then
+              echo "❌ No EKS cluster found"
+              exit 1
+          fi
+
+          echo "Found cluster: $CLUSTER_NAME"
+
+          # Update kubeconfig
+          aws eks update-kubeconfig --name "$CLUSTER_NAME" --region $(aws configure get region)
+
+          if [ $? -eq 0 ]; then
+              echo ""
+              echo "✓ kubectl configured successfully!"
+              echo ""
+              echo "Testing connection..."
+              kubectl get nodes
+              echo ""
+              echo "Available commands:"
+              echo "  kubectl get pods -A"
+              echo "  kubectl get services -A"
+              echo "  kubectl logs -n <namespace> <pod-name>"
+          else
+              echo "❌ Failed to configure kubectl"
+              exit 1
+          fi
+          EOF
+
+          # Create CloudWatch logs helper script
+          cat > /home/ec2-user/rds-tests/view-logs.sh << 'EOF'
+          #!/bin/bash
+          # View CloudWatch logs
+
+          if [ -z "$1" ]; then
+              echo "Usage: $0 <log-group-name> [minutes-ago]"
+              echo ""
+              echo "Examples:"
+              echo "  $0 /aws/eks/cluster/logs 10"
+              echo "  $0 /aws/lambda/RDSStressTestFunction 5"
+              echo ""
+              echo "Available log groups:"
+              aws logs describe-log-groups --query 'logGroups[*].logGroupName' --output table
+              exit 1
+          fi
+
+          LOG_GROUP=$1
+          MINUTES=${2:-10}
+
+          echo "Fetching logs from $LOG_GROUP (last $MINUTES minutes)..."
+          echo ""
+
+          START_TIME=$(($(date +%s) - ($MINUTES * 60)))000
+
+          aws logs tail "$LOG_GROUP" --since "${MINUTES}m" --follow
+          EOF
+
+          # Download the CloudFormation template and deployment script if S3 bucket is configured
+          if [ ! -z "${S3BucketName}" ]; then
+            echo "Downloading scripts from S3..."
+            aws s3 cp s3://${S3BucketName}/scripts/rds-test-ec2.yaml /home/ec2-user/rds-tests/ 2>/dev/null || echo "⚠ Template not found in S3"
+            aws s3 cp s3://${S3BucketName}/scripts/deploy-rds-test-ec2.sh /home/ec2-user/rds-tests/ 2>/dev/null || echo "⚠ Deploy script not found in S3"
+          fi
+
+          # Set permissions and ownership for ec2-user
+          echo "Setting permissions for ec2-user..."
+          chmod +x /home/ec2-user/rds-tests/*.sh 2>/dev/null || echo "⚠ No .sh files to chmod"
+          chmod +x /home/ec2-user/rds-tests/*.py 2>/dev/null || echo "⚠ No .py files to chmod"
+          chown -R ec2-user:ec2-user /home/ec2-user/rds-tests
+
+          # Copy scripts to ssm-user directory
+          echo "Copying scripts to ssm-user..."
+          cp -r /home/ec2-user/rds-tests/* /home/ssm-user/rds-tests/ 2>/dev/null || echo "⚠ Copy to ssm-user had issues"
+          chown -R ssm-user:ssm-user /home/ssm-user/rds-tests
+
+          # Create symlink for easy access
+          ln -sf /home/ssm-user/rds-tests /home/ssm-user/scripts 2>/dev/null || echo "⚠ Symlink creation had issues"
+
+          # Signal completion
+          echo "✓ EC2 instance setup complete at $(date)!" | tee /tmp/setup-complete.txt
+          echo "=== UserData execution completed at $(date) ===" 
+
+          # Create a summary of what was installed
+          cat > /home/ec2-user/setup-summary.txt << 'SUMMARYEOF'
+          EC2 Workshop Instance Setup Summary
+          ====================================
+
+          Installed Tools:
+          - PostgreSQL 15 client
+          - Python 3 with psycopg2 and boto3
+          - AWS CLI v2
+          - kubectl
+          - stress-ng
+          - jq, git
+          - uv (Python package manager)
+          - kiro-cli (AI assistant)
+          - CloudWatch Agent
+
+          Users Configured:
+          - ec2-user (default user)
+          - ssm-user (for Systems Manager sessions)
+
+          Scripts Location:
+          - /home/ec2-user/rds-tests/
+          - /home/ssm-user/rds-tests/
+
+          Quick Start:
+          cd ~/rds-tests
+          source config.sh
+          ./test-connection.sh
+
+          For full documentation, see:
+          cat ~/rds-tests/README.txt
+          SUMMARYEOF
+
+          chown ec2-user:ec2-user /home/ec2-user/setup-summary.txt
+          cp /home/ec2-user/setup-summary.txt /home/ssm-user/
+          chown ssm-user:ssm-user /home/ssm-user/setup-summary.txt
+
+Outputs:
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref TestInstance
+    Export:
+      Name: !Join ["-", [!Ref "AWS::StackName", "InstanceId"]]
+
+  InstancePrivateIp:
+    Description: Private IP address
+    Value: !GetAtt TestInstance.PrivateIp
+    Export:
+      Name: !Join ["-", [!Ref "AWS::StackName", "PrivateIp"]]
+
+  InstancePublicIp:
+    Description: Public IP address
+    Value: !GetAtt TestInstance.PublicIp
+    Export:
+      Name: !Join ["-", [!Ref "AWS::StackName", "PublicIp"]]
+
+  SSMConnectCommand:
+    Description: Command to connect via Systems Manager
+    Value: !Sub "aws ssm start-session --target ${TestInstance}"
+
+  RoleArn:
+    Description: IAM Role ARN
+    Value: !GetAtt EC2Role.Arn
+    Export:
+      Name: !Join ["-", [!Ref "AWS::StackName", "RoleArn"]]
