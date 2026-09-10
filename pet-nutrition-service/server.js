@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('aadotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
