@@ -50,7 +50,7 @@ echo "Checking aws-ebs-csi-driver add-on"
 result=$(aws eks describe-addon --addon-name aws-ebs-csi-driver --cluster-name ${CLUSTER_NAME} --region ${REGION} 2>&1)
 echo "${result}"
 
-if [[ "${result}" == *"No addon: "* ]];  then
+if [[ "${result}" == *"ResourceNotFoundException"* ]]; then
     echo "Installing aws-ebs-csi-driver add-on"
     aws eks create-addon \
         --cluster-name ${CLUSTER_NAME} \

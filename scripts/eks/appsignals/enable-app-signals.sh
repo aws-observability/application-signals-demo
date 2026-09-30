@@ -61,7 +61,7 @@ else
     result=$(aws eks describe-addon --addon-name amazon-cloudwatch-observability --cluster-name ${CLUSTER_NAME} --region ${REGION} 2>&1)
     echo "${result}"
 
-    if [[ "${result}" == *"No addon: "* ]];  then
+    if [[ "${result}" == *"ResourceNotFoundException"* ]]; then
         echo "Installing amazon-cloudwatch-observability add-on"
 
         ADDON_VERSION_ARG=""
