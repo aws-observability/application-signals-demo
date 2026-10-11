@@ -33,6 +33,13 @@ spec:
             - java
             - org.springframework.boot.loader.JarLauncher
           image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/springcommunity/spring-petclinic-api-gateway:latest
+          env:
+          - name: CONFIG_SERVER_URL
+            value: http://config-server:8888
+          - name: DISCOVERY_SERVER_URL
+            value: http://discovery-server:8761/eureka
+          - name: SPRING_PROFILES_ACTIVE
+            value: prod
           securityContext:
             runAsNonRoot: true
             runAsUser: 101

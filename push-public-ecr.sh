@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export REGION='us-east-1'
+export REGION='us-east-2'
 
 get_repo_link() {
     repository_exists=$(aws ecr-public describe-repositories --repository-names $1 --region ${REGION} --query 'repositories[0].repositoryUri' --output text 2>&1)

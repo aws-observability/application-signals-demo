@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  # Lambda Function - will have 2 published versions
+  BillingInfoProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: BillingInfo
+      Handler: lambda_handler.lambda_handler
+      Runtime: python3.12
+      CodeUri: ./src
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: BillingInfo
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:Scan
+            Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/BillingInfo"
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - xray:PutTraceSegments
+              - xray:PutTelemetryRecords
+            Resource: "*"
+      Environment:
+        Variables:
+          TABLE_NAME: BillingInfo
+      Timeout: 60
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /process-billing
+            Method: get
+
+  # EventBridge Scheduler Role - Points to version 1 specifically
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: BillingInfo-Scheduler-Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambdaVersion1Only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                # Only allows version 1 - enforced policy
+                Resource: !Sub "${BillingInfoProcessor.Arn}:1"
+
+  # EventBridge Schedule - runs every minute, points to V1 only
+  SchedulerRule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: BillingInfoSchedule
+      Description: Schedule for Lambda Version 1 - runs every minute
+      ScheduleExpression: rate(1 minute)
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      State: ENABLED
+      Target:
+        Arn: !Sub "${BillingInfoProcessor.Arn}:1"
+        RoleArn: !GetAtt SchedulerRole.Arn
+        RetryPolicy:
+          MaximumRetryAttempts: 0
+
+  # CloudWatch Alarm for EventBridge Scheduler Errors
+  SchedulerErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: BillingInfo-Scheduler-Error-Alarm
+      AlarmDescription: Alarm when EventBridge Scheduler fails to invoke Lambda
+      MetricName: TargetErrorCount
+      Namespace: AWS/Scheduler
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ScheduleGroup
+          Value: default
+        - Name: ScheduleName
+          Value: BillingInfoSchedule
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  # SNS Topic for Alarm Notifications (optional)
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: BillingInfo-Alarm-Topic
+      DisplayName: BillingInfo Scheduler Error Notifications
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "billing-info-bucket-${AWS::Region}-${AWS::AccountId}"
+
+Outputs:
+  BillingInfoProcessorFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt BillingInfoProcessor.Arn
+
+  BillingInfoProcessorVersion1:
+    Description: "Lambda Function Version 1 ARN (will be created by deploy script)"
+    Value: !Sub "${BillingInfoProcessor.Arn}:1"
+
+  BillingInfoProcessorVersion2:
+    Description: "Lambda Function Version 2 ARN (will be created by deploy script)"
+    Value: !Sub "${BillingInfoProcessor.Arn}:2"
+
+  SchedulerRuleName:
+    Description: "EventBridge Scheduler Name (points to Version 1)"
+    Value: !Ref SchedulerRule
+
+  SchedulerErrorAlarmName:
+    Description: "CloudWatch Alarm for Scheduler Errors"
+    Value: !Ref SchedulerErrorAlarm
+
+  AlarmTopicArn:
+    Description: "SNS Topic for Alarm Notifications"
+    Value: !Ref AlarmTopic
+
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/process-billing"
+
+  S3BucketName:
+    Description: "S3 bucket name for storing artifacts"
+    Value: !Ref S3Bucket
+
+  InstructionsForScenario:
+    Description: "Instructions to trigger the error scenario"
+    Value: "Use deploy-two-versions.sh to deploy. Function will have Version 1 (app.py) and Version 2 (app2.py). Scheduler points to Version 1 only. Policy enforced for Version 1."

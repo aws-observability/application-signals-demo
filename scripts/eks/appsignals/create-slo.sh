@@ -31,8 +31,8 @@ aws application-signals start-discovery --region $REGION --endpoint $ENDPOINT
 check_if_step_failed_and_exit "There was an error enabling topology discovery, exiting"
 
 # Pause for synthetics canaries to generate traffic
-echo "Wait 10 minutes for canaries to generate traffic"
-sleep 600
+#echo "Wait 10 minutes for canaries to generate traffic"
+#sleep 600
 
 echo "Creating Service Level Objectives"
 
