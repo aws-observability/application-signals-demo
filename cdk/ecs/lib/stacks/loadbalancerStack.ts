@@ -40,13 +40,17 @@ export class LoadBalancerStack extends Stack {
             port: 8080,
             protocol: ApplicationProtocol.HTTP,
             targetType: TargetType.IP,
+            // '/' would work but it hits RumConfigFilter which buffers the whole
+            // index.html into memory before responding (~15s), causing flaky ALB
+            // health checks. '/actuator/health' bypasses the filter and returns
+            // fast, so we can also tighten the intervals safely.
             healthCheck: {
-                path: '/',
+                path: '/actuator/health',
                 protocol: Protocol.HTTP,
-                healthyThresholdCount: 5,
-                unhealthyThresholdCount: 2,
-                interval: Duration.seconds(240),
-                timeout: Duration.seconds(60),
+                healthyThresholdCount: 2,
+                unhealthyThresholdCount: 3,
+                interval: Duration.seconds(30),
+                timeout: Duration.seconds(10),
             },
         });
 
